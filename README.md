@@ -29,13 +29,11 @@ Each record in the raw dataset contains:
 | Sitting      | 59,939   |
 | Standing     | 48,395   |
 
-<p align="center">
-  <img src="figures/class_distribution.png"
-       alt="WISDM class distribution (number of samples per activity)"
-       width="500">
-</p>
+<img src="figures/class_distribution.png"
+     alt="WISDM class distribution (number of samples per activity)"
+     width="500">
 
-<p align="center"><em>Figure 1. Class distribution in the WISDM dataset (number of samples per activity).</em></p>
+*Figure 1. Class distribution in the WISDM dataset (number of samples per activity).* 
 
 
 
