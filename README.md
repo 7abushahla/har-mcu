@@ -6,7 +6,7 @@ This repository contains the full implementation and supplementary materials for
 
 ## Dataset 
 
-This work uses the **Wireless Sensor Data Mining (WISDM)** dataset as our primary public benchmark for human activity recognition (HAR). The dataset consists of motion data collected from **36 users** performing **six activities** over specific time periods: walking, jogging, sitting, standing, and ascending and descending stairs. The signals were recorded using smartphone accelerometers, which measure linear acceleration along three axes and can indirectly capture device orientation. Data were sampled at **20 Hz** (1 sample every 50 ms), yielding 20 samples per second.
+This work uses the **Wireless Sensor Data Mining (WISDM)** dataset as our primary public benchmark for human activity recognition (HAR). The dataset consists of **1,073,623 labeled samples** of motion data collected from **36 users** performing **six activities** over specific time periods: walking, jogging, sitting, standing, and ascending and descending stairs. The signals were recorded using smartphone accelerometers, which measure linear acceleration along three axes and can indirectly capture device orientation. Data were sampled at **20 Hz** (1 sample every 50 ms), yielding 20 samples per second.
 
 Each record in the raw dataset contains:
 
