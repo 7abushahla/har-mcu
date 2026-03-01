@@ -111,6 +111,10 @@ conda activate tinymlproj
 conda env update -n tinymlproj -f environment.yml --prune
 ```
 
+If you see TensorFlow logs about NUMA (for example `could not open file to read NUMA node` or `Could not identify NUMA node of platform GPU id 0`), those are informational on many desktop kernels and are not the failure cause by themselves.
+
+If notebook training fails with `TypeError: Object of type float32 is not JSON serializable`, the failure is from writing Keras history/report JSON. This repo now uses shared JSON-safe serialization in pipeline scripts. Pull latest changes, restart the kernel, and rerun `notebooks/replication_deepconvlstm.ipynb` from cell 7 onward.
+
 ### Fast smoke test
 
 ```bash
@@ -122,6 +126,8 @@ python -m src.smoke.run_smoke --config configs/smoke.yaml
 ```bash
 python -m src.run_all --config configs/default.yaml
 ```
+
+`run_all` now reports an overall status and exits non-zero if any protocol fails strict PTQ or QAT deployability gates.
 
 ### DeepConvLSTM replication notebook
 
@@ -135,6 +141,32 @@ Open `notebooks/replication_deepconvlstm.ipynb` and run in this order:
 1. Preflight/runtime cells
 2. Quick mode (`RUN_MODE="quick"`) for sanity
 3. Full mode (`RUN_MODE="full"`) for replication results
+
+#### Paper Strict Mode (Nano 33 BLE Sense)
+
+The replication notebook and quantization pipeline use two complementary tracks:
+- Replication-metric track: host-side TFLite accuracy/size reporting for PTQ and QAT.
+- Strict deployment track: full-integer I/O plus TFLM op compatibility for Nano deployability.
+
+Strict policy defaults:
+- Full-integer strict mode enabled for both PTQ and QAT (`strict_full_int8=true`).
+- TFLM op compatibility required (`require_tflm_compatible=true`).
+- Accepted integer I/O dtypes: `int8` and `uint8`.
+- Mixed-precision/`SELECT_TF_OPS` fallback is not used for deployment acceptance.
+
+Why `status=error` can appear with valid quantized I/O:
+- Conversion can succeed and still produce control-flow ops (for example `WHILE`, `FILL`, `EXPAND_DIMS`) that are outside the configured TFLM resolver set.
+- In that case, replication metrics may still be available on host TFLite, but strict deployability is marked failed.
+
+Notebook toggles:
+- `RUN_QAT=True` by default.
+- `STRICT_FULL_INT8=True`
+- `REQUIRE_TFLM_COMPAT=True`
+- `FAIL_ON_PTQ_ERROR=False` to keep notebook flow alive and report PTQ failure rows.
+- `FAIL_ON_QAT_ERROR=False` to keep notebook flow alive and report QAT failure rows.
+- Two calibration variants are reported:
+  - `traincal`: representative data from train split.
+  - `authorcal`: representative data from test split (`AUTHOR_STYLE_REP_SAMPLES=100`) to mirror the reference notebook style.
 
 Key artifacts are generated in:
 - `data/processed/`

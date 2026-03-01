@@ -2,7 +2,7 @@
 
 ## Completed
 - [x] Phase 0: Repo scaffold and config files.
-- [x] Conda environment packaging files and docs added (`environment.yml`, `requirements.txt`, README setup steps for `tinymlproject`).
+- [x] Conda environment packaging files and docs added (`environment.yml`, `requirements.txt`, README setup steps for `tinymlproj`).
 - [x] Phase 1: Deterministic data pipeline (cleaning, windowing, split protocols, train-only normalization).
 - [x] Phase 2: Baseline DeepConv+LSTM training/eval scripts.
 - [x] Phase 3: Window sweep pipeline.
@@ -12,6 +12,10 @@
 - [x] Phase 7: TinyOL simulator + Arduino TinyOL scaffold.
 - [x] Phase 8: `src/run_all.py` orchestration and final table generation.
 - [x] Phase 9: Smoke runner + tests scaffold.
+- [x] Phase 10: Shared JSON serialization hardening across training/eval/quant/smoke/deploy reports.
+- [x] Added regression tests for NumPy/TensorFlow scalar JSON payloads and fixed split test fixture sizing for modern scikit-learn constraints.
+- [x] Phase 11: Strict full-int8 PTQ policy for Nano 33 BLE Sense replication (no mixed fallback), with notebook strict-gate guardrails and PTQ status/error schema.
+- [x] Phase 12: Dual-track PTQ/QAT replication in TF 2.14.1 (paper-metric reporting + strict Nano deployability), including calibration variants (`traincal`, `authorcal`) and strict dual gate enforcement in smoke/run_all.
 
 ## Implemented Files
 - `configs/default.yaml`, `configs/smoke.yaml`
@@ -29,7 +33,7 @@
 - `tests/*.py`
 
 ## Remaining External Steps (manual/hardware-dependent)
-- [ ] Install dependencies inside conda env `tinymlproject` and verify TensorFlow CUDA runtime.
+- [ ] Install dependencies inside conda env `tinymlproj` and verify TensorFlow CUDA runtime.
 - [ ] Vendor full TFLite Micro source at pinned commit into `third_party/tflite-micro`.
 - [ ] Install Arduino toolchain (`arduino-cli`) and board core.
 - [ ] Compile/upload Arduino sketches and capture Flash/RAM/latency.

@@ -32,12 +32,22 @@ train:
 quant:
   ptq:
     representative_samples: 32
+    representative_source: train
     enforce_full_int8: true
+    strict_full_int8: true
+    require_tflm_compatible: true
+    accepted_integer_io_dtypes: [int8, uint8]
   qat:
     enabled: true
     learning_rate: 0.0001
     epochs: 1
     batch_size: 64
+    representative_samples: 32
+    representative_source: train
+    enforce_full_int8: true
+    strict_full_int8: true
+    require_tflm_compatible: true
+    accepted_integer_io_dtypes: [int8, uint8]
 
 deploy:
   tflm_commit: 5f9d9d6

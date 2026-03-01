@@ -13,6 +13,12 @@ def dataset_prefix(window_size: int, protocol: str) -> str:
     return f"T{window_size}_P{slug_protocol(protocol)}"
 
 
+def variant_suffix(variant: str | None) -> str:
+    if not variant:
+        return ""
+    return f"_{variant}"
+
+
 def split_npz_path(processed_dir: str | Path, window_size: int, protocol: str) -> Path:
     return Path(processed_dir) / f"splits_{dataset_prefix(window_size, protocol)}.npz"
 
@@ -49,9 +55,21 @@ def confusion_png(reports_dir: str | Path, window_size: int, protocol: str, suff
     return Path(reports_dir) / f"confusion_{suffix}_{dataset_prefix(window_size, protocol)}.png"
 
 
-def ptq_tflite_path(models_dir: str | Path, window_size: int, protocol: str) -> Path:
-    return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_ptq_int8.tflite"
+def ptq_tflite_path(
+    models_dir: str | Path,
+    window_size: int,
+    protocol: str,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_ptq_int8{suffix}.tflite"
 
 
-def qat_tflite_path(models_dir: str | Path, window_size: int, protocol: str) -> Path:
-    return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_qat.tflite"
+def qat_tflite_path(
+    models_dir: str | Path,
+    window_size: int,
+    protocol: str,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_qat{suffix}.tflite"

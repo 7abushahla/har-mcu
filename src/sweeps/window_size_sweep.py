@@ -65,7 +65,12 @@ def run_sweep_for_protocol(cfg: dict[str, Any], protocol: str) -> dict[str, str]
             f"- Best by accuracy: T={int(best_row['window_size'])}, accuracy={float(best_row['accuracy']):.4f}, macro-F1={float(best_row['macro_f1']):.4f}\n\n"
         )
         f.write("## Results\n\n")
-        f.write(df.to_markdown(index=False))
+        try:
+            f.write(df.to_markdown(index=False))
+        except Exception:
+            f.write("```\n")
+            f.write(df.to_string(index=False))
+            f.write("\n```\n")
 
     return {"csv": str(csv_path), "png": str(png_path), "md": str(md_path)}
 

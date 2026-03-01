@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 import tensorflow as tf
+from src.utils.repro import dump_json
 
 DEFAULT_ALLOWED_OPS = {
     "ADD",
@@ -69,7 +69,7 @@ def main() -> None:
     report_json.parent.mkdir(parents=True, exist_ok=True)
     report_md.parent.mkdir(parents=True, exist_ok=True)
 
-    report_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    dump_json(report_json, payload)
 
     with report_md.open("w", encoding="utf-8") as f:
         f.write("# TFLM Operator Compatibility\n\n")

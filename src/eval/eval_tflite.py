@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +14,7 @@ from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
 from src.utils.artifacts import ptq_tflite_path
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
+from src.utils.repro import dump_json
 
 
 def _quantize_input(x: np.ndarray, scale: float, zero_point: int, dtype: np.dtype) -> np.ndarray:
@@ -123,8 +123,7 @@ def evaluate_tflite(
     metrics_path = reports_dir / f"{tag}_T{window_size}_P{protocol}.json"
     report_path = reports_dir / f"{tag}_T{window_size}_P{protocol}.md"
 
-    with metrics_path.open("w", encoding="utf-8") as f:
-        json.dump(metrics, f, indent=2)
+    dump_json(metrics_path, metrics)
 
     with report_path.open("w", encoding="utf-8") as f:
         f.write(f"# {tag.upper()} TFLite Evaluation (T={window_size}, protocol={protocol})\n\n")

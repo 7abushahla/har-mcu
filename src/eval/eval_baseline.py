@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +27,7 @@ from src.utils.artifacts import (
     confusion_png,
 )
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
+from src.utils.repro import dump_json
 
 
 def evaluate_baseline_for_protocol(
@@ -100,9 +100,7 @@ def evaluate_baseline_for_protocol(
     }
 
     metrics_path = baseline_metrics_json(cfg["paths"]["reports_dir"], window_size, protocol)
-    metrics_path.parent.mkdir(parents=True, exist_ok=True)
-    with metrics_path.open("w", encoding="utf-8") as f:
-        json.dump(metrics, f, indent=2)
+    dump_json(metrics_path, metrics)
 
     md_path = baseline_report_md(cfg["paths"]["reports_dir"], window_size, protocol)
     with md_path.open("w", encoding="utf-8") as f:

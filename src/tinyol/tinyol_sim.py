@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +16,7 @@ from src.data.io import dataset_exists, load_split_arrays
 from src.train.train_embed import train_embed_for_protocol
 from src.utils.artifacts import dataset_prefix
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
-from src.utils.repro import set_global_seed
+from src.utils.repro import dump_json, set_global_seed
 
 
 def softmax(logits: np.ndarray) -> np.ndarray:
@@ -157,8 +156,7 @@ def run_tinyol_sim(
 
     json_path = reports_dir / f"tinyol_ablation_T{window_size}_P{protocol}.json"
     md_path = reports_dir / "tinyol_ablation.md"
-    with json_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
+    dump_json(json_path, payload)
 
     with md_path.open("a", encoding="utf-8") as f:
         f.write(f"## TinyOL Ablation (T={window_size}, protocol={protocol})\n\n")

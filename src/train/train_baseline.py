@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -14,7 +12,7 @@ from src.data.io import dataset_exists, load_split_arrays
 from src.models.deepconv_lstm import build_deepconv_lstm, compile_deepconv_lstm
 from src.utils.artifacts import baseline_ckpt_path, history_path
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
-from src.utils.repro import set_global_seed
+from src.utils.repro import dump_json, set_global_seed
 from src.utils.runtime import check_tensorflow_runtime
 
 
@@ -81,8 +79,7 @@ def train_baseline_for_protocol(
     model.save(ckpt_path)
 
     hist_path = history_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)
-    with hist_path.open("w", encoding="utf-8") as f:
-        json.dump(history.history, f, indent=2)
+    dump_json(hist_path, history.history)
 
     out = {
         "checkpoint": str(ckpt_path),
