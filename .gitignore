@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+
+# Generated artifacts
+data/processed/*.npy
+data/processed/*.npz
+data/processed/*.json
+checkpoints/*
+models_tflite/*
+reports/*.json
+reports/*.md
+reports/*.png
+reports/*.csv
+
+# Allow tracked template report
+!reports/on_device_metrics.md
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,53 @@
+paths:
+  raw_csv: /home/dellio/github/har-mcu/WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  processed_dir: /home/dellio/github/har-mcu/data/processed
+  checkpoints_dir: /home/dellio/github/har-mcu/checkpoints
+  reports_dir: /home/dellio/github/har-mcu/reports
+  models_tflite_dir: /home/dellio/github/har-mcu/models_tflite
+  deploy_common_dir: /home/dellio/github/har-mcu/deploy/common
+
+env:
+  tensorflow_version: 2.14.1
+  require_gpu: false
+
+seed: 42
+classes: [Walking, Jogging, Upstairs, Downstairs, Sitting, Standing]
+window_size_default: 20
+window_sizes_sweep: [20]
+overlap: 0.5
+test_ratio: 0.33
+val_ratio_from_train: 0.2
+split_protocols: [random_stratified, user_holdout]
+label_policy: drop_cross_boundary
+
+train:
+  learning_rate: 0.001
+  batch_size: 64
+  epochs: 1
+  dropout: 0.3
+  reduce_lr_factor: 0.5
+  reduce_lr_patience: 2
+  early_stopping_patience: 3
+
+quant:
+  ptq:
+    representative_samples: 32
+    enforce_full_int8: true
+  qat:
+    enabled: true
+    learning_rate: 0.0001
+    epochs: 1
+    batch_size: 64
+
+deploy:
+  tflm_commit: 5f9d9d6
+  board_fqbn: arduino:mbed_nano:nano33ble
+  tensor_arena_kb: 64
+  sample_rate_hz: 20
+  enable_power_measurement: false
+
+smoke:
+  enabled: true
+  max_windows_per_class: 200
+  representative_samples: 32
+  quick_epochs: 1

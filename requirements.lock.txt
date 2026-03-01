@@ -1,0 +1,17 @@
+# Compatibility-locked requirements baseline.
+# Keep this aligned with requirements.txt constraints.
+numpy<2
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+PyYAML
+tqdm
+tensorflow[and-cuda]==2.14.1
+tensorflow-model-optimization==0.8.0
+nvidia-cuda-nvrtc-cu11==11.8.89
+ipykernel
+jupyterlab
+notebook
+pytest

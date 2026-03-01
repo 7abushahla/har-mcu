@@ -39,3 +39,123 @@ Each record in the raw dataset contains:
 
 [^1]: https://dl.acm.org/doi/abs/10.1145/1964897.1964918
 [^2]: https://www.cis.fordham.edu/wisdm/dataset.php 
+
+## Reproducible Pipeline (TensorFlow 2.14.1 CUDA + TFLite Micro)
+
+### Environment
+
+Use conda environment `tinymlproj`.
+
+Optional: update conda first:
+
+```bash
+conda update -n base -c defaults conda -y
+```
+
+#### Option A (Recommended): install with `environment.yml`
+
+```bash
+conda env create -f environment.yml
+conda activate tinymlproj
+```
+
+If `tinymlproj` already exists:
+
+```bash
+conda activate tinymlproj
+conda env update -n tinymlproj -f environment.yml --prune
+```
+
+#### Option B: install with `requirements.txt` in an existing env
+
+```bash
+conda create -n tinymlproj "python<3.11" -y
+conda activate tinymlproj
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### Option C: manual package install (your current flow)
+
+```bash
+conda create -n tinymlproj "python<3.11" -y
+conda activate tinymlproj
+python -m pip install --upgrade pip
+python -m pip install "numpy<2" pandas scikit-learn scipy matplotlib seaborn "tensorflow[and-cuda]==2.14.1" tensorflow-model-optimization==0.8.0 nvidia-cuda-nvrtc-cu11==11.8.89 PyYAML tqdm ipykernel jupyterlab notebook pytest
+```
+
+Validate TensorFlow/CUDA runtime after activation:
+
+```bash
+python scripts/env/check_tf_cuda.py --expect-version 2.14.1 --require-gpu
+python scripts/env/check_versions.py
+```
+
+Register the notebook kernel once:
+
+```bash
+python -m ipykernel install --user --name tinymlproj --display-name "Python (tinymlproj)"
+```
+
+If you see TensorFlow/XLA logs like `Start cannot spawn child process: No such file or directory`, update the env and restart Jupyter kernel:
+
+```bash
+conda activate tinymlproj
+conda env update -n tinymlproj -f environment.yml --prune
+```
+
+If you see `Could not load library libcudnn_cnn_infer.so.8 ... libnvrtc.so: cannot open shared object file`, make sure `nvidia-cuda-nvrtc-cu11` is installed, then restart the kernel and rerun notebook cell 1:
+
+```bash
+conda activate tinymlproj
+conda env update -n tinymlproj -f environment.yml --prune
+```
+
+### Fast smoke test
+
+```bash
+python -m src.smoke.run_smoke --config configs/smoke.yaml
+```
+
+### Full pipeline
+
+```bash
+python -m src.run_all --config configs/default.yaml
+```
+
+### DeepConvLSTM replication notebook
+
+Launch Jupyter:
+
+```bash
+jupyter lab
+```
+
+Open `notebooks/replication_deepconvlstm.ipynb` and run in this order:
+1. Preflight/runtime cells
+2. Quick mode (`RUN_MODE="quick"`) for sanity
+3. Full mode (`RUN_MODE="full"`) for replication results
+
+Key artifacts are generated in:
+- `data/processed/`
+- `checkpoints/`
+- `models_tflite/`
+- `reports/`
+- `deploy/common/`
+
+### Arduino deployment
+
+1. Export model and normalization headers:
+
+```bash
+python -m src.deploy.export_c_array --tflite models_tflite/<model>.tflite --out-dir deploy/common
+python -m src.deploy.export_norm_header --norm-json data/processed/<norm_stats>.json --out deploy/common/norm_stats.h
+```
+
+2. Use `deploy/arduino_infer/arduino_infer.ino` for inference profiling.
+3. Use `deploy/arduino_tinyol/arduino_tinyol.ino` for TinyOL-style online head updates.
+
+### TFLite Micro vendor pin
+
+Commit pin metadata lives at `third_party/tflite-micro/VERSION_PIN.md`.
+Vendor the full TFLM source tree in that directory at the pinned commit for reproducible embedded builds.

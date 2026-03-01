@@ -1,0 +1,22 @@
+# Core scientific stack
+numpy<2
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+PyYAML
+tqdm
+
+# TensorFlow + CUDA stack
+tensorflow[and-cuda]==2.14.1
+tensorflow-model-optimization==0.8.0
+nvidia-cuda-nvrtc-cu11==11.8.89
+
+# Notebook tooling
+ipykernel
+jupyterlab
+notebook
+
+# Test tooling
+pytest
