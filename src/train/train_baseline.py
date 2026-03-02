@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
-from src.models.deepconv_lstm import build_deepconv_lstm, compile_deepconv_lstm
+from src.models.deepconv_lstm import build_deepconv_lstm, build_deepconv_lstm_conv2d, compile_deepconv_lstm
 from src.utils.artifacts import baseline_ckpt_path, history_path
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json, set_global_seed
@@ -24,7 +24,20 @@ def train_baseline_for_protocol(
     cfg: dict[str, Any],
     window_size: int,
     protocol: str,
+    model_builder=None,
 ) -> dict[str, Any]:
+    """Train (or reload) one fp32 baseline model for the given protocol.
+
+    Args:
+        cfg: effective config dict.
+        window_size: number of timesteps per window.
+        protocol: split protocol name (e.g. ``"random_stratified"``).
+        model_builder: callable with signature
+            ``(window_size, num_features, num_classes, dropout) -> tf.keras.Model``.
+            Defaults to :func:`build_deepconv_lstm` (Conv1D architecture).
+            Pass :func:`build_deepconv_lstm_conv2d` for the QAT-compatible
+            Conv2D equivalent.
+    """
     ensure_path_dirs(cfg)
     check_tensorflow_runtime(cfg)
     set_global_seed(int(cfg["seed"]))
@@ -41,7 +54,8 @@ def train_baseline_for_protocol(
     y_train_oh = _to_one_hot(y_train, num_classes)
     y_val_oh = _to_one_hot(y_val, num_classes)
 
-    model = build_deepconv_lstm(
+    _builder = model_builder if model_builder is not None else build_deepconv_lstm
+    model = _builder(
         window_size=window_size,
         num_features=int(X_train.shape[-1]),
         num_classes=num_classes,
