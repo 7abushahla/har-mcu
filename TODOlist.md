@@ -31,6 +31,9 @@
 - `deploy/arduino_infer/arduino_infer.ino`, `deploy/arduino_tinyol/arduino_tinyol.ino`
 - `tests/*.py`
 
+## Pending Tasks (implementation)
+- [ ] **QAT compatibility workaround**: Apply a `QuantizeConfig`-based QAT fix so Cell 11 (QAT in replication_deepconvlstm.ipynb) can produce actual TFLite exports on TF 2.14.1 + tfmot 0.8.0. Root cause: `keras.src.layers.convolutional.conv1d.Conv1D` class path not recognized by tfmot's default registry. Options: custom `QuantizeConfig` per layer type passed to `quantize_annotate_layer`, or rebuild model from `build_deepconv_lstm()` → apply `quantize_model()` → load weights → fine-tune.
+
 ## Remaining External Steps (manual/hardware-dependent)
 - [ ] Install dependencies inside conda env `tinymlproj` and verify TensorFlow CUDA runtime.
 - [ ] Install Arduino toolchain (`arduino-cli`) and board core.
