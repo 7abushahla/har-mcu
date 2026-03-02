@@ -58,6 +58,7 @@ def build_parser(description: str) -> argparse.ArgumentParser:
     parser.add_argument("--window-size", type=int, default=None)
     parser.add_argument("--split-protocol", type=str, default=None)
     parser.add_argument("--label-policy", type=str, default=None)
+    parser.add_argument("--run-mode", type=str, default=None, help="runtime.run_mode override")
     parser.add_argument("--smoke", action="store_true", help="Force smoke-mode settings")
     return parser
 
@@ -70,6 +71,8 @@ def apply_common_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> dic
         cfg["split_protocols"] = [args.split_protocol]
     if args.label_policy is not None:
         cfg["label_policy"] = args.label_policy
+    if args.run_mode is not None:
+        cfg.setdefault("runtime", {})["run_mode"] = str(args.run_mode)
     if args.smoke:
         cfg.setdefault("smoke", {})["enabled"] = True
         cfg["train"]["epochs"] = int(cfg["smoke"].get("quick_epochs", 1))

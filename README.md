@@ -175,6 +175,79 @@ Key artifacts are generated in:
 - `reports/`
 - `deploy/common/`
 
+### Paper Replication notebooks (WISDM-first, PTQ/QAT-only)
+
+Use these notebooks for the 5-paper reproducibility track:
+
+- `notebooks/replication_xtinyhar.ipynb`: XTinyHAR student adaptation on WISDM.
+- `notebooks/replication_repmobile.ipynb`: RepMobile folded architecture adaptation.
+- `notebooks/replication_tcn_attention_har.ipynb`: TCN-attention-HAR teacher adaptation.
+- `notebooks/replication_daghero_qadnn.ipynb`: Daghero quantized/adaptive CNN adaptation.
+- `notebooks/replication_tcn_inception.ipynb`: TCN-Inception adaptation.
+
+Recommended run modes in each notebook:
+
+- `RUN_MODE="sanity_check"`: quick validation runs; GPU can be used for non-QAT stages, QAT on CPU.
+- `RUN_MODE="full_run"`: final benchmark runs on CPU for all stages.
+
+### What `run_paper_experiment` does
+
+`src/run_paper_experiment.py` executes the full paper pipeline for each split protocol:
+
+1. Train FP32 model from the selected paper model variant.
+2. Evaluate FP32 model and save metrics + confusion matrix.
+3. Export PTQ INT8 model and run strict deploy-gate checks.
+4. Evaluate PTQ TFLite model (accuracy/F1/confusion/latency).
+5. Run QAT (if enabled), export INT8 model, and run strict deploy-gate checks.
+6. Evaluate QAT TFLite model (accuracy/F1/confusion/latency).
+7. Save per-run artifacts, per-paper summaries, master summaries, and per-paper comparison charts/tables.
+
+Compression policy is explicitly enforced: `experiment.compression_focus` must be `ptq_qat_only`.
+KD details from papers are documented for context only and are not executed in this pipeline.
+
+### What is saved and where
+
+Primary save locations:
+
+- `checkpoints/`
+  - FP32 checkpoints: `<model>_T<window>_P<protocol>_<run_id>.keras`
+  - FP32 history JSON
+  - QAT checkpoint + QAT history JSON
+- `models_tflite/`
+  - PTQ INT8 `.tflite`
+  - QAT INT8 `.tflite`
+- `reports/<paper_slug>/`
+  - `*_results_<protocol>.csv`
+  - `<paper_slug>_summary.md`
+  - stage metrics JSON/MD for FP32/PTQ/QAT
+  - confusion matrices (FP32/PTQ/QAT)
+  - training curves (FP32/QAT)
+  - run artifacts (`artifacts/*.json`)
+- `reports/<paper_slug>/comparison/`
+  - `<paper_slug>_comparison.csv`
+  - `<paper_slug>_comparison.md`
+  - accuracy/model-size/latency PNG charts
+- `reports/results_master.csv`
+- `reports/results_master.md`
+
+### Metrics schema (paper notebooks)
+
+Each run records:
+
+- FP32/PTQ/QAT: `accuracy`, `macro_f1`
+- Classification report JSON and confusion matrix plot paths
+- Quantized model size (`ptq_model_size_kb`, `qat_model_size_kb`)
+- Training time:
+  - `fp32_training_time_sec`
+  - `qat_training_time_sec`
+- TFLite inference timing (CPU host interpreter):
+  - `inference_latency_ms_median`
+  - `inference_latency_ms_p95`
+  - `inference_latency_ms_mean`
+  - `warmup_samples`, `timed_samples`
+- Deploy-gate fields:
+  - `status`, `full_integer_io`, `tflm_compatible`, `unsupported_ops`
+
 ### Arduino deployment
 
 1. Export model and normalization headers:

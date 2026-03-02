@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any, Callable
 
 import numpy as np
@@ -80,6 +81,7 @@ def train_model_for_protocol(
         ),
     ]
 
+    train_t0 = time.perf_counter()
     history = model.fit(
         X_train,
         y_train_oh,
@@ -89,6 +91,7 @@ def train_model_for_protocol(
         callbacks=callbacks,
         verbose=2,
     )
+    training_time_sec = float(time.perf_counter() - train_t0)
 
     model_name = str(cfg.get("experiment", {}).get("model_variant", model.name))
     ckpt = model_ckpt_path(
@@ -114,6 +117,8 @@ def train_model_for_protocol(
         "run_id": run_id,
         "checkpoint": str(ckpt),
         "history": str(hist_path),
+        "history_json": str(hist_path),
         "epochs_ran": int(len(history.history.get("loss", []))),
         "final_val_accuracy": float(history.history.get("val_accuracy", [0.0])[-1]),
+        "training_time_sec": training_time_sec,
     }

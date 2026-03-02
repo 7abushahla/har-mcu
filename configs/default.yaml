@@ -8,7 +8,27 @@ paths:
 
 env:
   tensorflow_version: 2.14.1
-  require_gpu: true
+  require_gpu: false
+
+runtime:
+  run_mode: sanity_check
+  gpu_fallback_to_cpu: true
+  fail_if_gpu_missing: false
+  stage_devices:
+    sanity_check:
+      train: gpu
+      eval_fp32: gpu
+      ptq: gpu
+      eval_ptq: gpu
+      qat: cpu
+      eval_qat: cpu
+    full_run:
+      train: cpu
+      eval_fp32: cpu
+      ptq: cpu
+      eval_ptq: cpu
+      qat: cpu
+      eval_qat: cpu
 
 seed: 42
 classes: [Walking, Jogging, Upstairs, Downstairs, Sitting, Standing]
@@ -24,6 +44,12 @@ experiment:
   paper_slug: deepconvlstm
   model_variant: deepconv_lstm
   run_id: r0
+  compression_focus: ptq_qat_only
+  paper_targets:
+    fp32_accuracy: null
+    ptq_accuracy: null
+    qat_accuracy: null
+    notes: "Default config does not represent a single paper target."
   model_kwargs: {}
 
 paper_protocol:
@@ -59,6 +85,12 @@ quant:
     strict_full_int8: true
     require_tflm_compatible: true
     accepted_integer_io_dtypes: [int8, uint8]
+
+eval:
+  tflite_timing:
+    enabled: true
+    warmup_samples: 32
+    timed_samples: 256
 
 deploy:
   tflm_commit: 5f9d9d6

@@ -110,6 +110,7 @@ def quantize_ptq_for_protocol(
     run_id: str | None = None,
     variant: str | None = None,
     raise_on_strict_failure: bool = True,
+    reports_dir_override: str | Path | None = None,
 ) -> dict[str, Any]:
     ensure_path_dirs(cfg)
     processed_dir = cfg["paths"]["processed_dir"]
@@ -151,7 +152,7 @@ def quantize_ptq_for_protocol(
         ptq_cfg.get("accepted_integer_io_dtypes", ["int8", "uint8"])
     )
 
-    reports_dir = Path(cfg["paths"]["reports_dir"])
+    reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
     json_path, md_path = _report_paths(
         reports_dir,

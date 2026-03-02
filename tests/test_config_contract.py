@@ -23,6 +23,24 @@ def test_default_config_contract():
     assert cfg["quant"]["qat"].get("strict_full_int8") is True
     assert cfg["quant"]["qat"].get("require_tflm_compatible") is True
     assert "deploy" in cfg
+    assert cfg.get("experiment", {}).get("compression_focus") == "ptq_qat_only"
+    assert "paper_targets" in cfg.get("experiment", {})
+    for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
+        assert key in cfg["experiment"]["paper_targets"]
+    assert cfg.get("runtime", {}).get("run_mode") in {"sanity_check", "full_run"}
+    assert cfg.get("runtime", {}).get("gpu_fallback_to_cpu") in {True, False}
+    assert cfg.get("runtime", {}).get("fail_if_gpu_missing") in {True, False}
+    stage_devices = cfg.get("runtime", {}).get("stage_devices", {})
+    for mode in ("sanity_check", "full_run"):
+        assert mode in stage_devices
+        for stage in ("train", "eval_fp32", "ptq", "eval_ptq", "qat", "eval_qat"):
+            assert stage in stage_devices[mode]
+            assert stage_devices[mode][stage] in {"cpu", "gpu"}
+    assert "eval" in cfg
+    assert "tflite_timing" in cfg["eval"]
+    assert cfg["eval"]["tflite_timing"]["enabled"] in {True, False}
+    assert int(cfg["eval"]["tflite_timing"]["warmup_samples"]) >= 0
+    assert int(cfg["eval"]["tflite_timing"]["timed_samples"]) >= 0
 
 
 def test_smoke_config_ptq_strict_contract():
@@ -38,6 +56,12 @@ def test_smoke_config_ptq_strict_contract():
     assert cfg["quant"]["qat"].get("require_tflm_compatible") is True
     assert cfg["quant"]["qat"].get("representative_source") == "train"
     assert set(cfg["quant"]["qat"].get("accepted_integer_io_dtypes", [])) >= {"int8", "uint8"}
+    assert cfg.get("experiment", {}).get("compression_focus") == "ptq_qat_only"
+    assert "paper_targets" in cfg.get("experiment", {})
+    for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
+        assert key in cfg["experiment"]["paper_targets"]
+    assert cfg.get("runtime", {}).get("run_mode") in {"sanity_check", "full_run"}
+    assert "eval" in cfg and "tflite_timing" in cfg["eval"]
 
 
 def test_nested_paper_config_resolves_paths_to_repo_root():
@@ -45,4 +69,10 @@ def test_nested_paper_config_resolves_paths_to_repo_root():
     assert "WISDM_ar_v1.1" in cfg["paths"]["raw_csv"]
     assert cfg["paths"]["raw_csv"].startswith("/")
     assert cfg["experiment"]["paper_slug"] == "xtinyhar"
+    assert cfg["experiment"]["compression_focus"] == "ptq_qat_only"
+    assert "paper_targets" in cfg["experiment"]
+    for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
+        assert key in cfg["experiment"]["paper_targets"]
+    assert cfg["runtime"]["run_mode"] in {"sanity_check", "full_run"}
+    assert "eval" in cfg and "tflite_timing" in cfg["eval"]
     assert "annotation_policy" in cfg["quant"]["qat"]

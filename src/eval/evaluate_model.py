@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.metrics import (
     accuracy_score,
@@ -17,6 +16,7 @@ from sklearn.metrics import (
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
+from src.eval.plots import save_confusion_matrix_plot
 from src.utils.artifacts import model_confusion_png, model_metrics_json, model_report_md
 from src.utils.config import ensure_path_dirs
 from src.utils.repro import dump_json
@@ -28,6 +28,7 @@ def evaluate_model_for_protocol(
     protocol: str,
     window_size: int,
     run_id: str,
+    reports_dir_override: str | Path | None = None,
 ) -> dict[str, Any]:
     """Evaluate a saved Keras model checkpoint on test split."""
 
@@ -52,24 +53,22 @@ def evaluate_model_for_protocol(
 
     cm = confusion_matrix(y_test, y_pred)
 
+    reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
     model_name = str(cfg.get("experiment", {}).get("model_variant", Path(model_path).stem))
     png_path = model_confusion_png(
-        cfg["paths"]["reports_dir"],
+        reports_dir,
         model_name=model_name,
         window_size=window_size,
         protocol=protocol,
         run_id=run_id,
     )
-    png_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(8, 6))
-    plt.imshow(cm)
-    plt.title(f"{model_name} Confusion Matrix ({protocol}, T={window_size})")
-    plt.xlabel("Predicted")
-    plt.ylabel("True")
-    plt.colorbar()
-    plt.tight_layout()
-    plt.savefig(png_path)
-    plt.close()
+    save_confusion_matrix_plot(
+        cm,
+        class_names=class_names,
+        out_png=png_path,
+        title=f"{model_name} FP32 Confusion Matrix ({protocol}, T={window_size})",
+        cmap="Blues",
+    )
 
     per_class = {
         class_names[i]: {
@@ -103,7 +102,7 @@ def evaluate_model_for_protocol(
     }
 
     metrics_path = model_metrics_json(
-        cfg["paths"]["reports_dir"],
+        reports_dir,
         model_name=model_name,
         window_size=window_size,
         protocol=protocol,
@@ -112,7 +111,7 @@ def evaluate_model_for_protocol(
     dump_json(metrics_path, metrics)
 
     report_path = model_report_md(
-        cfg["paths"]["reports_dir"],
+        reports_dir,
         model_name=model_name,
         window_size=window_size,
         protocol=protocol,

@@ -122,6 +122,29 @@ def model_confusion_png(
     return Path(reports_dir) / f"confusion_{run_prefix(model_name, window_size, protocol, run_id)}.png"
 
 
+def tflite_confusion_png(
+    reports_dir: str | Path,
+    tag: str,
+    window_size: int,
+    protocol: str,
+) -> Path:
+    return Path(reports_dir) / f"confusion_{tag}_{dataset_prefix(window_size, protocol)}.png"
+
+
+def model_training_curve_png(
+    reports_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+    tier: str = "fp32",
+) -> Path:
+    return (
+        Path(reports_dir)
+        / f"curve_{tier}_{run_prefix(model_name, window_size, protocol, run_id)}.png"
+    )
+
+
 def ptq_tflite_path(
     models_dir: str | Path,
     window_size: int,
@@ -167,3 +190,42 @@ def model_qat_tflite_path(
 ) -> Path:
     suffix = variant_suffix(variant)
     return Path(models_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}_qat{suffix}.tflite"
+
+
+def model_qat_history_path(
+    checkpoints_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return (
+        Path(checkpoints_dir)
+        / f"history_{run_prefix(model_name, window_size, protocol, run_id)}_qat{suffix}.json"
+    )
+
+
+def paper_comparison_dir(reports_dir: str | Path, paper_slug: str) -> Path:
+    return Path(reports_dir) / paper_slug / "comparison"
+
+
+def paper_comparison_csv_path(reports_dir: str | Path, paper_slug: str) -> Path:
+    return paper_comparison_dir(reports_dir, paper_slug) / f"{paper_slug}_comparison.csv"
+
+
+def paper_comparison_md_path(reports_dir: str | Path, paper_slug: str) -> Path:
+    return paper_comparison_dir(reports_dir, paper_slug) / f"{paper_slug}_comparison.md"
+
+
+def paper_comparison_accuracy_png_path(reports_dir: str | Path, paper_slug: str) -> Path:
+    return paper_comparison_dir(reports_dir, paper_slug) / f"{paper_slug}_comparison_accuracy.png"
+
+
+def paper_comparison_size_png_path(reports_dir: str | Path, paper_slug: str) -> Path:
+    return paper_comparison_dir(reports_dir, paper_slug) / f"{paper_slug}_comparison_size.png"
+
+
+def paper_comparison_latency_png_path(reports_dir: str | Path, paper_slug: str) -> Path:
+    return paper_comparison_dir(reports_dir, paper_slug) / f"{paper_slug}_comparison_latency.png"

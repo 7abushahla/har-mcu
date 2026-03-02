@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from src.train.train_baseline import train_baseline_for_protocol
 from src.utils.artifacts import (
     baseline_ckpt_path,
     model_ckpt_path,
+    model_qat_history_path,
     model_qat_tflite_path,
     model_slug,
     qat_tflite_path,
@@ -115,6 +117,10 @@ def _write_qat_markdown(md_path: Path, metrics: dict[str, Any]) -> None:
         f.write(f"- Accepted integer I/O dtypes: `{metrics['accepted_integer_io_dtypes']}`\n")
         f.write(f"- Representative source: `{metrics['representative_source']}`\n")
         f.write(f"- Representative samples: `{metrics['representative_samples']}`\n")
+        if metrics.get("training_time_sec") is not None:
+            f.write(f"- QAT training time: {float(metrics['training_time_sec']):.3f} s\n")
+        if metrics.get("history_json"):
+            f.write(f"- QAT history JSON: `{metrics['history_json']}`\n")
         if metrics.get("error"):
             f.write(f"- Error: `{metrics['error']}`\n")
         if metrics.get("unsupported_ops"):
@@ -135,6 +141,7 @@ def qat_for_protocol(
     annotation_policy: str | None = None,
     variant: str | None = None,
     raise_on_strict_failure: bool = True,
+    reports_dir_override: str | Path | None = None,
 ) -> dict[str, Any]:
     ensure_path_dirs(cfg)
     processed_dir = cfg["paths"]["processed_dir"]
@@ -187,10 +194,21 @@ def qat_for_protocol(
     variant_suffix_text = variant_suffix(variant)
     if model_slug(model_name) == "deepconv_lstm" and not run_id:
         qat_ckpt = ckpt_dir / f"deepconv_lstm_qat_T{window_size}_P{protocol}{variant_suffix_text}.keras"
+        qat_history_path = (
+            ckpt_dir / f"history_deepconv_lstm_qat_T{window_size}_P{protocol}{variant_suffix_text}.json"
+        )
     else:
         qat_ckpt = (
             ckpt_dir
             / f"{run_prefix(model_name, window_size, protocol, run_id)}_qat{variant_suffix_text}.keras"
+        )
+        qat_history_path = model_qat_history_path(
+            ckpt_dir,
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+            variant=variant,
         )
 
     if model_slug(model_name) == "deepconv_lstm" and not run_id:
@@ -208,7 +226,7 @@ def qat_for_protocol(
         )
     tfl_path.parent.mkdir(parents=True, exist_ok=True)
 
-    reports_dir = Path(cfg["paths"]["reports_dir"])
+    reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
     json_path, md_path = _report_paths(
         reports_dir,
@@ -226,6 +244,7 @@ def qat_for_protocol(
     fp32_model = tf.keras.models.load_model(ckpt_path)
 
     notes: list[str] = []
+    training_time_sec: float | None = None
 
     def _emit_failure(error_msg: str, *, epochs_ran: int = 0) -> None:
         payload = {
@@ -253,6 +272,8 @@ def qat_for_protocol(
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
+            "training_time_sec": training_time_sec,
+            "history_json": str(qat_history_path) if qat_history_path.exists() else None,
             "epochs_ran": int(epochs_ran),
             "status": "failed",
             "error": error_msg,
@@ -279,6 +300,7 @@ def qat_for_protocol(
         metrics=["accuracy"],
     )
 
+    train_t0 = time.perf_counter()
     hist = qat_model.fit(
         X_train,
         y_train_oh,
@@ -287,8 +309,10 @@ def qat_for_protocol(
         batch_size=int(qat_cfg.get("batch_size", cfg["train"].get("batch_size", 64))),
         verbose=2,
     )
+    training_time_sec = float(time.perf_counter() - train_t0)
 
     qat_model.save(qat_ckpt)
+    dump_json(qat_history_path, hist.history)
 
     try:
         X_rep = representative_array(arrays, rep_source)
@@ -319,6 +343,8 @@ def qat_for_protocol(
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
+            "training_time_sec": training_time_sec,
+            "history_json": str(qat_history_path),
             "epochs_ran": int(len(hist.history.get("loss", []))),
             "status": "failed",
             "error": error_msg,
@@ -370,6 +396,8 @@ def qat_for_protocol(
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
+            "training_time_sec": training_time_sec,
+            "history_json": str(qat_history_path),
             "epochs_ran": int(len(hist.history.get("loss", []))),
             "status": "failed",
             "error": error_msg,
@@ -415,6 +443,8 @@ def qat_for_protocol(
         "compat_error": gate["compat_error"],
         "has_unidirectional_sequence_lstm": gate["has_unidirectional_sequence_lstm"],
         "has_while_op": gate["has_while_op"],
+        "training_time_sec": training_time_sec,
+        "history_json": str(qat_history_path),
         "epochs_ran": int(len(hist.history.get("loss", []))),
         "status": gate["status"],
         "error": gate["error"],
@@ -433,6 +463,9 @@ def qat_for_protocol(
         "report_json": str(json_path),
         "report_md": str(md_path),
         "tflite": str(tfl_path),
+        "history_json": str(qat_history_path),
+        "training_time_sec": training_time_sec,
+        "epochs_ran": int(len(hist.history.get("loss", []))),
         "status": gate["status"],
         "model_name": model_name,
         "run_id": run_id,
