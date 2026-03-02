@@ -1,10 +1,10 @@
 paths:
-  raw_csv: /home/dellio/github/har-mcu/WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
-  processed_dir: /home/dellio/github/har-mcu/data/processed
-  checkpoints_dir: /home/dellio/github/har-mcu/checkpoints
-  reports_dir: /home/dellio/github/har-mcu/reports
-  models_tflite_dir: /home/dellio/github/har-mcu/models_tflite
-  deploy_common_dir: /home/dellio/github/har-mcu/deploy/common
+  raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  processed_dir: data/processed
+  checkpoints_dir: checkpoints
+  reports_dir: reports
+  models_tflite_dir: models_tflite
+  deploy_common_dir: deploy/common
 
 env:
   tensorflow_version: 2.14.1
@@ -12,8 +12,8 @@ env:
 
 seed: 42
 classes: [Walking, Jogging, Upstairs, Downstairs, Sitting, Standing]
-window_size_default: 20
-window_sizes_sweep: [20]
+window_size_default: 200
+window_sizes_sweep: [200]
 overlap: 0.5
 test_ratio: 0.33
 val_ratio_from_train: 0.2
@@ -21,27 +21,30 @@ split_protocols: [random_stratified, user_holdout]
 label_policy: drop_cross_boundary
 
 experiment:
-  paper_slug: deepconvlstm
-  model_variant: deepconv_lstm
-  run_id: smoke
-  model_kwargs: {}
+  paper_slug: repmobile
+  model_variant: repmobile_folded
+  run_id: wisdm_r0
+  model_kwargs:
+    channels: [32, 64, 96, 128]
+    stride: 1
+    dropout: 0.1
 
 paper_protocol:
-  original_window: 20
-  wisdm_window_override: 20
+  original_window: 200
+  wisdm_window_override: 200
 
 train:
-  learning_rate: 0.001
-  batch_size: 64
-  epochs: 1
-  dropout: 0.3
+  learning_rate: 0.0001
+  batch_size: 128
+  epochs: 40
+  dropout: 0.1
   reduce_lr_factor: 0.5
-  reduce_lr_patience: 2
-  early_stopping_patience: 3
+  reduce_lr_patience: 6
+  early_stopping_patience: 8
 
 quant:
   ptq:
-    representative_samples: 32
+    representative_samples: 128
     representative_source: train
     enforce_full_int8: true
     strict_full_int8: true
@@ -49,11 +52,11 @@ quant:
     accepted_integer_io_dtypes: [int8, uint8]
   qat:
     enabled: true
-    annotation_policy: auto
+    annotation_policy: all_supported
     learning_rate: 0.0001
-    epochs: 1
-    batch_size: 64
-    representative_samples: 32
+    epochs: 8
+    batch_size: 128
+    representative_samples: 128
     representative_source: train
     enforce_full_int8: true
     strict_full_int8: true
@@ -68,7 +71,7 @@ deploy:
   enable_power_measurement: false
 
 smoke:
-  enabled: true
-  max_windows_per_class: 200
-  representative_samples: 32
+  enabled: false
+  max_windows_per_class: null
+  representative_samples: 64
   quick_epochs: 1

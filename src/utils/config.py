@@ -16,16 +16,22 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
         raise ValueError(f"Expected mapping at root of config: {path}")
-    # Resolve relative paths in the `paths:` section against the config file's
-    # directory (which is the repo root for configs/default.yaml).  This makes
-    # the config portable — no hardcoded absolute paths needed.
+    # Resolve relative paths in `paths:` against repo root.
+    # Supports both configs/default.yaml and nested configs/papers/*.yaml.
     config_dir = path.parent
+    if config_dir.name == "configs":
+        repo_root = config_dir.parent
+    elif config_dir.parent.name == "configs":
+        repo_root = config_dir.parent.parent
+    else:
+        repo_root = config_dir
+
     if "paths" in data and isinstance(data["paths"], dict):
         for key, value in data["paths"].items():
             if isinstance(value, str) and value:
                 p = Path(value)
                 if not p.is_absolute():
-                    data["paths"][key] = str((config_dir.parent / p).resolve())
+                    data["paths"][key] = str((repo_root / p).resolve())
     return data
 
 

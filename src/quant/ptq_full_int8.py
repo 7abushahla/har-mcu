@@ -16,7 +16,15 @@ from src.quant.deploy_gate import (
     representative_dataset,
 )
 from src.train.train_baseline import train_baseline_for_protocol
-from src.utils.artifacts import baseline_ckpt_path, ptq_tflite_path, variant_suffix
+from src.utils.artifacts import (
+    baseline_ckpt_path,
+    model_ckpt_path,
+    model_ptq_tflite_path,
+    model_slug,
+    ptq_tflite_path,
+    run_prefix,
+    variant_suffix,
+)
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json
 
@@ -46,12 +54,17 @@ def _make_converter(
 
 def _report_paths(
     reports_dir: str | Path,
+    model_name: str,
     window_size: int,
     protocol: str,
+    run_id: str | None,
     variant: str | None,
 ) -> tuple[Path, Path]:
     suffix = variant_suffix(variant)
-    base = f"ptq_export_T{window_size}_P{protocol}{suffix}"
+    if model_slug(model_name) == "deepconv_lstm" and not run_id:
+        base = f"ptq_export_T{window_size}_P{protocol}{suffix}"
+    else:
+        base = f"ptq_export_{run_prefix(model_name, window_size, protocol, run_id)}{suffix}"
     reports_path = Path(reports_dir)
     return reports_path / f"{base}.json", reports_path / f"{base}.md"
 
@@ -92,6 +105,9 @@ def quantize_ptq_for_protocol(
     window_size: int,
     protocol: str,
     *,
+    model_name: str = "deepconv_lstm",
+    checkpoint_path: str | None = None,
+    run_id: str | None = None,
     variant: str | None = None,
     raise_on_strict_failure: bool = True,
 ) -> dict[str, Any]:
@@ -101,9 +117,26 @@ def quantize_ptq_for_protocol(
     if not dataset_exists(processed_dir, window_size, protocol):
         build_dataset_for_protocol(cfg, window_size, protocol)
 
-    ckpt_path = baseline_ckpt_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)
+    if checkpoint_path is not None:
+        ckpt_path = Path(checkpoint_path)
+    elif model_slug(model_name) == "deepconv_lstm" and not run_id:
+        ckpt_path = baseline_ckpt_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)
+    else:
+        ckpt_path = model_ckpt_path(
+            cfg["paths"]["checkpoints_dir"],
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+        )
+
     if not ckpt_path.exists():
-        train_baseline_for_protocol(cfg, window_size, protocol)
+        if model_slug(model_name) == "deepconv_lstm" and checkpoint_path is None and not run_id:
+            train_baseline_for_protocol(cfg, window_size, protocol)
+        else:
+            raise FileNotFoundError(
+                f"Checkpoint not found for model '{model_name}'. Provide checkpoint_path or train it first: {ckpt_path}"
+            )
 
     arrays = load_split_arrays(processed_dir, window_size, protocol)
     model = tf.keras.models.load_model(ckpt_path)
@@ -120,8 +153,30 @@ def quantize_ptq_for_protocol(
 
     reports_dir = Path(cfg["paths"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
-    json_path, md_path = _report_paths(reports_dir, window_size, protocol, variant)
-    model_path = ptq_tflite_path(cfg["paths"]["models_tflite_dir"], window_size, protocol, variant=variant)
+    json_path, md_path = _report_paths(
+        reports_dir,
+        model_name=model_name,
+        window_size=window_size,
+        protocol=protocol,
+        run_id=run_id,
+        variant=variant,
+    )
+    if model_slug(model_name) == "deepconv_lstm" and not run_id:
+        model_path = ptq_tflite_path(
+            cfg["paths"]["models_tflite_dir"],
+            window_size,
+            protocol,
+            variant=variant,
+        )
+    else:
+        model_path = model_ptq_tflite_path(
+            cfg["paths"]["models_tflite_dir"],
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+            variant=variant,
+        )
 
     notes: list[str] = []
 
@@ -132,6 +187,8 @@ def quantize_ptq_for_protocol(
         metrics = {
             "window_size": int(window_size),
             "protocol": protocol,
+            "model_name": model_name,
+            "run_id": run_id,
             "variant": variant or "default",
             "checkpoint": str(ckpt_path),
             "tflite_model": None,
@@ -174,6 +231,8 @@ def quantize_ptq_for_protocol(
         metrics = {
             "window_size": int(window_size),
             "protocol": protocol,
+            "model_name": model_name,
+            "run_id": run_id,
             "variant": variant or "default",
             "checkpoint": str(ckpt_path),
             "tflite_model": None,
@@ -222,6 +281,8 @@ def quantize_ptq_for_protocol(
     metrics = {
         "window_size": int(window_size),
         "protocol": protocol,
+        "model_name": model_name,
+        "run_id": run_id,
         "variant": variant or "default",
         "checkpoint": str(ckpt_path),
         "tflite_model": str(model_path),
@@ -264,6 +325,8 @@ def quantize_ptq_for_protocol(
         "report_json": str(json_path),
         "report_md": str(md_path),
         "status": gate["status"],
+        "model_name": model_name,
+        "run_id": run_id,
         "variant": variant or "default",
     }
 
@@ -271,12 +334,23 @@ def quantize_ptq_for_protocol(
 def main() -> None:
     parser = build_parser("Export full-integer PTQ model")
     parser.add_argument("--variant", type=str, default=None, help="Optional artifact variant suffix")
+    parser.add_argument("--model-name", type=str, default="deepconv_lstm")
+    parser.add_argument("--checkpoint-path", type=str, default=None)
+    parser.add_argument("--run-id", type=str, default=None)
     args = parser.parse_args()
     cfg = apply_common_overrides(load_yaml(args.config), args)
 
     ws = int(cfg["window_size_default"])
     for protocol in cfg.get("split_protocols", ["random_stratified"]):
-        out = quantize_ptq_for_protocol(cfg, ws, protocol, variant=args.variant)
+        out = quantize_ptq_for_protocol(
+            cfg,
+            ws,
+            protocol,
+            model_name=args.model_name,
+            checkpoint_path=args.checkpoint_path,
+            run_id=args.run_id,
+            variant=args.variant,
+        )
         print(f"PTQ done window_size={ws} protocol={protocol}")
         for k, v in out.items():
             print(f"  - {k}: {v}")
@@ -284,4 +358,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

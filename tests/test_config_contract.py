@@ -38,3 +38,11 @@ def test_smoke_config_ptq_strict_contract():
     assert cfg["quant"]["qat"].get("require_tflm_compatible") is True
     assert cfg["quant"]["qat"].get("representative_source") == "train"
     assert set(cfg["quant"]["qat"].get("accepted_integer_io_dtypes", [])) >= {"int8", "uint8"}
+
+
+def test_nested_paper_config_resolves_paths_to_repo_root():
+    cfg = load_yaml("configs/papers/xtinyhar_wisdm.yaml")
+    assert "WISDM_ar_v1.1" in cfg["paths"]["raw_csv"]
+    assert cfg["paths"]["raw_csv"].startswith("/")
+    assert cfg["experiment"]["paper_slug"] == "xtinyhar"
+    assert "annotation_policy" in cfg["quant"]["qat"]

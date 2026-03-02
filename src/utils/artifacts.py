@@ -19,6 +19,23 @@ def variant_suffix(variant: str | None) -> str:
     return f"_{variant}"
 
 
+def model_slug(model_name: str) -> str:
+    """Return a filesystem-safe model slug."""
+    return str(model_name).strip().lower().replace(" ", "_").replace("-", "_")
+
+
+def run_prefix(
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> str:
+    base = f"{model_slug(model_name)}_{dataset_prefix(window_size, protocol)}"
+    if run_id:
+        return f"{base}_{run_id}"
+    return base
+
+
 def split_npz_path(processed_dir: str | Path, window_size: int, protocol: str) -> Path:
     return Path(processed_dir) / f"splits_{dataset_prefix(window_size, protocol)}.npz"
 
@@ -39,20 +56,70 @@ def baseline_ckpt_path(checkpoints_dir: str | Path, window_size: int, protocol: 
     return Path(checkpoints_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}.keras"
 
 
+def model_ckpt_path(
+    checkpoints_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> Path:
+    return Path(checkpoints_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}.keras"
+
+
 def history_path(checkpoints_dir: str | Path, window_size: int, protocol: str) -> Path:
     return Path(checkpoints_dir) / f"history_{dataset_prefix(window_size, protocol)}.json"
+
+
+def model_history_path(
+    checkpoints_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> Path:
+    return Path(checkpoints_dir) / f"history_{run_prefix(model_name, window_size, protocol, run_id)}.json"
 
 
 def baseline_metrics_json(reports_dir: str | Path, window_size: int, protocol: str) -> Path:
     return Path(reports_dir) / f"baseline_{dataset_prefix(window_size, protocol)}.json"
 
 
+def model_metrics_json(
+    reports_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> Path:
+    return Path(reports_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}.json"
+
+
 def baseline_report_md(reports_dir: str | Path, window_size: int, protocol: str) -> Path:
     return Path(reports_dir) / f"baseline_{dataset_prefix(window_size, protocol)}.md"
 
 
+def model_report_md(
+    reports_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> Path:
+    return Path(reports_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}.md"
+
+
 def confusion_png(reports_dir: str | Path, window_size: int, protocol: str, suffix: str = "baseline") -> Path:
     return Path(reports_dir) / f"confusion_{suffix}_{dataset_prefix(window_size, protocol)}.png"
+
+
+def model_confusion_png(
+    reports_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+) -> Path:
+    return Path(reports_dir) / f"confusion_{run_prefix(model_name, window_size, protocol, run_id)}.png"
 
 
 def ptq_tflite_path(
@@ -65,6 +132,21 @@ def ptq_tflite_path(
     return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_ptq_int8{suffix}.tflite"
 
 
+def model_ptq_tflite_path(
+    models_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return (
+        Path(models_dir)
+        / f"{run_prefix(model_name, window_size, protocol, run_id)}_ptq_int8{suffix}.tflite"
+    )
+
+
 def qat_tflite_path(
     models_dir: str | Path,
     window_size: int,
@@ -73,3 +155,15 @@ def qat_tflite_path(
 ) -> Path:
     suffix = variant_suffix(variant)
     return Path(models_dir) / f"deepconv_lstm_{dataset_prefix(window_size, protocol)}_qat{suffix}.tflite"
+
+
+def model_qat_tflite_path(
+    models_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return Path(models_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}_qat{suffix}.tflite"

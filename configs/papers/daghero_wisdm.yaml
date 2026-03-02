@@ -8,12 +8,12 @@ paths:
 
 env:
   tensorflow_version: 2.14.1
-  require_gpu: true
+  require_gpu: false
 
 seed: 42
 classes: [Walking, Jogging, Upstairs, Downstairs, Sitting, Standing]
-window_size_default: 100
-window_sizes_sweep: [20, 40, 64, 80, 100, 128, 200]
+window_size_default: 200
+window_sizes_sweep: [200]
 overlap: 0.5
 test_ratio: 0.33
 val_ratio_from_train: 0.2
@@ -21,27 +21,30 @@ split_protocols: [random_stratified, user_holdout]
 label_policy: drop_cross_boundary
 
 experiment:
-  paper_slug: deepconvlstm
-  model_variant: deepconv_lstm
-  run_id: r0
-  model_kwargs: {}
+  paper_slug: daghero_qadnn
+  model_variant: daghero_cnn_2layer
+  run_id: wisdm_r0
+  model_kwargs:
+    channels: [32, 64]
+    kernel_size: 7
+    pool_size: 2
 
 paper_protocol:
-  original_window: 100
-  wisdm_window_override: 100
+  original_window: 200
+  wisdm_window_override: 200
 
 train:
-  learning_rate: 0.001
-  batch_size: 64
+  learning_rate: 0.01
+  batch_size: 32
   epochs: 50
-  dropout: 0.3
-  reduce_lr_factor: 0.5
-  reduce_lr_patience: 5
-  early_stopping_patience: 10
+  dropout: 0.2
+  reduce_lr_factor: 0.1
+  reduce_lr_patience: 3
+  early_stopping_patience: 5
 
 quant:
   ptq:
-    representative_samples: 256
+    representative_samples: 128
     representative_source: train
     enforce_full_int8: true
     strict_full_int8: true
@@ -49,11 +52,11 @@ quant:
     accepted_integer_io_dtypes: [int8, uint8]
   qat:
     enabled: true
-    annotation_policy: auto
-    learning_rate: 0.0001
+    annotation_policy: conv_dense
+    learning_rate: 0.001
     epochs: 10
-    batch_size: 64
-    representative_samples: 256
+    batch_size: 32
+    representative_samples: 128
     representative_source: train
     enforce_full_int8: true
     strict_full_int8: true

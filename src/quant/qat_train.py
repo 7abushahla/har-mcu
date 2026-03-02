@@ -17,40 +17,82 @@ from src.quant.deploy_gate import (
     representative_dataset,
 )
 from src.train.train_baseline import train_baseline_for_protocol
-from src.utils.artifacts import baseline_ckpt_path, qat_tflite_path, variant_suffix
+from src.utils.artifacts import (
+    baseline_ckpt_path,
+    model_ckpt_path,
+    model_qat_tflite_path,
+    model_slug,
+    qat_tflite_path,
+    run_prefix,
+    variant_suffix,
+)
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json
 
 
-def _build_qat_model(fp32_model: tf.keras.Model) -> tuple[tf.keras.Model, str]:
+def _build_qat_model(
+    fp32_model: tf.keras.Model,
+    annotation_policy: str = "auto",
+) -> tuple[tf.keras.Model, str]:
     import tensorflow_model_optimization as tfmot
 
-    try:
-        qat_model = tfmot.quantization.keras.quantize_model(fp32_model)
-        return qat_model, "quantize_model_full"
-    except Exception:
-        quantize_annotate_layer = tfmot.quantization.keras.quantize_annotate_layer
-        quantize_apply = tfmot.quantization.keras.quantize_apply
+    policy = str(annotation_policy).strip().lower()
+    if policy in {"auto", "full"}:
+        try:
+            qat_model = tfmot.quantization.keras.quantize_model(fp32_model)
+            return qat_model, "quantize_model_full"
+        except Exception:
+            if policy == "full":
+                raise
 
-        def annotate(layer: tf.keras.layers.Layer) -> tf.keras.layers.Layer:
-            if isinstance(layer, (tf.keras.layers.Conv1D, tf.keras.layers.Dense)):
-                return quantize_annotate_layer(layer)
-            return layer
+    quantize_annotate_layer = tfmot.quantization.keras.quantize_annotate_layer
+    quantize_apply = tfmot.quantization.keras.quantize_apply
 
-        annotated = tf.keras.models.clone_model(fp32_model, clone_function=annotate)
-        annotated.set_weights(fp32_model.get_weights())
-        qat_model = quantize_apply(annotated)
-        return qat_model, "annotate_conv_dense_only"
+    allowed: set[type[tf.keras.layers.Layer]] = set()
+    if policy in {"auto", "conv_dense", "conv1d_dense"}:
+        allowed.update({tf.keras.layers.Conv1D, tf.keras.layers.Dense})
+    if policy in {"conv2d_dense"}:
+        allowed.update({tf.keras.layers.Conv2D, tf.keras.layers.Dense})
+    if policy in {"dense_only"}:
+        allowed.update({tf.keras.layers.Dense})
+    if policy in {"depthwise_conv2d_dense", "depthwise"}:
+        allowed.update({tf.keras.layers.DepthwiseConv2D, tf.keras.layers.Dense})
+    if policy in {"all_supported"}:
+        allowed.update(
+            {
+                tf.keras.layers.Conv1D,
+                tf.keras.layers.Conv2D,
+                tf.keras.layers.DepthwiseConv2D,
+                tf.keras.layers.Dense,
+            }
+        )
+    if not allowed:
+        allowed.update({tf.keras.layers.Conv1D, tf.keras.layers.Dense})
+
+    def annotate(layer: tf.keras.layers.Layer) -> tf.keras.layers.Layer:
+        if any(isinstance(layer, t) for t in allowed):
+            return quantize_annotate_layer(layer)
+        return layer
+
+    annotated = tf.keras.models.clone_model(fp32_model, clone_function=annotate)
+    annotated.set_weights(fp32_model.get_weights())
+    qat_model = quantize_apply(annotated)
+    return qat_model, f"annotate_policy_{policy}"
 
 
 def _report_paths(
     reports_dir: str | Path,
+    model_name: str,
     window_size: int,
     protocol: str,
+    run_id: str | None,
     variant: str | None,
 ) -> tuple[Path, Path]:
     suffix = variant_suffix(variant)
-    base = f"qat_export_T{window_size}_P{protocol}{suffix}"
+    if model_slug(model_name) == "deepconv_lstm" and not run_id:
+        base = f"qat_export_T{window_size}_P{protocol}{suffix}"
+    else:
+        base = f"qat_export_{run_prefix(model_name, window_size, protocol, run_id)}{suffix}"
     reports_path = Path(reports_dir)
     return reports_path / f"{base}.json", reports_path / f"{base}.md"
 
@@ -87,6 +129,10 @@ def qat_for_protocol(
     window_size: int,
     protocol: str,
     *,
+    model_name: str = "deepconv_lstm",
+    checkpoint_path: str | None = None,
+    run_id: str | None = None,
+    annotation_policy: str | None = None,
     variant: str | None = None,
     raise_on_strict_failure: bool = True,
 ) -> dict[str, Any]:
@@ -96,9 +142,26 @@ def qat_for_protocol(
     if not dataset_exists(processed_dir, window_size, protocol):
         build_dataset_for_protocol(cfg, window_size, protocol)
 
-    ckpt_path = baseline_ckpt_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)
+    if checkpoint_path is not None:
+        ckpt_path = Path(checkpoint_path)
+    elif model_slug(model_name) == "deepconv_lstm" and not run_id:
+        ckpt_path = baseline_ckpt_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)
+    else:
+        ckpt_path = model_ckpt_path(
+            cfg["paths"]["checkpoints_dir"],
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+        )
+
     if not ckpt_path.exists():
-        train_baseline_for_protocol(cfg, window_size, protocol)
+        if model_slug(model_name) == "deepconv_lstm" and checkpoint_path is None and not run_id:
+            train_baseline_for_protocol(cfg, window_size, protocol)
+        else:
+            raise FileNotFoundError(
+                f"Checkpoint not found for model '{model_name}'. Provide checkpoint_path or train it first: {ckpt_path}"
+            )
 
     arrays = load_split_arrays(processed_dir, window_size, protocol)
     X_train, y_train = arrays["X_train"], arrays["y_train"]
@@ -122,16 +185,39 @@ def qat_for_protocol(
     ckpt_dir = Path(cfg["paths"]["checkpoints_dir"])
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     variant_suffix_text = variant_suffix(variant)
-    qat_ckpt = ckpt_dir / f"deepconv_lstm_qat_T{window_size}_P{protocol}{variant_suffix_text}.keras"
+    if model_slug(model_name) == "deepconv_lstm" and not run_id:
+        qat_ckpt = ckpt_dir / f"deepconv_lstm_qat_T{window_size}_P{protocol}{variant_suffix_text}.keras"
+    else:
+        qat_ckpt = (
+            ckpt_dir
+            / f"{run_prefix(model_name, window_size, protocol, run_id)}_qat{variant_suffix_text}.keras"
+        )
 
-    tfl_path = qat_tflite_path(
-        cfg["paths"]["models_tflite_dir"], window_size, protocol, variant=variant
-    )
+    if model_slug(model_name) == "deepconv_lstm" and not run_id:
+        tfl_path = qat_tflite_path(
+            cfg["paths"]["models_tflite_dir"], window_size, protocol, variant=variant
+        )
+    else:
+        tfl_path = model_qat_tflite_path(
+            cfg["paths"]["models_tflite_dir"],
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+            variant=variant,
+        )
     tfl_path.parent.mkdir(parents=True, exist_ok=True)
 
     reports_dir = Path(cfg["paths"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
-    json_path, md_path = _report_paths(reports_dir, window_size, protocol, variant)
+    json_path, md_path = _report_paths(
+        reports_dir,
+        model_name=model_name,
+        window_size=window_size,
+        protocol=protocol,
+        run_id=run_id,
+        variant=variant,
+    )
 
     num_classes = len(cfg.get("classes", [])) or int(np.max(y_train)) + 1
     y_train_oh = tf.keras.utils.to_categorical(y_train, num_classes)
@@ -145,6 +231,8 @@ def qat_for_protocol(
         payload = {
             "window_size": int(window_size),
             "protocol": protocol,
+            "model_name": model_name,
+            "run_id": run_id,
             "variant": variant or "default",
             "qat_checkpoint": str(qat_ckpt),
             "qat_tflite": str(tfl_path) if tfl_path.exists() else None,
@@ -174,7 +262,8 @@ def qat_for_protocol(
         _write_qat_markdown(md_path, payload)
 
     try:
-        qat_model, strategy = _build_qat_model(fp32_model)
+        policy = annotation_policy or str(qat_cfg.get("annotation_policy", "auto"))
+        qat_model, strategy = _build_qat_model(fp32_model, annotation_policy=policy)
         notes.append(f"QAT strategy: {strategy}")
     except Exception as exc:
         error_msg = f"Unable to construct QAT model: {exc}"
@@ -208,6 +297,8 @@ def qat_for_protocol(
         payload = {
             "window_size": int(window_size),
             "protocol": protocol,
+            "model_name": model_name,
+            "run_id": run_id,
             "variant": variant or "default",
             "qat_checkpoint": str(qat_ckpt),
             "qat_tflite": None,
@@ -257,6 +348,8 @@ def qat_for_protocol(
         payload = {
             "window_size": int(window_size),
             "protocol": protocol,
+            "model_name": model_name,
+            "run_id": run_id,
             "variant": variant or "default",
             "qat_checkpoint": str(qat_ckpt),
             "qat_tflite": None,
@@ -300,6 +393,8 @@ def qat_for_protocol(
     payload = {
         "window_size": int(window_size),
         "protocol": protocol,
+        "model_name": model_name,
+        "run_id": run_id,
         "variant": variant or "default",
         "qat_checkpoint": str(qat_ckpt),
         "qat_tflite": str(tfl_path),
@@ -339,6 +434,8 @@ def qat_for_protocol(
         "report_md": str(md_path),
         "tflite": str(tfl_path),
         "status": gate["status"],
+        "model_name": model_name,
+        "run_id": run_id,
         "variant": variant or "default",
     }
 
@@ -346,12 +443,30 @@ def qat_for_protocol(
 def main() -> None:
     parser = build_parser("Run QAT fine-tuning and export")
     parser.add_argument("--variant", type=str, default=None, help="Optional artifact variant suffix")
+    parser.add_argument("--model-name", type=str, default="deepconv_lstm")
+    parser.add_argument("--checkpoint-path", type=str, default=None)
+    parser.add_argument("--run-id", type=str, default=None)
+    parser.add_argument(
+        "--annotation-policy",
+        type=str,
+        default=None,
+        help="QAT annotation policy: auto/full/conv_dense/conv2d_dense/dense_only/depthwise_conv2d_dense/all_supported",
+    )
     args = parser.parse_args()
     cfg = apply_common_overrides(load_yaml(args.config), args)
 
     ws = int(cfg["window_size_default"])
     for protocol in cfg.get("split_protocols", ["random_stratified"]):
-        out = qat_for_protocol(cfg, ws, protocol, variant=args.variant)
+        out = qat_for_protocol(
+            cfg,
+            ws,
+            protocol,
+            model_name=args.model_name,
+            checkpoint_path=args.checkpoint_path,
+            run_id=args.run_id,
+            annotation_policy=args.annotation_policy,
+            variant=args.variant,
+        )
         print(f"QAT done window_size={ws} protocol={protocol}")
         for k, v in out.items():
             print(f"  - {k}: {v}")
