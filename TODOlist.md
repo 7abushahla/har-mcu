@@ -29,12 +29,10 @@
 - `src/tinyol/tinyol_sim.py`
 - `src/run_all.py`, `src/smoke/run_smoke.py`
 - `deploy/arduino_infer/arduino_infer.ino`, `deploy/arduino_tinyol/arduino_tinyol.ino`
-- `third_party/tflite-micro/VERSION_PIN.md`
 - `tests/*.py`
 
 ## Remaining External Steps (manual/hardware-dependent)
 - [ ] Install dependencies inside conda env `tinymlproj` and verify TensorFlow CUDA runtime.
-- [ ] Vendor full TFLite Micro source at pinned commit into `third_party/tflite-micro`.
 - [ ] Install Arduino toolchain (`arduino-cli`) and board core.
 - [ ] Compile/upload Arduino sketches and capture Flash/RAM/latency.
 - [ ] Power measurement run (optional hardware path).

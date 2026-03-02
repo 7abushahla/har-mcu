@@ -186,8 +186,3 @@ python -m src.deploy.export_norm_header --norm-json data/processed/<norm_stats>.
 
 2. Use `deploy/arduino_infer/arduino_infer.ino` for inference profiling.
 3. Use `deploy/arduino_tinyol/arduino_tinyol.ino` for TinyOL-style online head updates.
-
-### TFLite Micro vendor pin
-
-Commit pin metadata lives at `third_party/tflite-micro/VERSION_PIN.md`.
-Vendor the full TFLM source tree in that directory at the pinned commit for reproducible embedded builds.
