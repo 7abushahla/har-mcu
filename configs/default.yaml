@@ -1,10 +1,10 @@
 paths:
-  raw_csv: /home/dellio/github/har-mcu/WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
-  processed_dir: /home/dellio/github/har-mcu/data/processed
-  checkpoints_dir: /home/dellio/github/har-mcu/checkpoints
-  reports_dir: /home/dellio/github/har-mcu/reports
-  models_tflite_dir: /home/dellio/github/har-mcu/models_tflite
-  deploy_common_dir: /home/dellio/github/har-mcu/deploy/common
+  raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  processed_dir: data/processed
+  checkpoints_dir: checkpoints
+  reports_dir: reports
+  models_tflite_dir: models_tflite
+  deploy_common_dir: deploy/common
 
 env:
   tensorflow_version: 2.14.1

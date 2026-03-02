@@ -11,10 +11,21 @@ import yaml
 
 
 def load_yaml(path: str | Path) -> dict[str, Any]:
-    with Path(path).open("r", encoding="utf-8") as f:
+    path = Path(path).resolve()
+    with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
         raise ValueError(f"Expected mapping at root of config: {path}")
+    # Resolve relative paths in the `paths:` section against the config file's
+    # directory (which is the repo root for configs/default.yaml).  This makes
+    # the config portable — no hardcoded absolute paths needed.
+    config_dir = path.parent
+    if "paths" in data and isinstance(data["paths"], dict):
+        for key, value in data["paths"].items():
+            if isinstance(value, str) and value:
+                p = Path(value)
+                if not p.is_absolute():
+                    data["paths"][key] = str((config_dir.parent / p).resolve())
     return data
 
 
