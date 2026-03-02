@@ -1,0 +1,51 @@
+{
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "model_name": "repmobile_folded",
+  "run_id": "wisdm_r0",
+  "variant": "default",
+  "checkpoint": "/home/dellio/github/har-mcu/checkpoints/repmobile_folded_T200_Prandom_stratified_wisdm_r0.keras",
+  "tflite_model": "/home/dellio/github/har-mcu/models_tflite/repmobile_folded_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite",
+  "fp32_checkpoint_size_kb": 255.375,
+  "ptq_tflite_size_kb": 46.6640625,
+  "size_reduction_vs_ckpt_percent": 81.72723935389133,
+  "input_dtype": "<class 'numpy.int8'>",
+  "output_dtype": "<class 'numpy.int8'>",
+  "input_dtype_normalized": "int8",
+  "output_dtype_normalized": "int8",
+  "accepted_integer_io_dtypes": [
+    "int8",
+    "uint8"
+  ],
+  "full_integer_io": true,
+  "representative_source": "train",
+  "representative_samples": 128,
+  "strict_full_int8": true,
+  "require_tflm_compatible": true,
+  "deployable_full_int8": false,
+  "tflm_compatible": false,
+  "unsupported_ops": [
+    "DELEGATE",
+    "DEPTHWISE_CONV_2D",
+    "EXPAND_DIMS",
+    "MEAN"
+  ],
+  "tflm_ops": [
+    "CONV_2D",
+    "DELEGATE",
+    "DEPTHWISE_CONV_2D",
+    "EXPAND_DIMS",
+    "FULLY_CONNECTED",
+    "MEAN",
+    "RESHAPE",
+    "SOFTMAX"
+  ],
+  "compat_error": null,
+  "has_unidirectional_sequence_lstm": false,
+  "has_while_op": false,
+  "status": "failed",
+  "error": "Unsupported TFLM ops: DELEGATE, DEPTHWISE_CONV_2D, EXPAND_DIMS, MEAN",
+  "notes": [
+    "Converted with builtin TFLite ops path"
+  ]
+}

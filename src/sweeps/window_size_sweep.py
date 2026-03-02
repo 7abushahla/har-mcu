@@ -12,6 +12,7 @@ from src.data.build_dataset import build_dataset_for_protocol
 from src.eval.eval_baseline import evaluate_baseline_for_protocol
 from src.train.train_baseline import train_baseline_for_protocol
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
+from src.utils.markdown_tables import dataframe_to_pipe_markdown
 
 
 def run_sweep_for_protocol(cfg: dict[str, Any], protocol: str) -> dict[str, str]:
@@ -65,12 +66,7 @@ def run_sweep_for_protocol(cfg: dict[str, Any], protocol: str) -> dict[str, str]
             f"- Best by accuracy: T={int(best_row['window_size'])}, accuracy={float(best_row['accuracy']):.4f}, macro-F1={float(best_row['macro_f1']):.4f}\n\n"
         )
         f.write("## Results\n\n")
-        try:
-            f.write(df.to_markdown(index=False))
-        except Exception:
-            f.write("```\n")
-            f.write(df.to_string(index=False))
-            f.write("\n```\n")
+        f.write(dataframe_to_pipe_markdown(df))
 
     return {"csv": str(csv_path), "png": str(png_path), "md": str(md_path)}
 

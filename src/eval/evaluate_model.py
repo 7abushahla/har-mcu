@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import tensorflow as tf
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -17,6 +16,7 @@ from sklearn.metrics import (
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
 from src.eval.plots import save_confusion_matrix_plot
+from src.models.serialization import load_checkpoint_model
 from src.utils.artifacts import model_confusion_png, model_metrics_json, model_report_md
 from src.utils.config import ensure_path_dirs
 from src.utils.repro import dump_json
@@ -40,18 +40,19 @@ def evaluate_model_for_protocol(
     arrays = load_split_arrays(processed_dir, window_size, protocol)
     X_test, y_test = arrays["X_test"], arrays["y_test"]
 
-    model = tf.keras.models.load_model(model_path)
+    model = load_checkpoint_model(model_path, compile=False)
     probs = model.predict(X_test, verbose=0)
     y_pred = probs.argmax(axis=1)
 
     class_names = cfg.get("classes")
+    labels = list(range(len(class_names)))
     acc = float(accuracy_score(y_test, y_pred))
     macro_f1 = float(f1_score(y_test, y_pred, average="macro"))
     precision, recall, f1, support = precision_recall_fscore_support(
-        y_test, y_pred, average=None, zero_division=0
+        y_test, y_pred, labels=labels, average=None, zero_division=0
     )
 
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred, labels=labels)
 
     reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
     model_name = str(cfg.get("experiment", {}).get("model_variant", Path(model_path).stem))
@@ -95,6 +96,7 @@ def evaluate_model_for_protocol(
         "classification_report": classification_report(
             y_test,
             y_pred,
+            labels=labels,
             target_names=class_names,
             zero_division=0,
             output_dict=True,

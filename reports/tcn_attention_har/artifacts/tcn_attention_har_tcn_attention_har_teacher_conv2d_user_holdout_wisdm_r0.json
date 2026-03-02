@@ -1,0 +1,360 @@
+{
+  "compression_focus": "ptq_qat_only",
+  "deploy_gate": {
+    "ptq": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "BATCH_MATMUL",
+        "BATCH_TO_SPACE_ND",
+        "CONCATENATION",
+        "FILL",
+        "MEAN",
+        "PAD",
+        "REDUCE_PROD",
+        "RSQRT",
+        "SPACE_TO_BATCH_ND",
+        "SQUARED_DIFFERENCE",
+        "SUB"
+      ]
+    },
+    "qat": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "BATCH_MATMUL",
+        "BATCH_TO_SPACE_ND",
+        "CONCATENATION",
+        "FILL",
+        "MEAN",
+        "PAD",
+        "REDUCE_PROD",
+        "RSQRT",
+        "SPACE_TO_BATCH_ND",
+        "SQUARED_DIFFERENCE",
+        "SUB"
+      ]
+    }
+  },
+  "eval_fp32_device": "gpu",
+  "eval_ptq_device": "gpu",
+  "eval_qat_device": "cpu",
+  "fp32_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_attention_har/confusion_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.png",
+  "fp32_curve_png": "/home/dellio/github/har-mcu/reports/tcn_attention_har/curve_fp32_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.png",
+  "fp32_history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.json",
+  "fp32_metrics": {
+    "accuracy": 0.8607038123167156,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.720112517580872,
+        "precision": 0.6009389671361502,
+        "recall": 0.8982456140350877,
+        "support": 285.0
+      },
+      "Jogging": {
+        "f1-score": 0.9774635439681838,
+        "precision": 0.9727352682497801,
+        "recall": 0.9822380106571936,
+        "support": 1126.0
+      },
+      "Sitting": {
+        "f1-score": 0.833976833976834,
+        "precision": 0.8181818181818182,
+        "recall": 0.8503937007874016,
+        "support": 127.0
+      },
+      "Standing": {
+        "f1-score": 0.6781609195402298,
+        "precision": 0.5339366515837104,
+        "recall": 0.9291338582677166,
+        "support": 127.0
+      },
+      "Upstairs": {
+        "f1-score": 0.6658354114713217,
+        "precision": 0.6846153846153846,
+        "recall": 0.6480582524271845,
+        "support": 412.0
+      },
+      "Walking": {
+        "f1-score": 0.8863356585966352,
+        "precision": 0.9782608695652174,
+        "recall": 0.8102025506376594,
+        "support": 1333.0
+      },
+      "accuracy": 0.8607038123167156,
+      "macro avg": {
+        "f1-score": 0.7936474808556794,
+        "precision": 0.7647781598886768,
+        "recall": 0.853045331135374,
+        "support": 3410.0
+      },
+      "weighted avg": {
+        "f1-score": 0.8661897757040733,
+        "precision": 0.8869119768138565,
+        "recall": 0.8607038123167156,
+        "support": 3410.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1080,
+        2,
+        114,
+        128,
+        4,
+        5
+      ],
+      [
+        8,
+        1106,
+        8,
+        4,
+        0,
+        0
+      ],
+      [
+        0,
+        23,
+        267,
+        35,
+        14,
+        73
+      ],
+      [
+        16,
+        6,
+        1,
+        256,
+        0,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        108,
+        19
+      ],
+      [
+        0,
+        0,
+        0,
+        3,
+        6,
+        118
+      ]
+    ],
+    "confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_attention_har/confusion_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.png",
+    "macro_f1": 0.7936474808556794,
+    "model_name": "tcn_attention_har_teacher_conv2d",
+    "paper_slug": "tcn_attention_har",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.720112517580872,
+        "precision": 0.6009389671361502,
+        "recall": 0.8982456140350877,
+        "support": 285
+      },
+      "Jogging": {
+        "f1": 0.9774635439681838,
+        "precision": 0.9727352682497801,
+        "recall": 0.9822380106571936,
+        "support": 1126
+      },
+      "Sitting": {
+        "f1": 0.833976833976834,
+        "precision": 0.8181818181818182,
+        "recall": 0.8503937007874016,
+        "support": 127
+      },
+      "Standing": {
+        "f1": 0.6781609195402298,
+        "precision": 0.5339366515837104,
+        "recall": 0.9291338582677166,
+        "support": 127
+      },
+      "Upstairs": {
+        "f1": 0.6658354114713217,
+        "precision": 0.6846153846153846,
+        "recall": 0.6480582524271845,
+        "support": 412
+      },
+      "Walking": {
+        "f1": 0.8863356585966352,
+        "precision": 0.9782608695652174,
+        "recall": 0.8102025506376594,
+        "support": 1333
+      }
+    },
+    "protocol": "user_holdout",
+    "run_id": "wisdm_r0",
+    "seed": 42,
+    "window_size": 200
+  },
+  "fp32_training_time_sec": 66.46890478201385,
+  "paper_slug": "tcn_attention_har",
+  "protocol": "user_holdout",
+  "ptq_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_attention_har/confusion_ptq_tcn_attention_har_teacher_conv2d_wisdm_r0_T200_Puser_holdout.png",
+  "ptq_device": "gpu",
+  "ptq_inference_latency_ms_median": 11.328067492286209,
+  "ptq_inference_latency_ms_p95": 11.871703740325756,
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "checkpoint": "/home/dellio/github/har-mcu/checkpoints/tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.keras",
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "error": "Unsupported TFLM ops: BATCH_MATMUL, BATCH_TO_SPACE_ND, CONCATENATION, FILL, MEAN, PAD, REDUCE_PROD, RSQRT, SPACE_TO_BATCH_ND, SQUARED_DIFFERENCE, SUB",
+    "fp32_checkpoint_size_kb": 5783.7177734375,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_attention_har_teacher_conv2d",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "user_holdout",
+    "ptq_tflite_size_kb": 623.9921875,
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "size_reduction_vs_ckpt_percent": 89.21122689689722,
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflite_model": "/home/dellio/github/har-mcu/models_tflite/tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0_ptq_int8.tflite",
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "ADD",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "CONV_2D",
+      "FILL",
+      "FULLY_CONNECTED",
+      "MEAN",
+      "MUL",
+      "PACK",
+      "PAD",
+      "REDUCE_PROD",
+      "RESHAPE",
+      "RSQRT",
+      "SHAPE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SQUARED_DIFFERENCE",
+      "STRIDED_SLICE",
+      "SUB",
+      "TRANSPOSE"
+    ],
+    "unsupported_ops": [
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "FILL",
+      "MEAN",
+      "PAD",
+      "REDUCE_PROD",
+      "RSQRT",
+      "SPACE_TO_BATCH_ND",
+      "SQUARED_DIFFERENCE",
+      "SUB"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_attention_har/confusion_qat_tcn_attention_har_teacher_conv2d_wisdm_r0_T200_Puser_holdout.png",
+  "qat_curve_png": "/home/dellio/github/har-mcu/reports/tcn_attention_har/curve_qat_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0.png",
+  "qat_device": "cpu",
+  "qat_history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0_qat.json",
+  "qat_inference_latency_ms_median": 11.950079497182742,
+  "qat_inference_latency_ms_p95": 12.350502496701665,
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "epochs_ran": 10,
+    "error": "Unsupported TFLM ops: BATCH_MATMUL, BATCH_TO_SPACE_ND, CONCATENATION, FILL, MEAN, PAD, REDUCE_PROD, RSQRT, SPACE_TO_BATCH_ND, SQUARED_DIFFERENCE, SUB",
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0_qat.json",
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_attention_har_teacher_conv2d",
+    "notes": [
+      "QAT strategy: annotate_policy_all_supported",
+      "Exported with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "user_holdout",
+    "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0_qat.keras",
+    "qat_tflite": "/home/dellio/github/har-mcu/models_tflite/tcn_attention_har_teacher_conv2d_T200_Puser_holdout_wisdm_r0_qat.tflite",
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "ADD",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "CONV_2D",
+      "FILL",
+      "FULLY_CONNECTED",
+      "MEAN",
+      "MUL",
+      "PACK",
+      "PAD",
+      "REDUCE_PROD",
+      "RESHAPE",
+      "RSQRT",
+      "SHAPE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SQUARED_DIFFERENCE",
+      "STRIDED_SLICE",
+      "SUB",
+      "TRANSPOSE"
+    ],
+    "training_time_sec": 514.8198633919965,
+    "unsupported_ops": [
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "FILL",
+      "MEAN",
+      "PAD",
+      "REDUCE_PROD",
+      "RSQRT",
+      "SPACE_TO_BATCH_ND",
+      "SQUARED_DIFFERENCE",
+      "SUB"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_training_time_sec": 514.8198633919965,
+  "run_id": "wisdm_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "train_device": "gpu",
+  "variant": "tcn_attention_har_teacher_conv2d",
+  "window_size": 200
+}

@@ -165,11 +165,12 @@ def evaluate_tflite(
 
     y_pred, input_dtype, output_dtype = _run_tflite_predict(model_path, X_test)
     class_names = cfg.get("classes")
+    labels = list(range(len(class_names)))
 
     acc = float(accuracy_score(y_test, y_pred))
     macro_f1 = float(f1_score(y_test, y_pred, average="macro"))
     precision, recall, f1, support = precision_recall_fscore_support(
-        y_test, y_pred, average=None, zero_division=0
+        y_test, y_pred, labels=labels, average=None, zero_division=0
     )
 
     per_class = {
@@ -181,7 +182,7 @@ def evaluate_tflite(
         }
         for i in range(len(class_names))
     }
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred, labels=labels)
 
     size_kb = Path(model_path).stat().st_size / 1024.0
     reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
@@ -229,6 +230,7 @@ def evaluate_tflite(
         "classification_report": classification_report(
             y_test,
             y_pred,
+            labels=labels,
             target_names=class_names,
             zero_division=0,
             output_dict=True,

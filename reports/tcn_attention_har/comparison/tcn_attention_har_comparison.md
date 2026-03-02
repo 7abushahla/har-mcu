@@ -1,0 +1,16 @@
+# tcn_attention_har Comparison
+
+- Notes: Teacher WISDM target from paper; PTQ/QAT are replication extensions.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.9951397326852977 | 0.9903443753213494 | — | 207.1802610379964 | — | — | 0.9903 | 0.004839732685297693 | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9948359659781288 | 0.9900820236115063 | 623.9921875 | — | 11.637880495982245 | 12.102538505132543 | — | — | failed |
+| WISDM replication | random_stratified | QAT int8 | 0.9960510328068044 | 0.9929304878846664 | 631.390625 | 515.1469900859956 | 11.380064002878498 | 13.507992993254447 | — | — | failed |
+| WISDM replication | user_holdout | baseline float | 0.8607038123167156 | 0.7936474808556794 | — | 66.46890478201385 | — | — | 0.9903 | -0.1295961876832844 | ok |
+| WISDM replication | user_holdout | PTQ int8 | 0.864516129032258 | 0.7985137188882564 | 623.9921875 | — | 11.328067492286209 | 11.871703740325756 | — | — | failed |
+| WISDM replication | user_holdout | QAT int8 | 0.8718475073313783 | 0.8207396670330422 | 631.390625 | 514.8198633919965 | 11.950079497182742 | 12.350502496701665 | — | — | failed |
+| paper target | — | baseline float | 0.9903 | — | — | — | — | — | 0.9903 | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | reference |
+

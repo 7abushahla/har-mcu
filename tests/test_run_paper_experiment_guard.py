@@ -131,7 +131,7 @@ def test_run_paper_experiment_outputs_comparison_and_timing_fields(tmp_path: Pat
     )
     monkeypatch.setattr(runner, "stage_device_scope", lambda cfg, stage: nullcontext())
     monkeypatch.setattr(
-        runner,
+        runner.train_model_module,
         "train_model_for_protocol",
         lambda *args, **kwargs: {
             "checkpoint": str(model_ckpt),
@@ -140,12 +140,12 @@ def test_run_paper_experiment_outputs_comparison_and_timing_fields(tmp_path: Pat
         },
     )
     monkeypatch.setattr(
-        runner,
+        runner.eval_model_module,
         "evaluate_model_for_protocol",
         lambda *args, **kwargs: {"metrics_json": str(fp32_metrics_path), "accuracy": 0.9, "macro_f1": 0.89},
     )
     monkeypatch.setattr(
-        runner,
+        runner.ptq_module,
         "quantize_ptq_for_protocol",
         lambda *args, **kwargs: {
             "tflite_model": str(ptq_tflite),
@@ -160,9 +160,9 @@ def test_run_paper_experiment_outputs_comparison_and_timing_fields(tmp_path: Pat
             return {"metrics_json": str(qat_eval_path), "accuracy": 0.885, "macro_f1": 0.875}
         return {"metrics_json": str(ptq_eval_path), "accuracy": 0.88, "macro_f1": 0.87}
 
-    monkeypatch.setattr(runner, "evaluate_tflite", _fake_eval_tflite)
+    monkeypatch.setattr(runner.eval_tflite_module, "evaluate_tflite", _fake_eval_tflite)
     monkeypatch.setattr(
-        runner,
+        runner.qat_module,
         "qat_for_protocol",
         lambda *args, **kwargs: {
             "report_json": str(qat_report_path),
@@ -173,17 +173,17 @@ def test_run_paper_experiment_outputs_comparison_and_timing_fields(tmp_path: Pat
         },
     )
     monkeypatch.setattr(
-        runner,
+        runner.reporting_module,
         "export_paper_results",
         lambda *args, **kwargs: {"csv": str(tmp_path / "paper.csv"), "md": str(tmp_path / "paper.md")},
     )
     monkeypatch.setattr(
-        runner,
+        runner.reporting_module,
         "append_master_results",
         lambda *args, **kwargs: {"csv": str(tmp_path / "master.csv"), "md": str(tmp_path / "master.md")},
     )
     monkeypatch.setattr(
-        runner,
+        runner.paper_comparison_module,
         "export_paper_comparison",
         lambda *args, **kwargs: {
             "csv": str(tmp_path / "cmp.csv"),
@@ -223,3 +223,200 @@ def test_run_paper_experiment_outputs_comparison_and_timing_fields(tmp_path: Pat
     assert "qat_inference_latency_ms_p95" in row
     assert "fp32_curve_png" in row
     assert "qat_curve_png" in row
+    assert row["eval_fp32_device"] == "cpu"
+    assert row["eval_qat_device"] == "cpu"
+
+
+def test_run_paper_experiment_continues_when_qat_failed(tmp_path: Path, monkeypatch):
+    model_ckpt = tmp_path / "model.keras"
+    model_ckpt.write_text("stub", encoding="utf-8")
+    ptq_tflite = tmp_path / "ptq.tflite"
+    ptq_tflite.write_bytes(b"ptq")
+
+    fp32_metrics_path = tmp_path / "fp32.json"
+    fp32_metrics_path.write_text(
+        json.dumps(
+            {
+                "accuracy": 0.91,
+                "macro_f1": 0.90,
+                "confusion_plot": str(tmp_path / "fp32_cm.png"),
+                "classification_report": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    ptq_report_path = tmp_path / "ptq_report.json"
+    ptq_report_path.write_text(
+        json.dumps(
+            {
+                "status": "ok",
+                "full_integer_io": True,
+                "tflm_compatible": True,
+                "unsupported_ops": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    ptq_eval_path = tmp_path / "ptq_eval.json"
+    ptq_eval_path.write_text(
+        json.dumps(
+            {
+                "accuracy": 0.89,
+                "macro_f1": 0.88,
+                "model_size_kb": 11.1,
+                "inference_latency_ms_median": 0.3,
+                "inference_latency_ms_p95": 0.5,
+                "confusion_plot": str(tmp_path / "ptq_cm.png"),
+                "classification_report": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    qat_report_path = tmp_path / "qat_report_failed.json"
+    qat_report_path.write_text(
+        json.dumps(
+            {
+                "status": "failed",
+                "full_integer_io": False,
+                "tflm_compatible": False,
+                "unsupported_ops": [],
+                "error": "Conv1D/SeparableConv1D not supported; use *_conv2d",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    hist_path = tmp_path / "history_fp32.json"
+    hist_path.write_text(
+        json.dumps(
+            {
+                "loss": [1.0, 0.8],
+                "val_loss": [1.1, 0.9],
+                "accuracy": [0.7, 0.8],
+                "val_accuracy": [0.68, 0.79],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        runner,
+        "_builder_registry",
+        lambda: {
+            "xtinyhar_student_conv2d": (
+                lambda **kwargs: None,
+                lambda model, learning_rate=1e-4: model,
+                {"learning_rate": 1e-4},
+            )
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "runtime_device_report",
+        lambda cfg: {
+            "run_mode": "full_run",
+            "resolved_stage_devices": {
+                "train": "cpu",
+                "eval_fp32": "cpu",
+                "ptq": "cpu",
+                "eval_ptq": "cpu",
+                "qat": "cpu",
+                "eval_qat": "cpu",
+            },
+        },
+    )
+    monkeypatch.setattr(runner, "stage_device_scope", lambda cfg, stage: nullcontext())
+    monkeypatch.setattr(
+        runner.train_model_module,
+        "train_model_for_protocol",
+        lambda *args, **kwargs: {
+            "checkpoint": str(model_ckpt),
+            "history_json": str(hist_path),
+            "training_time_sec": 2.0,
+        },
+    )
+    monkeypatch.setattr(
+        runner.eval_model_module,
+        "evaluate_model_for_protocol",
+        lambda *args, **kwargs: {"metrics_json": str(fp32_metrics_path), "accuracy": 0.91, "macro_f1": 0.90},
+    )
+    monkeypatch.setattr(
+        runner.ptq_module,
+        "quantize_ptq_for_protocol",
+        lambda *args, **kwargs: {
+            "tflite_model": str(ptq_tflite),
+            "report_json": str(ptq_report_path),
+            "status": "ok",
+        },
+    )
+    monkeypatch.setattr(
+        runner.eval_tflite_module,
+        "evaluate_tflite",
+        lambda *args, **kwargs: {
+            "metrics_json": str(ptq_eval_path),
+            "accuracy": 0.89,
+            "macro_f1": 0.88,
+        },
+    )
+    monkeypatch.setattr(
+        runner.qat_module,
+        "qat_for_protocol",
+        lambda *args, **kwargs: {
+            "report_json": str(qat_report_path),
+            "tflite": str(tmp_path / "missing_qat.tflite"),
+            "status": "failed",
+            "history_json": None,
+            "training_time_sec": None,
+        },
+    )
+    monkeypatch.setattr(
+        runner.reporting_module,
+        "export_paper_results",
+        lambda *args, **kwargs: {"csv": str(tmp_path / "paper.csv"), "md": str(tmp_path / "paper.md")},
+    )
+    monkeypatch.setattr(
+        runner.reporting_module,
+        "append_master_results",
+        lambda *args, **kwargs: {"csv": str(tmp_path / "master.csv"), "md": str(tmp_path / "master.md")},
+    )
+    monkeypatch.setattr(
+        runner.paper_comparison_module,
+        "export_paper_comparison",
+        lambda *args, **kwargs: {
+            "csv": str(tmp_path / "cmp.csv"),
+            "md": str(tmp_path / "cmp.md"),
+            "accuracy_png": str(tmp_path / "cmp_acc.png"),
+            "size_png": str(tmp_path / "cmp_size.png"),
+            "latency_png": str(tmp_path / "cmp_lat.png"),
+        },
+    )
+
+    cfg = {
+        "paths": {"reports_dir": str(tmp_path)},
+        "seed": 42,
+        "window_size_default": 200,
+        "paper_protocol": {"wisdm_window_override": 200},
+        "split_protocols": ["random_stratified"],
+        "train": {"learning_rate": 1e-4},
+        "quant": {"qat": {"enabled": True, "annotation_policy": "auto"}},
+        "experiment": {
+            "paper_slug": "xtinyhar",
+            "model_variant": "xtinyhar_student_conv2d",
+            "run_id": "r0",
+            "compression_focus": "ptq_qat_only",
+            "paper_targets": {
+                "fp32_accuracy": None,
+                "ptq_accuracy": None,
+                "qat_accuracy": None,
+                "notes": "test",
+            },
+        },
+    }
+    out = run_paper_experiment(cfg)
+    row = out["rows"][0]
+    assert row["qat_status"] == "failed"
+    assert row["qat_accuracy"] is None
+    assert row["ptq_accuracy"] == pytest.approx(0.89)

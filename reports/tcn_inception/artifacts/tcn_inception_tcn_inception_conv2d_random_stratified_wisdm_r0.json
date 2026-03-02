@@ -1,0 +1,328 @@
+{
+  "compression_focus": "ptq_qat_only",
+  "deploy_gate": {
+    "ptq": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "BATCH_TO_SPACE_ND",
+        "CONCATENATION",
+        "MAX_POOL_2D",
+        "MEAN",
+        "PAD",
+        "SPACE_TO_BATCH_ND"
+      ]
+    },
+    "qat": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "BATCH_TO_SPACE_ND",
+        "CONCATENATION",
+        "MAX_POOL_2D",
+        "MEAN",
+        "PAD",
+        "SPACE_TO_BATCH_ND"
+      ]
+    }
+  },
+  "eval_fp32_device": "gpu",
+  "eval_ptq_device": "gpu",
+  "eval_qat_device": "cpu",
+  "fp32_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_inception/confusion_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_curve_png": "/home/dellio/github/har-mcu/reports/tcn_inception/curve_fp32_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.json",
+  "fp32_metrics": {
+    "accuracy": 0.9975698663426489,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.9921875,
+        "precision": 0.9921875,
+        "recall": 0.9921875,
+        "support": 256.0
+      },
+      "Jogging": {
+        "f1-score": 0.9995176073323685,
+        "precision": 1.0,
+        "recall": 0.9990356798457087,
+        "support": 1037.0
+      },
+      "Sitting": {
+        "f1-score": 0.9888888888888889,
+        "precision": 1.0,
+        "recall": 0.978021978021978,
+        "support": 182.0
+      },
+      "Standing": {
+        "f1-score": 0.9931506849315068,
+        "precision": 0.9863945578231292,
+        "recall": 1.0,
+        "support": 145.0
+      },
+      "Upstairs": {
+        "f1-score": 0.9939393939393939,
+        "precision": 0.9879518072289156,
+        "recall": 1.0,
+        "support": 328.0
+      },
+      "Walking": {
+        "f1-score": 0.9996278377372534,
+        "precision": 1.0,
+        "recall": 0.9992559523809523,
+        "support": 1344.0
+      },
+      "accuracy": 0.9975698663426489,
+      "macro avg": {
+        "f1-score": 0.9945519854715686,
+        "precision": 0.9944223108420074,
+        "recall": 0.9947501850414399,
+        "support": 3292.0
+      },
+      "weighted avg": {
+        "f1-score": 0.9975687487932873,
+        "precision": 0.9975927714627698,
+        "recall": 0.9975698663426489,
+        "support": 3292.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1343,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1036,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        328,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        254,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        178,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        145
+      ]
+    ],
+    "confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_inception/confusion_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+    "macro_f1": 0.9945519854715686,
+    "model_name": "tcn_inception_conv2d",
+    "paper_slug": "tcn_inception",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.9921875,
+        "precision": 0.9921875,
+        "recall": 0.9921875,
+        "support": 256
+      },
+      "Jogging": {
+        "f1": 0.9995176073323685,
+        "precision": 1.0,
+        "recall": 0.9990356798457087,
+        "support": 1037
+      },
+      "Sitting": {
+        "f1": 0.9888888888888889,
+        "precision": 1.0,
+        "recall": 0.978021978021978,
+        "support": 182
+      },
+      "Standing": {
+        "f1": 0.9931506849315068,
+        "precision": 0.9863945578231292,
+        "recall": 1.0,
+        "support": 145
+      },
+      "Upstairs": {
+        "f1": 0.9939393939393939,
+        "precision": 0.9879518072289156,
+        "recall": 1.0,
+        "support": 328
+      },
+      "Walking": {
+        "f1": 0.9996278377372534,
+        "precision": 1.0,
+        "recall": 0.9992559523809523,
+        "support": 1344
+      }
+    },
+    "protocol": "random_stratified",
+    "run_id": "wisdm_r0",
+    "seed": 42,
+    "window_size": 200
+  },
+  "fp32_training_time_sec": 142.00669610800105,
+  "paper_slug": "tcn_inception",
+  "protocol": "random_stratified",
+  "ptq_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_inception/confusion_ptq_tcn_inception_conv2d_wisdm_r0_T200_Prandom_stratified.png",
+  "ptq_device": "gpu",
+  "ptq_inference_latency_ms_median": 3.2715040069888346,
+  "ptq_inference_latency_ms_p95": 3.503381503833225,
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "checkpoint": "/home/dellio/github/har-mcu/checkpoints/tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.keras",
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "error": "Unsupported TFLM ops: BATCH_TO_SPACE_ND, CONCATENATION, MAX_POOL_2D, MEAN, PAD, SPACE_TO_BATCH_ND",
+    "fp32_checkpoint_size_kb": 4222.353515625,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_inception_conv2d",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "random_stratified",
+    "ptq_tflite_size_kb": 379.4453125,
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "size_reduction_vs_ckpt_percent": 91.01341678057399,
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflite_model": "/home/dellio/github/har-mcu/models_tflite/tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite",
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "ADD",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PACK",
+      "PAD",
+      "RESHAPE",
+      "SHAPE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "STRIDED_SLICE"
+    ],
+    "unsupported_ops": [
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "MAX_POOL_2D",
+      "MEAN",
+      "PAD",
+      "SPACE_TO_BATCH_ND"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_confusion_plot": "/home/dellio/github/har-mcu/reports/tcn_inception/confusion_qat_tcn_inception_conv2d_wisdm_r0_T200_Prandom_stratified.png",
+  "qat_curve_png": "/home/dellio/github/har-mcu/reports/tcn_inception/curve_qat_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "qat_device": "cpu",
+  "qat_history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0_qat.json",
+  "qat_inference_latency_ms_median": 3.4041519975289702,
+  "qat_inference_latency_ms_p95": 3.479932747723069,
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "epochs_ran": 12,
+    "error": "Unsupported TFLM ops: BATCH_TO_SPACE_ND, CONCATENATION, MAX_POOL_2D, MEAN, PAD, SPACE_TO_BATCH_ND",
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "history_json": "/home/dellio/github/har-mcu/checkpoints/history_tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0_qat.json",
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_inception_conv2d",
+    "notes": [
+      "QAT strategy: annotate_policy_all_supported",
+      "Exported with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "random_stratified",
+    "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0_qat.keras",
+    "qat_tflite": "/home/dellio/github/har-mcu/models_tflite/tcn_inception_conv2d_T200_Prandom_stratified_wisdm_r0_qat.tflite",
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "ADD",
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PACK",
+      "PAD",
+      "RESHAPE",
+      "SHAPE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "STRIDED_SLICE"
+    ],
+    "training_time_sec": 396.7857247549982,
+    "unsupported_ops": [
+      "BATCH_TO_SPACE_ND",
+      "CONCATENATION",
+      "MAX_POOL_2D",
+      "MEAN",
+      "PAD",
+      "SPACE_TO_BATCH_ND"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_training_time_sec": 396.7857247549982,
+  "run_id": "wisdm_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "train_device": "gpu",
+  "variant": "tcn_inception_conv2d",
+  "window_size": 200
+}

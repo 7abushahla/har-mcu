@@ -5,11 +5,9 @@ paths:
   reports_dir: reports
   models_tflite_dir: models_tflite
   deploy_common_dir: deploy/common
-
 env:
   tensorflow_version: 2.14.1
   require_gpu: false
-
 runtime:
   run_mode: sanity_check
   gpu_fallback_to_cpu: true
@@ -29,36 +27,43 @@ runtime:
       eval_ptq: cpu
       qat: cpu
       eval_qat: cpu
-
 seed: 42
-classes: [Walking, Jogging, Upstairs, Downstairs, Sitting, Standing]
+classes:
+- Walking
+- Jogging
+- Upstairs
+- Downstairs
+- Sitting
+- Standing
 window_size_default: 200
-window_sizes_sweep: [200]
+window_sizes_sweep:
+- 200
 overlap: 0.5
 test_ratio: 0.33
 val_ratio_from_train: 0.2
-split_protocols: [random_stratified, user_holdout]
+split_protocols:
+- random_stratified
+- user_holdout
 label_policy: drop_cross_boundary
-
 experiment:
   paper_slug: daghero_qadnn
-  model_variant: daghero_cnn_2layer
+  model_variant: daghero_cnn_2layer_conv2d
   run_id: wisdm_r0
   compression_focus: ptq_qat_only
   paper_targets:
     fp32_accuracy: null
     ptq_accuracy: null
     qat_accuracy: null
-    notes: "Paper reports F1/MCU design fronts; direct WISDM accuracy target not fixed."
+    notes: Paper reports F1/MCU design fronts; direct WISDM accuracy target not fixed.
   model_kwargs:
-    channels: [32, 64]
+    channels:
+    - 32
+    - 64
     kernel_size: 7
     pool_size: 2
-
 paper_protocol:
   original_window: 200
   wisdm_window_override: 200
-
 train:
   learning_rate: 0.01
   batch_size: 32
@@ -67,7 +72,6 @@ train:
   reduce_lr_factor: 0.1
   reduce_lr_patience: 3
   early_stopping_patience: 5
-
 quant:
   ptq:
     representative_samples: 128
@@ -75,10 +79,12 @@ quant:
     enforce_full_int8: true
     strict_full_int8: true
     require_tflm_compatible: true
-    accepted_integer_io_dtypes: [int8, uint8]
+    accepted_integer_io_dtypes:
+    - int8
+    - uint8
   qat:
     enabled: true
-    annotation_policy: conv_dense
+    annotation_policy: conv2d_dense
     learning_rate: 0.001
     epochs: 10
     batch_size: 32
@@ -87,21 +93,20 @@ quant:
     enforce_full_int8: true
     strict_full_int8: true
     require_tflm_compatible: true
-    accepted_integer_io_dtypes: [int8, uint8]
-
+    accepted_integer_io_dtypes:
+    - int8
+    - uint8
 eval:
   tflite_timing:
     enabled: true
     warmup_samples: 32
     timed_samples: 256
-
 deploy:
   tflm_commit: 5f9d9d6
   board_fqbn: arduino:mbed_nano:nano33ble
   tensor_arena_kb: 64
   sample_rate_hz: 20
   enable_power_measurement: false
-
 smoke:
   enabled: false
   max_windows_per_class: null

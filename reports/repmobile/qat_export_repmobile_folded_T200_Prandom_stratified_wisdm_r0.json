@@ -1,0 +1,38 @@
+{
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "model_name": "repmobile_folded",
+  "run_id": "wisdm_r0",
+  "variant": "default",
+  "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.keras",
+  "qat_tflite": "/home/dellio/github/har-mcu/models_tflite/repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.tflite",
+  "input_dtype": null,
+  "output_dtype": null,
+  "input_dtype_normalized": null,
+  "output_dtype_normalized": null,
+  "accepted_integer_io_dtypes": [
+    "int8",
+    "uint8"
+  ],
+  "full_integer_io": false,
+  "representative_source": "train",
+  "representative_samples": 128,
+  "strict_full_int8": true,
+  "require_tflm_compatible": true,
+  "deployable_full_int8": false,
+  "tflm_compatible": false,
+  "unsupported_ops": [],
+  "tflm_ops": [],
+  "compat_error": null,
+  "has_unidirectional_sequence_lstm": false,
+  "has_while_op": false,
+  "training_time_sec": null,
+  "history_json": "/home/dellio/github/har-mcu/checkpoints/history_repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.json",
+  "epochs_ran": 0,
+  "status": "failed",
+  "error": "Unable to construct QAT model: Requested the deserialization of a Lambda layer with a Python `lambda` inside it. This carries a potential risk of arbitrary code execution and thus it is disallowed by default. If you trust the source of the saved model, you can pass `safe_mode=False` to the loading function in order to allow Lambda layer loading.",
+  "notes": [
+    "Experimental native SeparableConv1D QAT attempt enabled. If conversion fails, fallback to Conv2D-safe RepMobile variant.",
+    "Unable to construct QAT model: Requested the deserialization of a Lambda layer with a Python `lambda` inside it. This carries a potential risk of arbitrary code execution and thus it is disallowed by default. If you trust the source of the saved model, you can pass `safe_mode=False` to the loading function in order to allow Lambda layer loading."
+  ]
+}

@@ -115,6 +115,9 @@ If you see TensorFlow logs about NUMA (for example `could not open file to read 
 
 If notebook training fails with `TypeError: Object of type float32 is not JSON serializable`, the failure is from writing Keras history/report JSON. This repo now uses shared JSON-safe serialization in pipeline scripts. Pull latest changes, restart the kernel, and rerun `notebooks/replication_deepconvlstm.ipynb` from cell 7 onward.
 
+If paper notebooks fail during FP32 evaluation with `TypeError: 'str' object is not callable`, the typical cause is stale kernel state or custom-layer deserialization mismatch after code updates. Restart the kernel, rerun the notebook from the first cell, and retrain so fresh checkpoints are created with the current serialization code.
+The 5 paper notebooks now enable project-module auto-reload in the first cell and fail fast if the safe loader path is not active.
+
 ### Fast smoke test
 
 ```bash
@@ -185,10 +188,39 @@ Use these notebooks for the 5-paper reproducibility track:
 - `notebooks/replication_daghero_qadnn.ipynb`: Daghero quantized/adaptive CNN adaptation.
 - `notebooks/replication_tcn_inception.ipynb`: TCN-Inception adaptation.
 
+#### Conv1D -> Conv2D QAT-safe policy for paper notebooks
+
+To keep PTQ/QAT reproducible with `tensorflow==2.14.1` and `tensorflow-model-optimization==0.8.0`, the default paper configs use Conv2D-equivalent variants:
+
+- XTinyHAR: `xtinyhar_student` -> `xtinyhar_student_conv2d`
+- RepMobile: `repmobile_folded` -> `repmobile_folded_conv2d`
+- TCN-attention-HAR: `tcn_attention_har_teacher` -> `tcn_attention_har_teacher_conv2d`
+- Daghero CNN: `daghero_cnn_2layer` -> `daghero_cnn_2layer_conv2d`
+- TCN-Inception: `tcn_inception` -> `tcn_inception_conv2d`
+
+Mapping rule:
+- `Conv1D(filters, k)` on `(B, T, C)` is mapped to `Conv2D(filters, (k, 1))` on `(B, T, 1, C)`.
+- For RepMobile, SeparableConv1D is mapped explicitly to `DepthwiseConv2D((k,1)) + Conv2D((1,1))` (depthwise + pointwise decomposition).
+
+Original Conv1D builders remain in the codebase for traceability and manual experimentation, but the default WISDM paper configs point to `*_conv2d` variants.
+
+TFMOT transform semantics for SeparableConv layers:
+- `SeparableConv1DQuantize`: rewrites a `SeparableConv1D` path into a quantization-compatible `SeparableConv2D` representation (with shape expansion/squeeze around time axis).
+- `SeparableConvQuantize`: applies the default 8-bit separable-convolution transform on the 2D form (effectively quantization-aware decomposition into depthwise + pointwise operations).
+This repository keeps the production replication path on Conv2D-safe RepMobile (`repmobile_folded_conv2d`) and does not enable native SeparableConv1D QAT execution in notebooks/config defaults.
+
 Recommended run modes in each notebook:
 
 - `RUN_MODE="sanity_check"`: quick validation runs; GPU can be used for non-QAT stages, QAT on CPU.
 - `RUN_MODE="full_run"`: final benchmark runs on CPU for all stages.
+
+Comparison and reporting in these 5 notebooks follow the same style as `replication_deepconvlstm.ipynb`, adapted to paper-specific framing:
+- `paper target` rows (when available) + `WISDM replication` rows for FP32/PTQ/QAT.
+- accuracy comparison bar chart, quantized size table, latency (median+p95) chart.
+- reproducibility drift table from repeat FP32 checkpoint evaluation.
+- markdown exports are generated without optional `tabulate` dependency.
+
+If QAT fails with a message about `Conv1D`/`SeparableConv1D` not being supported, verify that the notebook is using the Conv2D-safe `model_variant` from `configs/papers/*.yaml` (`*_conv2d`).
 
 ### What `run_paper_experiment` does
 
@@ -204,6 +236,16 @@ Recommended run modes in each notebook:
 
 Compression policy is explicitly enforced: `experiment.compression_focus` must be `ptq_qat_only`.
 KD details from papers are documented for context only and are not executed in this pipeline.
+
+### PTQ/QAT status fields (important)
+
+Paper-run result rows include `ptq_status` and `qat_status`. These are **strict deploy-gate statuses**, not host-accuracy statuses.
+
+- `ok`: quantized export passed strict deployability checks.
+- `failed`: quantized export failed strict deployability checks (for example unsupported TFLM ops), even if host TFLite accuracy/F1 is high.
+- `skipped`: QAT stage was not run (`quant.qat.enabled=false`) or was intentionally skipped.
+
+In short: `ptq_status=failed` or `qat_status=failed` means **strict MCU deployability check failed** under the configured gate (`strict_full_int8` and/or `require_tflm_compatible`), not that notebook execution failed.
 
 ### What is saved and where
 
@@ -247,6 +289,8 @@ Each run records:
   - `warmup_samples`, `timed_samples`
 - Deploy-gate fields:
   - `status`, `full_integer_io`, `tflm_compatible`, `unsupported_ops`
+- Row-level quant stage statuses:
+  - `ptq_status`, `qat_status` (`ok` / `failed` / `skipped`; strict deploy-gate meaning)
 
 ### Arduino deployment
 

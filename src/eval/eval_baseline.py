@@ -8,7 +8,6 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import tensorflow as tf
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -19,6 +18,7 @@ from sklearn.metrics import (
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
+from src.models.serialization import load_checkpoint_model
 from src.train.train_baseline import train_baseline_for_protocol
 from src.utils.artifacts import (
     baseline_ckpt_path,
@@ -48,18 +48,19 @@ def evaluate_baseline_for_protocol(
     arrays = load_split_arrays(processed_dir, window_size, protocol)
     X_test, y_test = arrays["X_test"], arrays["y_test"]
 
-    model = tf.keras.models.load_model(ckpt_path)
+    model = load_checkpoint_model(ckpt_path, compile=False)
     probs = model.predict(X_test, verbose=0)
     y_pred = probs.argmax(axis=1)
 
     class_names = cfg.get("classes")
+    labels = list(range(len(class_names)))
     acc = float(accuracy_score(y_test, y_pred))
     macro_f1 = float(f1_score(y_test, y_pred, average="macro"))
     precision, recall, f1, support = precision_recall_fscore_support(
-        y_test, y_pred, average=None, zero_division=0
+        y_test, y_pred, labels=labels, average=None, zero_division=0
     )
 
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred, labels=labels)
 
     png_path = confusion_png(cfg["paths"]["reports_dir"], window_size, protocol, suffix="baseline")
     plt.figure(figsize=(8, 6))
@@ -93,6 +94,7 @@ def evaluate_baseline_for_protocol(
         "classification_report": classification_report(
             y_test,
             y_pred,
+            labels=labels,
             target_names=class_names,
             zero_division=0,
             output_dict=True,

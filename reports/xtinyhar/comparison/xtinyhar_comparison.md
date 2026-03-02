@@ -1,0 +1,16 @@
+# xtinyhar Comparison
+
+- Notes: Paper reports UTD-MHAD/MM-Fit accuracy; no direct WISDM target.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.9188942891859052 | 0.8748371963957752 | — | 55.9741168479959 | — | — | — | — | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9182867557715675 | 0.8737429121272973 | 119.1015625 | — | 0.17852099699666724 | 0.2170432489947416 | — | — | failed |
+| WISDM replication | random_stratified | QAT int8 | 0.9349939246658566 | 0.9059541199739924 | 119.5859375 | 15.775176953000482 | 0.17936000222107396 | 0.24865600425982848 | — | — | failed |
+| WISDM replication | user_holdout | baseline float | 0.7686217008797654 | 0.6084267116743621 | — | 34.648609484996996 | — | — | — | — | ok |
+| WISDM replication | user_holdout | PTQ int8 | 0.770674486803519 | 0.6107125985364786 | 119.234375 | — | 0.18489050853531808 | 0.21252024453133345 | — | — | failed |
+| WISDM replication | user_holdout | QAT int8 | 0.7668621700879765 | 0.6544004605590447 | 119.5859375 | 15.396848472009879 | 0.18340050155529752 | 0.20328325263108127 | — | — | failed |
+| paper target | — | baseline float | — | — | — | — | — | — | — | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | reference |
+

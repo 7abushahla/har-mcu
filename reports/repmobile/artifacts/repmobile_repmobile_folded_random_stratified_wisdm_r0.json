@@ -1,0 +1,287 @@
+{
+  "compression_focus": "ptq_qat_only",
+  "deploy_gate": {
+    "ptq": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "DELEGATE",
+        "DEPTHWISE_CONV_2D",
+        "EXPAND_DIMS",
+        "MEAN"
+      ]
+    },
+    "qat": {
+      "full_integer_io": false,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": []
+    }
+  },
+  "eval_fp32_device": "gpu",
+  "eval_ptq_device": "gpu",
+  "eval_qat_device": "cpu",
+  "fp32_confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_repmobile_folded_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_curve_png": "/home/dellio/github/har-mcu/reports/repmobile/curve_fp32_repmobile_folded_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_history_json": "/home/dellio/github/har-mcu/checkpoints/history_repmobile_folded_T200_Prandom_stratified_wisdm_r0.json",
+  "fp32_metrics": {
+    "accuracy": 0.7715674362089915,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 256.0
+      },
+      "Jogging": {
+        "f1-score": 0.934923000496771,
+        "precision": 0.9641393442622951,
+        "recall": 0.9074252651880425,
+        "support": 1037.0
+      },
+      "Sitting": {
+        "f1-score": 0.9157303370786517,
+        "precision": 0.9367816091954023,
+        "recall": 0.8956043956043956,
+        "support": 182.0
+      },
+      "Standing": {
+        "f1-score": 0.8221343873517787,
+        "precision": 0.9629629629629629,
+        "recall": 0.7172413793103448,
+        "support": 145.0
+      },
+      "Upstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 328.0
+      },
+      "Walking": {
+        "f1-score": 0.7895672791938352,
+        "precision": 0.6561576354679803,
+        "recall": 0.9910714285714286,
+        "support": 1344.0
+      },
+      "accuracy": 0.7715674362089915,
+      "macro avg": {
+        "f1-score": 0.577059167353506,
+        "precision": 0.5866735919814401,
+        "recall": 0.5852237447790353,
+        "support": 3292.0
+      },
+      "weighted avg": {
+        "f1-score": 0.7036956203724145,
+        "precision": 0.6657995882661477,
+        "recall": 0.7715674362089915,
+        "support": 3292.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1332,
+        11,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        86,
+        941,
+        0,
+        0,
+        10,
+        0
+      ],
+      [
+        307,
+        19,
+        0,
+        0,
+        1,
+        1
+      ],
+      [
+        251,
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        13,
+        0,
+        4,
+        0,
+        163,
+        2
+      ],
+      [
+        41,
+        0,
+        0,
+        0,
+        0,
+        104
+      ]
+    ],
+    "confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_repmobile_folded_T200_Prandom_stratified_wisdm_r0.png",
+    "macro_f1": 0.577059167353506,
+    "model_name": "repmobile_folded",
+    "paper_slug": "repmobile",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 256
+      },
+      "Jogging": {
+        "f1": 0.934923000496771,
+        "precision": 0.9641393442622951,
+        "recall": 0.9074252651880425,
+        "support": 1037
+      },
+      "Sitting": {
+        "f1": 0.9157303370786517,
+        "precision": 0.9367816091954023,
+        "recall": 0.8956043956043956,
+        "support": 182
+      },
+      "Standing": {
+        "f1": 0.8221343873517787,
+        "precision": 0.9629629629629629,
+        "recall": 0.7172413793103448,
+        "support": 145
+      },
+      "Upstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 328
+      },
+      "Walking": {
+        "f1": 0.7895672791938352,
+        "precision": 0.6561576354679803,
+        "recall": 0.9910714285714286,
+        "support": 1344
+      }
+    },
+    "protocol": "random_stratified",
+    "run_id": "wisdm_r0",
+    "seed": 42,
+    "window_size": 200
+  },
+  "fp32_training_time_sec": 32.311014646998956,
+  "paper_slug": "repmobile",
+  "protocol": "random_stratified",
+  "ptq_confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_ptq_repmobile_folded_wisdm_r0_T200_Prandom_stratified.png",
+  "ptq_device": "gpu",
+  "ptq_inference_latency_ms_median": 0.18633050058269873,
+  "ptq_inference_latency_ms_p95": 0.2401449892204255,
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "checkpoint": "/home/dellio/github/har-mcu/checkpoints/repmobile_folded_T200_Prandom_stratified_wisdm_r0.keras",
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "error": "Unsupported TFLM ops: DELEGATE, DEPTHWISE_CONV_2D, EXPAND_DIMS, MEAN",
+    "fp32_checkpoint_size_kb": 255.375,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "repmobile_folded",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "random_stratified",
+    "ptq_tflite_size_kb": 46.6640625,
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "size_reduction_vs_ckpt_percent": 81.72723935389133,
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflite_model": "/home/dellio/github/har-mcu/models_tflite/repmobile_folded_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite",
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "CONV_2D",
+      "DELEGATE",
+      "DEPTHWISE_CONV_2D",
+      "EXPAND_DIMS",
+      "FULLY_CONNECTED",
+      "MEAN",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "unsupported_ops": [
+      "DELEGATE",
+      "DEPTHWISE_CONV_2D",
+      "EXPAND_DIMS",
+      "MEAN"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_qat_repmobile_folded_wisdm_r0_T200_Prandom_stratified.png",
+  "qat_curve_png": "/home/dellio/github/har-mcu/reports/repmobile/curve_qat_repmobile_folded_T200_Prandom_stratified_wisdm_r0.png",
+  "qat_device": "cpu",
+  "qat_history_json": "/home/dellio/github/har-mcu/checkpoints/history_repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.json",
+  "qat_inference_latency_ms_median": 0.1833455025916919,
+  "qat_inference_latency_ms_p95": 0.1984825030376669,
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "epochs_ran": 0,
+    "error": "Unable to construct QAT model: Requested the deserialization of a Lambda layer with a Python `lambda` inside it. This carries a potential risk of arbitrary code execution and thus it is disallowed by default. If you trust the source of the saved model, you can pass `safe_mode=False` to the loading function in order to allow Lambda layer loading.",
+    "full_integer_io": false,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "history_json": "/home/dellio/github/har-mcu/checkpoints/history_repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.json",
+    "input_dtype": null,
+    "input_dtype_normalized": null,
+    "model_name": "repmobile_folded",
+    "notes": [
+      "Experimental native SeparableConv1D QAT attempt enabled. If conversion fails, fallback to Conv2D-safe RepMobile variant.",
+      "Unable to construct QAT model: Requested the deserialization of a Lambda layer with a Python `lambda` inside it. This carries a potential risk of arbitrary code execution and thus it is disallowed by default. If you trust the source of the saved model, you can pass `safe_mode=False` to the loading function in order to allow Lambda layer loading."
+    ],
+    "output_dtype": null,
+    "output_dtype_normalized": null,
+    "protocol": "random_stratified",
+    "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.keras",
+    "qat_tflite": "/home/dellio/github/har-mcu/models_tflite/repmobile_folded_T200_Prandom_stratified_wisdm_r0_qat.tflite",
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflm_compatible": false,
+    "tflm_ops": [],
+    "training_time_sec": null,
+    "unsupported_ops": [],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_training_time_sec": null,
+  "run_id": "wisdm_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "train_device": "gpu",
+  "variant": "repmobile_folded",
+  "window_size": 200
+}

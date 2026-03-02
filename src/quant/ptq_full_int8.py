@@ -9,6 +9,7 @@ import tensorflow as tf
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
+from src.models.serialization import load_checkpoint_model
 from src.quant.deploy_gate import (
     accepted_integer_dtypes,
     inspect_tflite_and_evaluate_deploy_gate,
@@ -140,7 +141,7 @@ def quantize_ptq_for_protocol(
             )
 
     arrays = load_split_arrays(processed_dir, window_size, protocol)
-    model = tf.keras.models.load_model(ckpt_path)
+    model = load_checkpoint_model(ckpt_path, compile=False)
 
     ptq_cfg = cfg.get("quant", {}).get("ptq", {})
     rep_count = int(ptq_cfg.get("representative_samples", 256))

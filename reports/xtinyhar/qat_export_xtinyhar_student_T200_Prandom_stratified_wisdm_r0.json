@@ -1,0 +1,37 @@
+{
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "model_name": "xtinyhar_student",
+  "run_id": "wisdm_r0",
+  "variant": "default",
+  "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/xtinyhar_student_T200_Prandom_stratified_wisdm_r0_qat.keras",
+  "qat_tflite": null,
+  "input_dtype": null,
+  "output_dtype": null,
+  "input_dtype_normalized": null,
+  "output_dtype_normalized": null,
+  "accepted_integer_io_dtypes": [
+    "int8",
+    "uint8"
+  ],
+  "full_integer_io": false,
+  "representative_source": "train",
+  "representative_samples": 128,
+  "strict_full_int8": true,
+  "require_tflm_compatible": true,
+  "deployable_full_int8": false,
+  "tflm_compatible": false,
+  "unsupported_ops": [],
+  "tflm_ops": [],
+  "compat_error": null,
+  "has_unidirectional_sequence_lstm": false,
+  "has_while_op": false,
+  "training_time_sec": null,
+  "history_json": null,
+  "epochs_ran": 0,
+  "status": "failed",
+  "error": "Unable to construct QAT model: Layer patch_embed:<class 'keras.src.layers.convolutional.conv1d.Conv1D'> is not supported. You can quantize this layer by passing a `tfmot.quantization.keras.QuantizeConfig` instance to the `quantize_annotate_layer` API.",
+  "notes": [
+    "Unable to construct QAT model: Layer patch_embed:<class 'keras.src.layers.convolutional.conv1d.Conv1D'> is not supported. You can quantize this layer by passing a `tfmot.quantization.keras.QuantizeConfig` instance to the `quantize_annotate_layer` API."
+  ]
+}

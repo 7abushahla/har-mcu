@@ -1,0 +1,150 @@
+{
+  "paper_slug": "daghero_qadnn",
+  "model_name": "daghero_cnn_2layer_conv2d",
+  "run_id": "wisdm_r0",
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "seed": 42,
+  "accuracy": 0.9951397326852977,
+  "macro_f1": 0.9880773071302986,
+  "per_class": {
+    "Walking": {
+      "precision": 0.9992553983618764,
+      "recall": 0.9985119047619048,
+      "f1": 0.9988835132117603,
+      "support": 1344
+    },
+    "Jogging": {
+      "precision": 0.9980732177263969,
+      "recall": 0.9990356798457087,
+      "f1": 0.9985542168674699,
+      "support": 1037
+    },
+    "Upstairs": {
+      "precision": 0.9939024390243902,
+      "recall": 0.9939024390243902,
+      "f1": 0.9939024390243902,
+      "support": 328
+    },
+    "Downstairs": {
+      "precision": 0.9883720930232558,
+      "recall": 0.99609375,
+      "f1": 0.9922178988326849,
+      "support": 256
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.945054945054945,
+      "f1": 0.9717514124293786,
+      "support": 182
+    },
+    "Standing": {
+      "precision": 0.9477124183006536,
+      "recall": 1.0,
+      "f1": 0.9731543624161074,
+      "support": 145
+    }
+  },
+  "confusion_matrix": [
+    [
+      1342,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    [
+      1,
+      1036,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      326,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      255,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      172,
+      8
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      145
+    ]
+  ],
+  "confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9992553983618764,
+      "recall": 0.9985119047619048,
+      "f1-score": 0.9988835132117603,
+      "support": 1344.0
+    },
+    "Jogging": {
+      "precision": 0.9980732177263969,
+      "recall": 0.9990356798457087,
+      "f1-score": 0.9985542168674699,
+      "support": 1037.0
+    },
+    "Upstairs": {
+      "precision": 0.9939024390243902,
+      "recall": 0.9939024390243902,
+      "f1-score": 0.9939024390243902,
+      "support": 328.0
+    },
+    "Downstairs": {
+      "precision": 0.9883720930232558,
+      "recall": 0.99609375,
+      "f1-score": 0.9922178988326849,
+      "support": 256.0
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.945054945054945,
+      "f1-score": 0.9717514124293786,
+      "support": 182.0
+    },
+    "Standing": {
+      "precision": 0.9477124183006536,
+      "recall": 1.0,
+      "f1-score": 0.9731543624161074,
+      "support": 145.0
+    },
+    "accuracy": 0.9951397326852977,
+    "macro avg": {
+      "precision": 0.9878859277394288,
+      "recall": 0.9887664531144914,
+      "f1-score": 0.9880773071302986,
+      "support": 3292.0
+    },
+    "weighted avg": {
+      "precision": 0.9952742219465929,
+      "recall": 0.9951397326852977,
+      "f1-score": 0.9951318609847577,
+      "support": 3292.0
+    }
+  }
+}

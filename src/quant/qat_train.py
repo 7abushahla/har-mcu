@@ -11,6 +11,7 @@ import tensorflow as tf
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
+from src.models.serialization import load_checkpoint_model
 from src.quant.deploy_gate import (
     accepted_integer_dtypes,
     inspect_tflite_and_evaluate_deploy_gate,
@@ -32,6 +33,17 @@ from src.utils.config import apply_common_overrides, build_parser, ensure_path_d
 from src.utils.repro import dump_json
 
 
+def _scan_conv1d_family_layers(model: tf.keras.Model) -> tuple[list[str], list[str]]:
+    conv1d_layers: list[str] = []
+    sepconv1d_layers: list[str] = []
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Conv1D):
+            conv1d_layers.append(f"{layer.name}:{layer.__class__.__name__}")
+        if isinstance(layer, tf.keras.layers.SeparableConv1D):
+            sepconv1d_layers.append(f"{layer.name}:{layer.__class__.__name__}")
+    return conv1d_layers, sepconv1d_layers
+
+
 def _build_qat_model(
     fp32_model: tf.keras.Model,
     annotation_policy: str = "auto",
@@ -51,10 +63,10 @@ def _build_qat_model(
     quantize_apply = tfmot.quantization.keras.quantize_apply
 
     allowed: set[type[tf.keras.layers.Layer]] = set()
-    if policy in {"auto", "conv_dense", "conv1d_dense"}:
-        allowed.update({tf.keras.layers.Conv1D, tf.keras.layers.Dense})
-    if policy in {"conv2d_dense"}:
+    if policy in {"auto", "conv_dense", "conv2d_dense"}:
         allowed.update({tf.keras.layers.Conv2D, tf.keras.layers.Dense})
+    if policy in {"conv1d_dense"}:
+        allowed.update({tf.keras.layers.Conv1D, tf.keras.layers.Dense})
     if policy in {"dense_only"}:
         allowed.update({tf.keras.layers.Dense})
     if policy in {"depthwise_conv2d_dense", "depthwise"}:
@@ -62,14 +74,13 @@ def _build_qat_model(
     if policy in {"all_supported"}:
         allowed.update(
             {
-                tf.keras.layers.Conv1D,
                 tf.keras.layers.Conv2D,
                 tf.keras.layers.DepthwiseConv2D,
                 tf.keras.layers.Dense,
             }
         )
     if not allowed:
-        allowed.update({tf.keras.layers.Conv1D, tf.keras.layers.Dense})
+        allowed.update({tf.keras.layers.Conv2D, tf.keras.layers.Dense})
 
     def annotate(layer: tf.keras.layers.Layer) -> tf.keras.layers.Layer:
         if any(isinstance(layer, t) for t in allowed):
@@ -241,12 +252,12 @@ def qat_for_protocol(
     y_train_oh = tf.keras.utils.to_categorical(y_train, num_classes)
     y_val_oh = tf.keras.utils.to_categorical(y_val, num_classes)
 
-    fp32_model = tf.keras.models.load_model(ckpt_path)
+    fp32_model = load_checkpoint_model(ckpt_path, compile=False)
 
     notes: list[str] = []
     training_time_sec: float | None = None
 
-    def _emit_failure(error_msg: str, *, epochs_ran: int = 0) -> None:
+    def _emit_failure(error_msg: str, *, epochs_ran: int = 0) -> dict[str, Any]:
         payload = {
             "window_size": int(window_size),
             "protocol": protocol,
@@ -281,6 +292,36 @@ def qat_for_protocol(
         }
         dump_json(json_path, payload)
         _write_qat_markdown(md_path, payload)
+        return payload
+
+    def _failure_return(error_msg: str, *, epochs_ran: int = 0) -> dict[str, Any]:
+        _emit_failure(error_msg, epochs_ran=epochs_ran)
+        return {
+            "report_json": str(json_path),
+            "report_md": str(md_path),
+            "tflite": str(tfl_path),
+            "history_json": str(qat_history_path) if qat_history_path.exists() else None,
+            "training_time_sec": training_time_sec,
+            "epochs_ran": int(epochs_ran),
+            "status": "failed",
+            "model_name": model_name,
+            "run_id": run_id,
+            "variant": variant or "default",
+        }
+
+    conv1d_layers, sepconv1d_layers = _scan_conv1d_family_layers(fp32_model)
+    if conv1d_layers or sepconv1d_layers:
+        detected = conv1d_layers + sepconv1d_layers
+        error_msg = (
+            "QAT model contains Conv1D/SeparableConv1D layers not reliably supported by this pipeline runtime. "
+            "Use Conv2D-safe model variants (`*_conv2d`) where Conv1D(k) is mapped to Conv2D((k,1)). "
+            f"Detected layers: {', '.join(detected)}"
+        )
+        notes.append(error_msg)
+        if raise_on_strict_failure:
+            _emit_failure(error_msg, epochs_ran=0)
+            raise RuntimeError(error_msg)
+        return _failure_return(error_msg, epochs_ran=0)
 
     try:
         policy = annotation_policy or str(qat_cfg.get("annotation_policy", "auto"))
@@ -289,8 +330,10 @@ def qat_for_protocol(
     except Exception as exc:
         error_msg = f"Unable to construct QAT model: {exc}"
         notes.append(error_msg)
-        _emit_failure(error_msg, epochs_ran=0)
-        raise RuntimeError(error_msg) from exc
+        if raise_on_strict_failure:
+            _emit_failure(error_msg, epochs_ran=0)
+            raise RuntimeError(error_msg) from exc
+        return _failure_return(error_msg, epochs_ran=0)
 
     qat_model.compile(
         optimizer=tf.keras.optimizers.RMSprop(
@@ -318,41 +361,11 @@ def qat_for_protocol(
         X_rep = representative_array(arrays, rep_source)
     except Exception as exc:
         error_msg = f"Invalid representative source for QAT: {exc}"
-        payload = {
-            "window_size": int(window_size),
-            "protocol": protocol,
-            "model_name": model_name,
-            "run_id": run_id,
-            "variant": variant or "default",
-            "qat_checkpoint": str(qat_ckpt),
-            "qat_tflite": None,
-            "input_dtype": None,
-            "output_dtype": None,
-            "input_dtype_normalized": None,
-            "output_dtype_normalized": None,
-            "accepted_integer_io_dtypes": accepted_io,
-            "full_integer_io": False,
-            "representative_source": rep_source,
-            "representative_samples": int(rep_count),
-            "strict_full_int8": bool(strict_full_int8),
-            "require_tflm_compatible": bool(require_tflm_compatible),
-            "deployable_full_int8": False,
-            "tflm_compatible": False,
-            "unsupported_ops": [],
-            "tflm_ops": [],
-            "compat_error": None,
-            "has_unidirectional_sequence_lstm": False,
-            "has_while_op": False,
-            "training_time_sec": training_time_sec,
-            "history_json": str(qat_history_path),
-            "epochs_ran": int(len(hist.history.get("loss", []))),
-            "status": "failed",
-            "error": error_msg,
-            "notes": notes,
-        }
-        dump_json(json_path, payload)
-        _write_qat_markdown(md_path, payload)
-        raise RuntimeError(error_msg) from exc
+        notes.append(error_msg)
+        if raise_on_strict_failure:
+            _emit_failure(error_msg, epochs_ran=int(len(hist.history.get("loss", []))))
+            raise RuntimeError(error_msg) from exc
+        return _failure_return(error_msg, epochs_ran=int(len(hist.history.get("loss", []))))
 
     converter = tf.lite.TFLiteConverter.from_keras_model(qat_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
@@ -371,41 +384,10 @@ def qat_for_protocol(
     except Exception as exc:
         error_msg = f"QAT conversion is non-deployable under strict full-int8 policy: {exc}"
         notes.append(f"Conversion failed: {exc}")
-        payload = {
-            "window_size": int(window_size),
-            "protocol": protocol,
-            "model_name": model_name,
-            "run_id": run_id,
-            "variant": variant or "default",
-            "qat_checkpoint": str(qat_ckpt),
-            "qat_tflite": None,
-            "input_dtype": None,
-            "output_dtype": None,
-            "input_dtype_normalized": None,
-            "output_dtype_normalized": None,
-            "accepted_integer_io_dtypes": accepted_io,
-            "full_integer_io": False,
-            "representative_source": rep_source,
-            "representative_samples": int(rep_count),
-            "strict_full_int8": bool(strict_full_int8),
-            "require_tflm_compatible": bool(require_tflm_compatible),
-            "deployable_full_int8": False,
-            "tflm_compatible": False,
-            "unsupported_ops": [],
-            "tflm_ops": [],
-            "compat_error": None,
-            "has_unidirectional_sequence_lstm": False,
-            "has_while_op": False,
-            "training_time_sec": training_time_sec,
-            "history_json": str(qat_history_path),
-            "epochs_ran": int(len(hist.history.get("loss", []))),
-            "status": "failed",
-            "error": error_msg,
-            "notes": notes,
-        }
-        dump_json(json_path, payload)
-        _write_qat_markdown(md_path, payload)
-        raise RuntimeError(error_msg) from exc
+        if raise_on_strict_failure:
+            _emit_failure(error_msg, epochs_ran=int(len(hist.history.get("loss", []))))
+            raise RuntimeError(error_msg) from exc
+        return _failure_return(error_msg, epochs_ran=int(len(hist.history.get("loss", []))))
 
     tfl_path.write_bytes(tfl_blob)
 

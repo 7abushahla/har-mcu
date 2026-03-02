@@ -1,0 +1,16 @@
+# daghero_qadnn Comparison
+
+- Notes: Paper reports F1/MCU design fronts; direct WISDM accuracy target not fixed.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.9951397326852977 | 0.9880773071302986 | — | 52.045218911007396 | — | — | — | — | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9951397326852977 | 0.9881475336053732 | 27.3671875 | — | 0.0903550026123412 | 0.1033074950100854 | — | — | failed |
+| WISDM replication | random_stratified | QAT int8 | 0.9951397326852977 | 0.9888402166688813 | 29.4140625 | 19.224958467006218 | 0.11628550419118255 | 0.1332850006292574 | — | — | failed |
+| WISDM replication | user_holdout | baseline float | 0.83841642228739 | 0.8040049281824485 | — | 11.901672872001654 | — | — | — | — | ok |
+| WISDM replication | user_holdout | PTQ int8 | 0.8381231671554252 | 0.8019774286258383 | 27.3671875 | — | 0.09138500900007784 | 0.10628000018186867 | — | — | failed |
+| WISDM replication | user_holdout | QAT int8 | 0.849266862170088 | 0.8190698054148177 | 29.4140625 | 18.77276402899588 | 0.11734999134205282 | 0.13964250683784485 | — | — | failed |
+| paper target | — | baseline float | — | — | — | — | — | — | — | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | reference |
+

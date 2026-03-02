@@ -1,0 +1,302 @@
+{
+  "compression_focus": "ptq_qat_only",
+  "deploy_gate": {
+    "ptq": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "MAX_POOL_2D",
+        "MEAN"
+      ]
+    },
+    "qat": {
+      "full_integer_io": true,
+      "status": "failed",
+      "tflm_compatible": false,
+      "unsupported_ops": [
+        "MAX_POOL_2D",
+        "MEAN"
+      ]
+    }
+  },
+  "eval_fp32_device": "gpu",
+  "eval_ptq_device": "gpu",
+  "eval_qat_device": "cpu",
+  "fp32_confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_curve_png": "/home/dellio/github/har-mcu/reports/daghero_qadnn/curve_fp32_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "fp32_history_json": "/home/dellio/github/har-mcu/checkpoints/history_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.json",
+  "fp32_metrics": {
+    "accuracy": 0.9951397326852977,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.9922178988326849,
+        "precision": 0.9883720930232558,
+        "recall": 0.99609375,
+        "support": 256.0
+      },
+      "Jogging": {
+        "f1-score": 0.9985542168674699,
+        "precision": 0.9980732177263969,
+        "recall": 0.9990356798457087,
+        "support": 1037.0
+      },
+      "Sitting": {
+        "f1-score": 0.9717514124293786,
+        "precision": 1.0,
+        "recall": 0.945054945054945,
+        "support": 182.0
+      },
+      "Standing": {
+        "f1-score": 0.9731543624161074,
+        "precision": 0.9477124183006536,
+        "recall": 1.0,
+        "support": 145.0
+      },
+      "Upstairs": {
+        "f1-score": 0.9939024390243902,
+        "precision": 0.9939024390243902,
+        "recall": 0.9939024390243902,
+        "support": 328.0
+      },
+      "Walking": {
+        "f1-score": 0.9988835132117603,
+        "precision": 0.9992553983618764,
+        "recall": 0.9985119047619048,
+        "support": 1344.0
+      },
+      "accuracy": 0.9951397326852977,
+      "macro avg": {
+        "f1-score": 0.9880773071302986,
+        "precision": 0.9878859277394288,
+        "recall": 0.9887664531144914,
+        "support": 3292.0
+      },
+      "weighted avg": {
+        "f1-score": 0.9951318609847577,
+        "precision": 0.9952742219465929,
+        "recall": 0.9951397326852977,
+        "support": 3292.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1342,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        1,
+        1036,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        2,
+        326,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        255,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        172,
+        8
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        145
+      ]
+    ],
+    "confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+    "macro_f1": 0.9880773071302986,
+    "model_name": "daghero_cnn_2layer_conv2d",
+    "paper_slug": "daghero_qadnn",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.9922178988326849,
+        "precision": 0.9883720930232558,
+        "recall": 0.99609375,
+        "support": 256
+      },
+      "Jogging": {
+        "f1": 0.9985542168674699,
+        "precision": 0.9980732177263969,
+        "recall": 0.9990356798457087,
+        "support": 1037
+      },
+      "Sitting": {
+        "f1": 0.9717514124293786,
+        "precision": 1.0,
+        "recall": 0.945054945054945,
+        "support": 182
+      },
+      "Standing": {
+        "f1": 0.9731543624161074,
+        "precision": 0.9477124183006536,
+        "recall": 1.0,
+        "support": 145
+      },
+      "Upstairs": {
+        "f1": 0.9939024390243902,
+        "precision": 0.9939024390243902,
+        "recall": 0.9939024390243902,
+        "support": 328
+      },
+      "Walking": {
+        "f1": 0.9988835132117603,
+        "precision": 0.9992553983618764,
+        "recall": 0.9985119047619048,
+        "support": 1344
+      }
+    },
+    "protocol": "random_stratified",
+    "run_id": "wisdm_r0",
+    "seed": 42,
+    "window_size": 200
+  },
+  "fp32_training_time_sec": 52.045218911007396,
+  "paper_slug": "daghero_qadnn",
+  "protocol": "random_stratified",
+  "ptq_confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_ptq_daghero_cnn_2layer_conv2d_wisdm_r0_T200_Prandom_stratified.png",
+  "ptq_device": "gpu",
+  "ptq_inference_latency_ms_median": 0.0903550026123412,
+  "ptq_inference_latency_ms_p95": 0.1033074950100854,
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "checkpoint": "/home/dellio/github/har-mcu/checkpoints/daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.keras",
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "error": "Unsupported TFLM ops: MAX_POOL_2D, MEAN",
+    "fp32_checkpoint_size_kb": 289.01953125,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "daghero_cnn_2layer_conv2d",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "random_stratified",
+    "ptq_tflite_size_kb": 27.3671875,
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "size_reduction_vs_ckpt_percent": 90.53102488207708,
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflite_model": "/home/dellio/github/har-mcu/models_tflite/daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite",
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "PACK",
+      "RESHAPE",
+      "SHAPE",
+      "SOFTMAX",
+      "STRIDED_SLICE"
+    ],
+    "unsupported_ops": [
+      "MAX_POOL_2D",
+      "MEAN"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_qat_daghero_cnn_2layer_conv2d_wisdm_r0_T200_Prandom_stratified.png",
+  "qat_curve_png": "/home/dellio/github/har-mcu/reports/daghero_qadnn/curve_qat_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0.png",
+  "qat_device": "cpu",
+  "qat_history_json": "/home/dellio/github/har-mcu/checkpoints/history_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_qat.json",
+  "qat_inference_latency_ms_median": 0.11628550419118255,
+  "qat_inference_latency_ms_p95": 0.1332850006292574,
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "compat_error": null,
+    "deployable_full_int8": false,
+    "epochs_ran": 10,
+    "error": "Unsupported TFLM ops: MAX_POOL_2D, MEAN",
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "history_json": "/home/dellio/github/har-mcu/checkpoints/history_daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_qat.json",
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "daghero_cnn_2layer_conv2d",
+    "notes": [
+      "QAT strategy: annotate_policy_conv2d_dense",
+      "Exported with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "protocol": "random_stratified",
+    "qat_checkpoint": "/home/dellio/github/har-mcu/checkpoints/daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_qat.keras",
+    "qat_tflite": "/home/dellio/github/har-mcu/models_tflite/daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_qat.tflite",
+    "representative_samples": 128,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "wisdm_r0",
+    "status": "failed",
+    "strict_full_int8": true,
+    "tflm_compatible": false,
+    "tflm_ops": [
+      "ADD",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PACK",
+      "RESHAPE",
+      "SHAPE",
+      "SOFTMAX",
+      "STRIDED_SLICE"
+    ],
+    "training_time_sec": 19.224958467006218,
+    "unsupported_ops": [
+      "MAX_POOL_2D",
+      "MEAN"
+    ],
+    "variant": "default",
+    "window_size": 200
+  },
+  "qat_training_time_sec": 19.224958467006218,
+  "run_id": "wisdm_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "train_device": "gpu",
+  "variant": "daghero_cnn_2layer_conv2d",
+  "window_size": 200
+}

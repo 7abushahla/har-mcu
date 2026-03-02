@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from src.utils.markdown_tables import dataframe_to_pipe_markdown
 
 
 def export_paper_results(
@@ -60,7 +61,7 @@ def export_paper_results(
                 if c in df.columns
             ]
             if keep_cols:
-                f.write(df[keep_cols].to_markdown(index=False))
+                f.write(dataframe_to_pipe_markdown(df[keep_cols]))
                 f.write("\n")
 
     return {"csv": str(csv_path), "md": str(md_path)}
@@ -123,7 +124,7 @@ def append_master_results(
                 if c in merged.columns
             ]
             if keep_cols:
-                f.write(merged[keep_cols].to_markdown(index=False))
+                f.write(dataframe_to_pipe_markdown(merged[keep_cols]))
                 f.write("\n")
 
     return {"csv": str(master_csv), "md": str(master_md)}

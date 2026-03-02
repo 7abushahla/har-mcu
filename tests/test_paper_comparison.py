@@ -62,13 +62,25 @@ def test_build_paper_comparison_rows_handles_partial_targets():
         },
     )
     assert len(rows) == (2 * 3 + 3)  # three tiers per protocol + three target rows
-    fp32_row = next(r for r in rows if r["source"] == "wisdm_run" and r["protocol"] == "random_stratified" and r["tier"] == "FP32")
-    assert fp32_row["delta_vs_paper_accuracy"] == pytest.approx(0.01)
-    qat_target = next(r for r in rows if r["source"] == "paper_target" and r["tier"] == "QAT INT8")
+    fp32_row = next(
+        r
+        for r in rows
+        if r["pipeline"] == "WISDM replication"
+        and r["protocol"] == "random_stratified"
+        and r["model"] == "baseline float"
+    )
+    assert fp32_row["acc_delta_vs_target"] == pytest.approx(0.01)
+    qat_target = next(r for r in rows if r["pipeline"] == "paper target" and r["model"] == "QAT int8")
     assert qat_target["accuracy"] is None
 
 
-def test_export_paper_comparison_writes_csv_md_and_plots(tmp_path: Path):
+def test_export_paper_comparison_writes_csv_md_and_plots(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        pd.DataFrame,
+        "to_markdown",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("should not be called")),
+    )
+
     out = export_paper_comparison(
         tmp_path,
         paper_slug="xtinyhar",
@@ -86,9 +98,9 @@ def test_export_paper_comparison_writes_csv_md_and_plots(tmp_path: Path):
 
     df = pd.read_csv(out["csv"])
     expected_cols = {
-        "source",
+        "pipeline",
         "protocol",
-        "tier",
+        "model",
         "accuracy",
         "macro_f1",
         "model_size_kb",
@@ -96,7 +108,7 @@ def test_export_paper_comparison_writes_csv_md_and_plots(tmp_path: Path):
         "inference_latency_ms_median",
         "inference_latency_ms_p95",
         "paper_target_accuracy",
-        "delta_vs_paper_accuracy",
+        "acc_delta_vs_target",
         "status",
     }
     assert expected_cols.issubset(set(df.columns))

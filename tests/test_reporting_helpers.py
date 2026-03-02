@@ -7,7 +7,9 @@ import pandas as pd
 from src.eval.reporting import append_master_results, export_paper_results
 
 
-def test_export_paper_results_writes_csv_and_md(tmp_path: Path):
+def test_export_paper_results_writes_csv_and_md(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(pd.DataFrame, "to_markdown", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("should not be called")))
+
     rows = [
         {
             "paper_slug": "xtinyhar",
@@ -15,8 +17,11 @@ def test_export_paper_results_writes_csv_and_md(tmp_path: Path):
             "variant": "xtinyhar_student",
             "run_mode": "sanity_check",
             "train_device": "gpu",
+            "eval_fp32_device": "gpu",
             "ptq_device": "gpu",
+            "eval_ptq_device": "gpu",
             "qat_device": "cpu",
+            "eval_qat_device": "cpu",
             "fp32_training_time_sec": 12.4,
             "ptq_inference_latency_ms_median": 0.45,
             "ptq_inference_latency_ms_p95": 0.60,
@@ -32,12 +37,16 @@ def test_export_paper_results_writes_csv_and_md(tmp_path: Path):
     assert len(df) == 1
     assert df.iloc[0]["paper_slug"] == "xtinyhar"
     assert df.iloc[0]["run_mode"] == "sanity_check"
+    assert df.iloc[0]["eval_fp32_device"] == "gpu"
     assert df.iloc[0]["qat_device"] == "cpu"
+    assert df.iloc[0]["eval_qat_device"] == "cpu"
     assert float(df.iloc[0]["fp32_training_time_sec"]) == 12.4
     assert float(df.iloc[0]["ptq_inference_latency_ms_median"]) == 0.45
 
 
-def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path):
+def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(pd.DataFrame, "to_markdown", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("should not be called")))
+
     rows_a = [
         {
             "paper_slug": "xtinyhar",

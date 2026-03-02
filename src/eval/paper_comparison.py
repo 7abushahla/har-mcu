@@ -16,12 +16,16 @@ from src.utils.artifacts import (
     paper_comparison_md_path,
     paper_comparison_size_png_path,
 )
+from src.utils.markdown_tables import dataframe_to_pipe_markdown
 
 
-def _target_for_tier(paper_targets: dict[str, Any], tier: str) -> float | None:
-    key_map = {"FP32": "fp32_accuracy", "PTQ INT8": "ptq_accuracy", "QAT INT8": "qat_accuracy"}
-    key = key_map[tier]
-    value = paper_targets.get(key)
+def _target_for_tier(paper_targets: dict[str, Any], model: str) -> float | None:
+    key_map = {
+        "baseline float": "fp32_accuracy",
+        "PTQ int8": "ptq_accuracy",
+        "QAT int8": "qat_accuracy",
+    }
+    value = paper_targets.get(key_map[model])
     return float(value) if value is not None else None
 
 
@@ -40,15 +44,16 @@ def build_paper_comparison_rows(
 
     for row in run_rows:
         protocol = row.get("protocol")
-        fp32_target = _target_for_tier(targets, "FP32")
-        ptq_target = _target_for_tier(targets, "PTQ INT8")
-        qat_target = _target_for_tier(targets, "QAT INT8")
+
+        fp32_target = _target_for_tier(targets, "baseline float")
+        ptq_target = _target_for_tier(targets, "PTQ int8")
+        qat_target = _target_for_tier(targets, "QAT int8")
 
         out.append(
             {
-                "source": "wisdm_run",
+                "pipeline": "WISDM replication",
                 "protocol": protocol,
-                "tier": "FP32",
+                "model": "baseline float",
                 "accuracy": row.get("accuracy"),
                 "macro_f1": row.get("macro_f1"),
                 "model_size_kb": None,
@@ -57,14 +62,14 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_p95": None,
                 "status": "ok",
                 "paper_target_accuracy": fp32_target,
-                "delta_vs_paper_accuracy": _delta_vs_target(row.get("accuracy"), fp32_target),
+                "acc_delta_vs_target": _delta_vs_target(row.get("accuracy"), fp32_target),
             }
         )
         out.append(
             {
-                "source": "wisdm_run",
+                "pipeline": "WISDM replication",
                 "protocol": protocol,
-                "tier": "PTQ INT8",
+                "model": "PTQ int8",
                 "accuracy": row.get("ptq_accuracy"),
                 "macro_f1": row.get("ptq_macro_f1"),
                 "model_size_kb": row.get("ptq_model_size_kb"),
@@ -73,14 +78,14 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_p95": row.get("ptq_inference_latency_ms_p95"),
                 "status": row.get("ptq_status"),
                 "paper_target_accuracy": ptq_target,
-                "delta_vs_paper_accuracy": _delta_vs_target(row.get("ptq_accuracy"), ptq_target),
+                "acc_delta_vs_target": _delta_vs_target(row.get("ptq_accuracy"), ptq_target),
             }
         )
         out.append(
             {
-                "source": "wisdm_run",
+                "pipeline": "WISDM replication",
                 "protocol": protocol,
-                "tier": "QAT INT8",
+                "model": "QAT int8",
                 "accuracy": row.get("qat_accuracy"),
                 "macro_f1": row.get("qat_macro_f1"),
                 "model_size_kb": row.get("qat_model_size_kb"),
@@ -89,25 +94,25 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_p95": row.get("qat_inference_latency_ms_p95"),
                 "status": row.get("qat_status"),
                 "paper_target_accuracy": qat_target,
-                "delta_vs_paper_accuracy": _delta_vs_target(row.get("qat_accuracy"), qat_target),
+                "acc_delta_vs_target": _delta_vs_target(row.get("qat_accuracy"), qat_target),
             }
         )
 
-    for tier in ("FP32", "PTQ INT8", "QAT INT8"):
+    for model in ("baseline float", "PTQ int8", "QAT int8"):
         out.append(
             {
-                "source": "paper_target",
+                "pipeline": "paper target",
                 "protocol": "—",
-                "tier": tier,
-                "accuracy": _target_for_tier(targets, tier),
+                "model": model,
+                "accuracy": _target_for_tier(targets, model),
                 "macro_f1": None,
                 "model_size_kb": None,
                 "training_time_sec": None,
                 "inference_latency_ms_median": None,
                 "inference_latency_ms_p95": None,
                 "status": "reference",
-                "paper_target_accuracy": _target_for_tier(targets, tier),
-                "delta_vs_paper_accuracy": None,
+                "paper_target_accuracy": _target_for_tier(targets, model),
+                "acc_delta_vs_target": None,
             }
         )
 
@@ -116,38 +121,87 @@ def build_paper_comparison_rows(
 
 def _plot_accuracy(df: pd.DataFrame, out_path: Path) -> None:
     rows = df[df["accuracy"].notna()].copy()
-    fig, ax = plt.subplots(figsize=(max(10, len(rows) * 1.2), 5.5))
+    fig, ax = plt.subplots(figsize=(max(10, len(rows) * 1.3), 5.5))
     if rows.empty:
         ax.text(0.5, 0.5, "No accuracy rows available", ha="center", va="center")
         ax.axis("off")
     else:
-        labels = [f"{r.source}\n{r.protocol}\n{r.tier}" for r in rows.itertuples()]
-        values = rows["accuracy"].astype(float).tolist()
-        colors = [
-            "#9e9e9e" if src == "paper_target" else ("#1f77b4" if tier == "FP32" else "#ff7f0e" if tier == "PTQ INT8" else "#2ca02c")
-            for src, tier in zip(rows["source"], rows["tier"])
+        labels = [
+            f"{r.pipeline}\n{r.protocol}\n{r.model}" for r in rows.itertuples()
         ]
-        bars = ax.bar(labels, values, color=colors, edgecolor="white")
+        values = rows["accuracy"].astype(float).tolist()
+
+        colors = []
+        for r in rows.itertuples():
+            if r.pipeline == "paper target":
+                if r.model == "baseline float":
+                    colors.append("#9e9e9e")
+                elif r.model == "PTQ int8":
+                    colors.append("#bdbdbd")
+                else:
+                    colors.append("#d9d9d9")
+            else:
+                if r.model == "baseline float":
+                    colors.append("#1f77b4")
+                elif r.model == "PTQ int8":
+                    colors.append("#ff7f0e")
+                else:
+                    colors.append("#2ca02c")
+
+        bars = ax.bar(labels, values, color=colors, edgecolor="white", width=0.6)
         for bar, val in zip(bars, values):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002, f"{val:.4f}", ha="center", va="bottom", fontsize=8)
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.002,
+                f"{val:.4f}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
+
+        target_fp32 = rows[(rows["pipeline"] == "paper target") & (rows["model"] == "baseline float")]
+        target_ptq = rows[(rows["pipeline"] == "paper target") & (rows["model"] == "PTQ int8")]
+        if not target_fp32.empty and pd.notna(target_fp32.iloc[0]["accuracy"]):
+            ax.axhline(
+                float(target_fp32.iloc[0]["accuracy"]),
+                color="#1f77b4",
+                linestyle="--",
+                linewidth=1.0,
+                label=f"Paper target baseline ({float(target_fp32.iloc[0]['accuracy']):.4f})",
+            )
+        if not target_ptq.empty and pd.notna(target_ptq.iloc[0]["accuracy"]):
+            ax.axhline(
+                float(target_ptq.iloc[0]["accuracy"]),
+                color="#ff7f0e",
+                linestyle="--",
+                linewidth=1.0,
+                label=f"Paper target PTQ ({float(target_ptq.iloc[0]['accuracy']):.4f})",
+            )
+
         ax.set_ylabel("Accuracy")
-        ax.set_title("FP32/PTQ/QAT Accuracy Comparison")
-        ax.grid(axis="y", alpha=0.3)
+        ax.set_title("Paper Target vs WISDM Replication — Accuracy comparison")
+        ax.grid(axis="y", alpha=0.35)
         ax.set_ylim(max(0.0, min(values) - 0.05), 1.02)
+        ax.legend(fontsize=8)
         plt.xticks(fontsize=8)
+
     fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)
 
 
 def _plot_model_size(df: pd.DataFrame, out_path: Path) -> None:
-    rows = df[(df["tier"].isin(["PTQ INT8", "QAT INT8"])) & (df["model_size_kb"].notna()) & (df["source"] == "wisdm_run")].copy()
+    rows = df[
+        (df["pipeline"] == "WISDM replication")
+        & (df["model"].isin(["PTQ int8", "QAT int8"]))
+        & (df["model_size_kb"].notna())
+    ].copy()
     fig, ax = plt.subplots(figsize=(max(8, len(rows) * 1.1), 4.8))
     if rows.empty:
         ax.text(0.5, 0.5, "No model-size rows available", ha="center", va="center")
         ax.axis("off")
     else:
-        labels = [f"{r.protocol}\n{r.tier}" for r in rows.itertuples()]
+        labels = [f"{r.protocol}\n{r.model}" for r in rows.itertuples()]
         values = rows["model_size_kb"].astype(float).tolist()
         bars = ax.bar(labels, values, color="#4c78a8", edgecolor="white")
         for bar, val in zip(bars, values):
@@ -163,8 +217,8 @@ def _plot_model_size(df: pd.DataFrame, out_path: Path) -> None:
 
 def _plot_latency(df: pd.DataFrame, out_path: Path) -> None:
     rows = df[
-        (df["tier"].isin(["PTQ INT8", "QAT INT8"]))
-        & (df["source"] == "wisdm_run")
+        (df["pipeline"] == "WISDM replication")
+        & (df["model"].isin(["PTQ int8", "QAT int8"]))
         & (df["inference_latency_ms_median"].notna())
     ].copy()
     fig, ax = plt.subplots(figsize=(max(8, len(rows) * 1.2), 5.0))
@@ -172,7 +226,7 @@ def _plot_latency(df: pd.DataFrame, out_path: Path) -> None:
         ax.text(0.5, 0.5, "No latency rows available", ha="center", va="center")
         ax.axis("off")
     else:
-        labels = [f"{r.protocol}\n{r.tier}" for r in rows.itertuples()]
+        labels = [f"{r.protocol}\n{r.model}" for r in rows.itertuples()]
         x = list(range(len(labels)))
         med = rows["inference_latency_ms_median"].astype(float).tolist()
         p95 = rows["inference_latency_ms_p95"].astype(float).tolist()
@@ -216,9 +270,9 @@ def export_paper_comparison(
         if notes:
             f.write(f"- Notes: {notes}\n\n")
         keep_cols = [
-            "source",
+            "pipeline",
             "protocol",
-            "tier",
+            "model",
             "accuracy",
             "macro_f1",
             "model_size_kb",
@@ -226,10 +280,10 @@ def export_paper_comparison(
             "inference_latency_ms_median",
             "inference_latency_ms_p95",
             "paper_target_accuracy",
-            "delta_vs_paper_accuracy",
+            "acc_delta_vs_target",
             "status",
         ]
-        f.write(df[keep_cols].to_markdown(index=False))
+        f.write(dataframe_to_pipe_markdown(df[keep_cols]))
         f.write("\n")
 
     _plot_accuracy(df, accuracy_png)

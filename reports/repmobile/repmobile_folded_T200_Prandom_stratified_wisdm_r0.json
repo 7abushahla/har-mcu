@@ -1,0 +1,150 @@
+{
+  "paper_slug": "repmobile",
+  "model_name": "repmobile_folded",
+  "run_id": "wisdm_r0",
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "seed": 42,
+  "accuracy": 0.7715674362089915,
+  "macro_f1": 0.577059167353506,
+  "per_class": {
+    "Walking": {
+      "precision": 0.6561576354679803,
+      "recall": 0.9910714285714286,
+      "f1": 0.7895672791938352,
+      "support": 1344
+    },
+    "Jogging": {
+      "precision": 0.9641393442622951,
+      "recall": 0.9074252651880425,
+      "f1": 0.934923000496771,
+      "support": 1037
+    },
+    "Upstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 328
+    },
+    "Downstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 256
+    },
+    "Sitting": {
+      "precision": 0.9367816091954023,
+      "recall": 0.8956043956043956,
+      "f1": 0.9157303370786517,
+      "support": 182
+    },
+    "Standing": {
+      "precision": 0.9629629629629629,
+      "recall": 0.7172413793103448,
+      "f1": 0.8221343873517787,
+      "support": 145
+    }
+  },
+  "confusion_matrix": [
+    [
+      1332,
+      11,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      86,
+      941,
+      0,
+      0,
+      10,
+      0
+    ],
+    [
+      307,
+      19,
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      251,
+      5,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      13,
+      0,
+      4,
+      0,
+      163,
+      2
+    ],
+    [
+      41,
+      0,
+      0,
+      0,
+      0,
+      104
+    ]
+  ],
+  "confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_repmobile_folded_T200_Prandom_stratified_wisdm_r0.png",
+  "classification_report": {
+    "Walking": {
+      "precision": 0.6561576354679803,
+      "recall": 0.9910714285714286,
+      "f1-score": 0.7895672791938352,
+      "support": 1344.0
+    },
+    "Jogging": {
+      "precision": 0.9641393442622951,
+      "recall": 0.9074252651880425,
+      "f1-score": 0.934923000496771,
+      "support": 1037.0
+    },
+    "Upstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 328.0
+    },
+    "Downstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 256.0
+    },
+    "Sitting": {
+      "precision": 0.9367816091954023,
+      "recall": 0.8956043956043956,
+      "f1-score": 0.9157303370786517,
+      "support": 182.0
+    },
+    "Standing": {
+      "precision": 0.9629629629629629,
+      "recall": 0.7172413793103448,
+      "f1-score": 0.8221343873517787,
+      "support": 145.0
+    },
+    "accuracy": 0.7715674362089915,
+    "macro avg": {
+      "precision": 0.5866735919814401,
+      "recall": 0.5852237447790353,
+      "f1-score": 0.577059167353506,
+      "support": 3292.0
+    },
+    "weighted avg": {
+      "precision": 0.6657995882661477,
+      "recall": 0.7715674362089915,
+      "f1-score": 0.7036956203724145,
+      "support": 3292.0
+    }
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "tag": "qat_daghero_cnn_2layer_conv2d_wisdm_r0",
+  "window_size": 200,
+  "protocol": "random_stratified",
+  "model_path": "/home/dellio/github/har-mcu/models_tflite/daghero_cnn_2layer_conv2d_T200_Prandom_stratified_wisdm_r0_qat.tflite",
+  "model_size_kb": 29.4140625,
+  "input_dtype": "<class 'numpy.int8'>",
+  "output_dtype": "<class 'numpy.int8'>",
+  "accuracy": 0.9951397326852977,
+  "macro_f1": 0.9888402166688813,
+  "confusion_matrix": [
+    [
+      1342,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      1036,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      3,
+      325,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      255,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      1,
+      173,
+      7
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      145
+    ]
+  ],
+  "confusion_plot": "/home/dellio/github/har-mcu/reports/daghero_qadnn/confusion_qat_daghero_cnn_2layer_conv2d_wisdm_r0_T200_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.9992553983618764,
+      "recall": 0.9985119047619048,
+      "f1": 0.9988835132117603,
+      "support": 1344
+    },
+    "Jogging": {
+      "precision": 0.9971126082771896,
+      "recall": 0.9990356798457087,
+      "f1": 0.9980732177263969,
+      "support": 1037
+    },
+    "Upstairs": {
+      "precision": 0.9908536585365854,
+      "recall": 0.9908536585365854,
+      "f1": 0.9908536585365854,
+      "support": 328
+    },
+    "Downstairs": {
+      "precision": 0.9922178988326849,
+      "recall": 0.99609375,
+      "f1": 0.9941520467836257,
+      "support": 256
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.9505494505494505,
+      "f1": 0.9746478873239437,
+      "support": 182
+    },
+    "Standing": {
+      "precision": 0.9539473684210527,
+      "recall": 1.0,
+      "f1": 0.9764309764309764,
+      "support": 145
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9992553983618764,
+      "recall": 0.9985119047619048,
+      "f1-score": 0.9988835132117603,
+      "support": 1344.0
+    },
+    "Jogging": {
+      "precision": 0.9971126082771896,
+      "recall": 0.9990356798457087,
+      "f1-score": 0.9980732177263969,
+      "support": 1037.0
+    },
+    "Upstairs": {
+      "precision": 0.9908536585365854,
+      "recall": 0.9908536585365854,
+      "f1-score": 0.9908536585365854,
+      "support": 328.0
+    },
+    "Downstairs": {
+      "precision": 0.9922178988326849,
+      "recall": 0.99609375,
+      "f1-score": 0.9941520467836257,
+      "support": 256.0
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.9505494505494505,
+      "f1-score": 0.9746478873239437,
+      "support": 182.0
+    },
+    "Standing": {
+      "precision": 0.9539473684210527,
+      "recall": 1.0,
+      "f1-score": 0.9764309764309764,
+      "support": 145.0
+    },
+    "accuracy": 0.9951397326852977,
+    "macro avg": {
+      "precision": 0.9888978220715648,
+      "recall": 0.9891740739489415,
+      "f1-score": 0.9888402166688813,
+      "support": 3292.0
+    },
+    "weighted avg": {
+      "precision": 0.9952415494240666,
+      "recall": 0.9951397326852977,
+      "f1-score": 0.9951314397299322,
+      "support": 3292.0
+    }
+  },
+  "inference_latency_ms_median": 0.11628550419118255,
+  "inference_latency_ms_p95": 0.1332850006292574,
+  "inference_latency_ms_mean": 0.11864187058563402,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}

@@ -39,6 +39,35 @@ def build_daghero_cnn_template(
     return tf.keras.Model(inp, out, name=f"daghero_cnn_{len(conv_channels)}layer")
 
 
+def build_daghero_cnn_template_conv2d(
+    window_size: int,
+    num_features: int,
+    num_classes: int,
+    conv_channels: tuple[int, ...] = (32, 64),
+    kernel_size: int = 7,
+    pool_size: int | None = 2,
+    dense_units: int = 64,
+    dropout: float = 0.2,
+) -> tf.keras.Model:
+    """Conv2D-equivalent Daghero-style CNN template for QAT-safe runs."""
+
+    inp = tf.keras.Input(shape=(window_size, num_features), name="input")
+    x = layers.Reshape((window_size, 1, num_features), name="reshape_in")(inp)
+
+    for i, c in enumerate(conv_channels):
+        x = layers.Conv2D(c, (kernel_size, 1), padding="same", use_bias=False, name=f"conv{i+1}")(x)
+        x = layers.BatchNormalization(name=f"bn{i+1}")(x)
+        x = layers.ReLU(name=f"relu{i+1}")(x)
+        if pool_size is not None:
+            x = layers.MaxPool2D(pool_size=(pool_size, 1), strides=(pool_size, 1), name=f"pool{i+1}")(x)
+
+    x = layers.GlobalAveragePooling2D(name="gap")(x)
+    x = layers.Dropout(dropout, name="drop")(x)
+    x = layers.Dense(dense_units, activation="relu", name="fc1")(x)
+    out = layers.Dense(num_classes, activation="softmax", name="classifier")(x)
+    return tf.keras.Model(inp, out, name=f"daghero_cnn_{len(conv_channels)}layer_conv2d")
+
+
 def build_daghero_2layer(
     window_size: int,
     num_features: int,
@@ -66,6 +95,42 @@ def build_daghero_4layer(
     pool_size: int | None = 2,
 ) -> tf.keras.Model:
     return build_daghero_cnn_template(
+        window_size=window_size,
+        num_features=num_features,
+        num_classes=num_classes,
+        conv_channels=channels,
+        kernel_size=kernel_size,
+        pool_size=pool_size,
+    )
+
+
+def build_daghero_2layer_conv2d(
+    window_size: int,
+    num_features: int,
+    num_classes: int,
+    channels: tuple[int, int] = (32, 64),
+    kernel_size: int = 7,
+    pool_size: int | None = 2,
+) -> tf.keras.Model:
+    return build_daghero_cnn_template_conv2d(
+        window_size=window_size,
+        num_features=num_features,
+        num_classes=num_classes,
+        conv_channels=channels,
+        kernel_size=kernel_size,
+        pool_size=pool_size,
+    )
+
+
+def build_daghero_4layer_conv2d(
+    window_size: int,
+    num_features: int,
+    num_classes: int,
+    channels: tuple[int, int, int, int] = (16, 32, 64, 64),
+    kernel_size: int = 7,
+    pool_size: int | None = 2,
+) -> tf.keras.Model:
+    return build_daghero_cnn_template_conv2d(
         window_size=window_size,
         num_features=num_features,
         num_classes=num_classes,

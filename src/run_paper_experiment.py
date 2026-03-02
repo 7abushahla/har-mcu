@@ -6,30 +6,36 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from src.eval.eval_tflite import evaluate_tflite
-from src.eval.paper_comparison import export_paper_comparison
+from src.eval import eval_tflite as eval_tflite_module
+from src.eval import evaluate_model as eval_model_module
+from src.eval import paper_comparison as paper_comparison_module
+from src.eval import reporting as reporting_module
 from src.eval.plots import save_training_curves
-from src.eval.evaluate_model import evaluate_model_for_protocol
-from src.eval.reporting import append_master_results, export_paper_results
 from src.models import (
     build_daghero_2layer,
+    build_daghero_2layer_conv2d,
     build_daghero_4layer,
+    build_daghero_4layer_conv2d,
     build_repmobile_folded,
+    build_repmobile_folded_conv2d,
     build_tahar_student_cnn,
     build_tahar_student_gru,
     build_tahar_student_lstm,
     build_tcn_attention_har_teacher,
+    build_tcn_attention_har_teacher_conv2d,
     build_tcn_inception,
+    build_tcn_inception_conv2d,
     build_xtinyhar_student,
+    build_xtinyhar_student_conv2d,
     compile_daghero_cnn,
     compile_repmobile_folded,
     compile_tcn_attention,
     compile_tcn_inception,
     compile_xtinyhar_student,
 )
-from src.quant.ptq_full_int8 import quantize_ptq_for_protocol
-from src.quant.qat_train import qat_for_protocol
-from src.train.train_model import train_model_for_protocol
+from src.quant import ptq_full_int8 as ptq_module
+from src.quant import qat_train as qat_module
+from src.train import train_model as train_model_module
 from src.utils.artifacts import model_training_curve_png
 from src.utils.config import apply_common_overrides, build_parser, load_yaml
 from src.utils.device_runtime import runtime_device_report, stage_device_scope
@@ -50,13 +56,28 @@ def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[s
             compile_xtinyhar_student,
             {"learning_rate": 1e-4},
         ),
+        "xtinyhar_student_conv2d": (
+            build_xtinyhar_student_conv2d,
+            compile_xtinyhar_student,
+            {"learning_rate": 1e-4},
+        ),
         "repmobile_folded": (
             build_repmobile_folded,
             compile_repmobile_folded,
             {"learning_rate": 1e-4},
         ),
+        "repmobile_folded_conv2d": (
+            build_repmobile_folded_conv2d,
+            compile_repmobile_folded,
+            {"learning_rate": 1e-4},
+        ),
         "tcn_attention_har_teacher": (
             build_tcn_attention_har_teacher,
+            compile_tcn_attention,
+            {"learning_rate": 5e-4},
+        ),
+        "tcn_attention_har_teacher_conv2d": (
+            build_tcn_attention_har_teacher_conv2d,
             compile_tcn_attention,
             {"learning_rate": 5e-4},
         ),
@@ -80,13 +101,28 @@ def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[s
             compile_daghero_cnn,
             {"learning_rate": 1e-3},
         ),
+        "daghero_cnn_2layer_conv2d": (
+            build_daghero_2layer_conv2d,
+            compile_daghero_cnn,
+            {"learning_rate": 1e-3},
+        ),
         "daghero_cnn_4layer": (
             build_daghero_4layer,
             compile_daghero_cnn,
             {"learning_rate": 1e-3},
         ),
+        "daghero_cnn_4layer_conv2d": (
+            build_daghero_4layer_conv2d,
+            compile_daghero_cnn,
+            {"learning_rate": 1e-3},
+        ),
         "tcn_inception": (
             build_tcn_inception,
+            compile_tcn_inception,
+            {"learning_rate": 5e-4},
+        ),
+        "tcn_inception_conv2d": (
+            build_tcn_inception_conv2d,
             compile_tcn_inception,
             {"learning_rate": 5e-4},
         ),
@@ -146,7 +182,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
 
     for protocol in protocols:
         with stage_device_scope(cfg, "train"):
-            train_out = train_model_for_protocol(
+            train_out = train_model_module.train_model_for_protocol(
                 cfg,
                 model_builder=builder,
                 compile_spec=compile_spec,
@@ -168,7 +204,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         )
 
         with stage_device_scope(cfg, "eval_fp32"):
-            fp32_eval = evaluate_model_for_protocol(
+            fp32_eval = eval_model_module.evaluate_model_for_protocol(
                 cfg,
                 model_path=train_out["checkpoint"],
                 protocol=protocol,
@@ -179,7 +215,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         fp32_metrics = _read_json(fp32_eval["metrics_json"])
 
         with stage_device_scope(cfg, "ptq"):
-            ptq_out = quantize_ptq_for_protocol(
+            ptq_out = ptq_module.quantize_ptq_for_protocol(
                 cfg,
                 window_size,
                 protocol,
@@ -191,7 +227,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             )
         ptq_report = _read_json(ptq_out["report_json"])
         with stage_device_scope(cfg, "eval_ptq"):
-            ptq_eval = evaluate_tflite(
+            ptq_eval = eval_tflite_module.evaluate_tflite(
                 cfg,
                 ptq_out["tflite_model"],
                 window_size,
@@ -209,7 +245,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         qat_out = None
         if bool(cfg.get("quant", {}).get("qat", {}).get("enabled", True)):
             with stage_device_scope(cfg, "qat"):
-                qat_out = qat_for_protocol(
+                qat_out = qat_module.qat_for_protocol(
                     cfg,
                     window_size,
                     protocol,
@@ -237,7 +273,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
                 )
             if Path(qat_out["tflite"]).exists():
                 with stage_device_scope(cfg, "eval_qat"):
-                    qat_eval = evaluate_tflite(
+                    qat_eval = eval_tflite_module.evaluate_tflite(
                         cfg,
                         qat_out["tflite"],
                         window_size,
@@ -391,15 +427,15 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         }
         all_rows.append(row)
 
-        export_paths[protocol] = export_paper_results(
+        export_paths[protocol] = reporting_module.export_paper_results(
             cfg["paths"]["reports_dir"],
             paper_slug=paper_slug,
             protocol=protocol,
             rows=[row],
         )
 
-    master_paths = append_master_results(cfg["paths"]["reports_dir"], all_rows)
-    comparison_exports = export_paper_comparison(
+    master_paths = reporting_module.append_master_results(cfg["paths"]["reports_dir"], all_rows)
+    comparison_exports = paper_comparison_module.export_paper_comparison(
         cfg["paths"]["reports_dir"],
         paper_slug=paper_slug,
         run_rows=all_rows,
