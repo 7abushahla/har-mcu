@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 pytest.importorskip("tensorflow")
@@ -19,3 +21,14 @@ def test_summarize_latency_ms_empty_values():
     assert summary["inference_latency_ms_median"] is None
     assert summary["inference_latency_ms_p95"] is None
     assert summary["inference_latency_ms_mean"] is None
+
+
+def test_interpreter_ops_fields_are_json_serializable():
+    payload = {
+        "interpreter_ops": ["CONV_2D", "RESHAPE", "SOFTMAX"],
+        "interpreter_op_count": 3,
+    }
+    serialized = json.dumps(payload)
+    restored = json.loads(serialized)
+    assert restored["interpreter_ops"] == ["CONV_2D", "RESHAPE", "SOFTMAX"]
+    assert restored["interpreter_op_count"] == 3
