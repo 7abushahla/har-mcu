@@ -73,9 +73,19 @@ def test_qat_conv1d_preflight_returns_failed_payload_when_non_strict(
         raise_on_strict_failure=False,
     )
     assert out["status"] == "failed"
+    assert "qat_device_attempted" in out
+    assert "qat_device_used" in out
+    assert "fallback_triggered" in out
+    assert "fallback_reason" in out
     report = json.loads(Path(out["report_json"]).read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    assert report["qat_status"] == "failed"
     assert "Conv1D/SeparableConv1D" in report["error"]
     assert "*_conv2d" in report["error"]
+    assert "qat_device_attempted" in report
+    assert "qat_device_used" in report
+    assert "fallback_triggered" in report
+    assert "fallback_reason" in report
 
 
 def test_qat_separableconv1d_preflight_returns_failed_payload_when_non_strict(
@@ -139,7 +149,17 @@ def test_qat_separableconv1d_preflight_returns_failed_payload_when_non_strict(
         raise_on_strict_failure=False,
     )
     assert out["status"] == "failed"
+    assert "qat_device_attempted" in out
+    assert "qat_device_used" in out
+    assert "fallback_triggered" in out
+    assert "fallback_reason" in out
     report = json.loads(Path(out["report_json"]).read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    assert report["qat_status"] == "failed"
     assert "Conv1D/SeparableConv1D" in report["error"]
     assert "SeparableConv1D" in report["error"]
     assert "*_conv2d" in report["error"]
+    assert "qat_device_attempted" in report
+    assert "qat_device_used" in report
+    assert "fallback_triggered" in report
+    assert "fallback_reason" in report

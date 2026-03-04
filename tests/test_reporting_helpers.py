@@ -23,10 +23,14 @@ def test_export_paper_results_writes_csv_and_md(tmp_path: Path, monkeypatch):
             "qat_device": "cpu",
             "eval_qat_device": "cpu",
             "fp32_training_time_sec": 12.4,
+            "fp32_model_size_kb": 180.2,
+            "fp32_tflite_status": "ok",
             "ptq_inference_latency_ms_median": 0.45,
             "ptq_inference_latency_ms_p95": 0.60,
             "accuracy": 0.95,
             "macro_f1": 0.94,
+            "ptq_status": "ok",
+            "qat_status": "failed",
         }
     ]
     out = export_paper_results(tmp_path, paper_slug="xtinyhar", protocol="random_stratified", rows=rows)
@@ -41,7 +45,11 @@ def test_export_paper_results_writes_csv_and_md(tmp_path: Path, monkeypatch):
     assert df.iloc[0]["qat_device"] == "cpu"
     assert df.iloc[0]["eval_qat_device"] == "cpu"
     assert float(df.iloc[0]["fp32_training_time_sec"]) == 12.4
+    assert float(df.iloc[0]["fp32_model_size_kb"]) == 180.2
+    assert df.iloc[0]["fp32_tflite_status"] == "ok"
     assert float(df.iloc[0]["ptq_inference_latency_ms_median"]) == 0.45
+    assert df.iloc[0]["ptq_status"] == "ok"
+    assert df.iloc[0]["qat_status"] == "failed"
 
 
 def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path, monkeypatch):
@@ -57,7 +65,11 @@ def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path, monk
             "compression_focus": "ptq_qat_only",
             "train_device": "cpu",
             "fp32_training_time_sec": 1.2,
+            "fp32_model_size_kb": 181.0,
+            "fp32_tflite_status": "ok",
             "accuracy": 0.95,
+            "ptq_status": "ok",
+            "qat_status": "failed",
         }
     ]
     rows_b = [
@@ -70,7 +82,11 @@ def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path, monk
             "compression_focus": "ptq_qat_only",
             "train_device": "cpu",
             "fp32_training_time_sec": 1.3,
+            "fp32_model_size_kb": 181.1,
+            "fp32_tflite_status": "ok",
             "accuracy": 0.96,
+            "ptq_status": "ok",
+            "qat_status": "ok",
         }
     ]
 
@@ -83,3 +99,7 @@ def test_append_master_results_deduplicates_by_run_identity(tmp_path: Path, monk
     assert df.iloc[0]["run_mode"] == "full_run"
     assert df.iloc[0]["compression_focus"] == "ptq_qat_only"
     assert float(df.iloc[0]["fp32_training_time_sec"]) == 1.3
+    assert float(df.iloc[0]["fp32_model_size_kb"]) == 181.1
+    assert df.iloc[0]["fp32_tflite_status"] == "ok"
+    assert df.iloc[0]["ptq_status"] == "ok"
+    assert df.iloc[0]["qat_status"] == "ok"

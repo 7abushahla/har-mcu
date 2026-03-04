@@ -74,28 +74,36 @@ def _tflite_flatbuffer_ops(model_path: str | Path) -> list[str]:
     return sorted(set(ops))
 
 
-def check_tflm_compat(model_path: str | Path) -> tuple[bool, list[str], list[str], str | None]:
+def check_tflm_compat(
+    model_path: str | Path,
+    *,
+    allowed_ops_profile: str | None = None,
+    allowed_ops_override: Any = None,
+) -> tuple[bool, list[str], list[str], str | None, list[str], str]:
     """
     Returns:
       (tflm_compatible, tflm_ops, unsupported_ops, compat_error)
 
     IMPORTANT:
       - Uses flatbuffer parsing to get ops (delegate-proof).
-      - Keeps DEFAULT_ALLOWED_OPS as the allowlist source of truth.
+      - Uses micro_mutable_op_resolver.h reference set as source of truth.
+      - allowed_ops_profile/allowed_ops_override are legacy (non-gating).
     """
     try:
-        from src.deploy.tflm_check_ops import DEFAULT_ALLOWED_OPS
+        from src.deploy.tflm_reference_ops import REFERENCE_OPS_MICRO_MUTABLE_MAIN
 
         ops = _tflite_flatbuffer_ops(model_path)
+        allowed_ops = set(REFERENCE_OPS_MICRO_MUTABLE_MAIN)
+        profile_used = "micro_mutable_main"
 
         # Sanity: DELEGATE should never appear in flatbuffer ops.
         if "DELEGATE" in ops:
             raise RuntimeError("DELEGATE appeared in flatbuffer ops (should be impossible).")
 
-        unsupported = sorted([op for op in ops if op not in DEFAULT_ALLOWED_OPS])
-        return len(unsupported) == 0, ops, unsupported, None
+        unsupported = sorted([op for op in ops if op not in allowed_ops])
+        return len(unsupported) == 0, ops, unsupported, None, sorted(allowed_ops), profile_used
     except Exception as exc:
-        return False, [], [], str(exc)
+        return False, [], [], str(exc), [], "micro_mutable_main"
 
 
 def evaluate_deploy_gate_from_details(
@@ -109,7 +117,11 @@ def evaluate_deploy_gate_from_details(
     tflm_ops: list[str],
     unsupported_ops: list[str],
     compat_error: str | None,
+    allowed_ops_used: list[str] | None = None,
+    allowed_ops_profile: str | None = None,
 ) -> dict[str, Any]:
+    from src.deploy.tflm_reference_ops import classify_ops_against_reference
+
     accepted = accepted_integer_dtypes(accepted_integer_io_dtypes)
     input_norm = normalize_dtype_name(input_dtype_raw)
     output_norm = normalize_dtype_name(output_dtype_raw)
@@ -123,11 +135,20 @@ def evaluate_deploy_gate_from_details(
             f"(input={input_norm}, output={output_norm}, accepted={accepted})"
         )
 
+    unsupported_micro_mutable = list(unsupported_ops)
+    reference_class = classify_ops_against_reference(unsupported_micro_mutable)
+    possibly_supported_upstream = reference_class["supported_in_reference"]
+    unsupported_in_reference = reference_class["unsupported_in_reference"]
+    profile_name = str(allowed_ops_profile or "micro_mutable_main")
+
     if require_tflm_compatible and not tflm_compatible:
         if compat_error:
             strict_errors.append(f"TFLM compatibility could not be verified: {compat_error}")
         else:
-            strict_errors.append("Unsupported TFLM ops: " + ", ".join(unsupported_ops))
+            strict_errors.append(
+                "Unsupported ops for micro_mutable_op_resolver.h source: "
+                + ", ".join(unsupported_micro_mutable)
+            )
 
     status = "ok" if not strict_errors else "failed"
     error = " | ".join(strict_errors) if strict_errors else None
@@ -139,10 +160,18 @@ def evaluate_deploy_gate_from_details(
         "output_dtype": str(output_dtype_raw),
         "input_dtype_normalized": input_norm,
         "output_dtype_normalized": output_norm,
+        "compatibility_scope": "micro_mutable_main",
         "full_integer_io": bool(full_integer_io),
         "tflm_compatible": bool(tflm_compatible),
-        "unsupported_ops": list(unsupported_ops),
+        "unsupported_ops_micro_mutable": unsupported_micro_mutable,
+        "unsupported_ops_profile": unsupported_micro_mutable,  # backward-compatible alias
+        "unsupported_ops": unsupported_micro_mutable,  # backward-compatible alias
         "tflm_ops": list(tflm_ops),
+        "allowed_ops_used": list(allowed_ops_used or []),
+        "allowed_ops_profile": profile_name,
+        "upstream_reference_tag": reference_class["reference_tag"],
+        "possibly_supported_upstream_tflm": possibly_supported_upstream,
+        "unsupported_in_reference": unsupported_in_reference,
         "compat_error": compat_error,
         "deployable_full_int8": bool(deployable_full_int8),
         "status": status,
@@ -159,6 +188,8 @@ def inspect_tflite_and_evaluate_deploy_gate(
     accepted_integer_io_dtypes: list[str],
     strict_full_int8: bool,
     require_tflm_compatible: bool,
+    allowed_ops_profile: str | None = None,
+    allowed_ops_override: Any = None,
 ) -> dict[str, Any]:
     import tensorflow as tf
 
@@ -172,7 +203,18 @@ def inspect_tflite_and_evaluate_deploy_gate(
     input_dtype_raw = interp.get_input_details()[0]["dtype"]
     output_dtype_raw = interp.get_output_details()[0]["dtype"]
 
-    tflm_compatible, tflm_ops, unsupported_ops, compat_error = check_tflm_compat(model_path)
+    (
+        tflm_compatible,
+        tflm_ops,
+        unsupported_ops,
+        compat_error,
+        allowed_ops_used,
+        profile_used,
+    ) = check_tflm_compat(
+        model_path,
+        allowed_ops_profile=allowed_ops_profile,
+        allowed_ops_override=allowed_ops_override,
+    )
     return evaluate_deploy_gate_from_details(
         input_dtype_raw=input_dtype_raw,
         output_dtype_raw=output_dtype_raw,
@@ -183,4 +225,6 @@ def inspect_tflite_and_evaluate_deploy_gate(
         tflm_ops=tflm_ops,
         unsupported_ops=unsupported_ops,
         compat_error=compat_error,
+        allowed_ops_used=allowed_ops_used,
+        allowed_ops_profile=profile_used,
     )

@@ -6,16 +6,38 @@
   "model_size_kb": 119.234375,
   "input_dtype": "<class 'numpy.int8'>",
   "output_dtype": "<class 'numpy.int8'>",
-  "accuracy": 0.770674486803519,
-  "macro_f1": 0.6107125985364786,
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_MATMUL",
+    "CONCATENATION",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "GATHER",
+    "GELU",
+    "MEAN",
+    "MUL",
+    "PACK",
+    "REDUCE_PROD",
+    "RESHAPE",
+    "RSQRT",
+    "SHAPE",
+    "SOFTMAX",
+    "SQUARED_DIFFERENCE",
+    "STRIDED_SLICE",
+    "SUB",
+    "TRANSPOSE"
+  ],
+  "interpreter_op_count": 19,
+  "accuracy": 0.7700879765395895,
+  "macro_f1": 0.611842800307793,
   "confusion_matrix": [
     [
-      1161,
+      1156,
       0,
-      136,
-      17,
+      141,
+      18,
       2,
-      17
+      16
     ],
     [
       46,
@@ -28,16 +50,16 @@
     [
       79,
       23,
-      153,
-      17,
+      155,
+      15,
       0,
       140
     ],
     [
       135,
       8,
-      54,
-      15,
+      53,
+      16,
       1,
       72
     ],
@@ -61,9 +83,9 @@
   "confusion_plot": "/home/dellio/github/har-mcu/reports/xtinyhar/confusion_ptq_xtinyhar_student_conv2d_wisdm_r0_T200_Puser_holdout.png",
   "per_class": {
     "Walking": {
-      "precision": 0.817030260380014,
-      "recall": 0.8709677419354839,
-      "f1": 0.8431372549019608,
+      "precision": 0.8163841807909604,
+      "recall": 0.8672168042010503,
+      "f1": 0.841033102946526,
       "support": 1333
     },
     "Jogging": {
@@ -73,15 +95,15 @@
       "support": 1126
     },
     "Upstairs": {
-      "precision": 0.4346590909090909,
-      "recall": 0.3713592233009709,
-      "f1": 0.4005235602094241,
+      "precision": 0.4329608938547486,
+      "recall": 0.3762135922330097,
+      "f1": 0.4025974025974026,
       "support": 412
     },
     "Downstairs": {
-      "precision": 0.26785714285714285,
-      "recall": 0.05263157894736842,
-      "f1": 0.08797653958944282,
+      "precision": 0.2857142857142857,
+      "recall": 0.056140350877192984,
+      "f1": 0.093841642228739,
       "support": 285
     },
     "Sitting": {
@@ -91,17 +113,17 @@
       "support": 127
     },
     "Standing": {
-      "precision": 0.3111111111111111,
+      "precision": 0.31197771587743733,
       "recall": 0.8818897637795275,
-      "f1": 0.459958932238193,
+      "f1": 0.4609053497942387,
       "support": 127
     }
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.817030260380014,
-      "recall": 0.8709677419354839,
-      "f1-score": 0.8431372549019608,
+      "precision": 0.8163841807909604,
+      "recall": 0.8672168042010503,
+      "f1-score": 0.841033102946526,
       "support": 1333.0
     },
     "Jogging": {
@@ -111,15 +133,15 @@
       "support": 1126.0
     },
     "Upstairs": {
-      "precision": 0.4346590909090909,
-      "recall": 0.3713592233009709,
-      "f1-score": 0.4005235602094241,
+      "precision": 0.4329608938547486,
+      "recall": 0.3762135922330097,
+      "f1-score": 0.4025974025974026,
       "support": 412.0
     },
     "Downstairs": {
-      "precision": 0.26785714285714285,
-      "recall": 0.05263157894736842,
-      "f1-score": 0.08797653958944282,
+      "precision": 0.2857142857142857,
+      "recall": 0.056140350877192984,
+      "f1-score": 0.093841642228739,
       "support": 285.0
     },
     "Sitting": {
@@ -129,28 +151,28 @@
       "support": 127.0
     },
     "Standing": {
-      "precision": 0.3111111111111111,
+      "precision": 0.31197771587743733,
       "recall": 0.8818897637795275,
-      "f1-score": 0.459958932238193,
+      "f1-score": 0.4609053497942387,
       "support": 127.0
     },
-    "accuracy": 0.770674486803519,
+    "accuracy": 0.7700879765395895,
     "macro avg": {
-      "precision": 0.6292837750504007,
-      "recall": 0.664250222299193,
-      "f1-score": 0.6107125985364786,
+      "precision": 0.6320136868804128,
+      "recall": 0.6650189228204312,
+      "f1-score": 0.611842800307793,
       "support": 3410.0
     },
     "weighted avg": {
-      "precision": 0.7630944281780708,
-      "recall": 0.770674486803519,
-      "f1-score": 0.7549522581237763,
+      "precision": 0.7641614261959628,
+      "recall": 0.7700879765395895,
+      "f1-score": 0.754905729616172,
       "support": 3410.0
     }
   },
-  "inference_latency_ms_median": 0.18489050853531808,
-  "inference_latency_ms_p95": 0.21252024453133345,
-  "inference_latency_ms_mean": 0.1881422149381251,
+  "inference_latency_ms_median": 0.18373800003246288,
+  "inference_latency_ms_p95": 0.29139275034140155,
+  "inference_latency_ms_mean": 0.19253873042757164,
   "warmup_samples": 32,
   "timed_samples": 256
 }

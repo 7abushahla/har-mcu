@@ -6,6 +6,33 @@
 - Paper-faithful protocols are documented per paper; WISDM adaptation is the first implementation milestone.
 - Existing DeepConvLSTM path remains operational and backward compatible.
 
+## Implemented updates (2026-03-04)
+- Shared TFLite evaluator now uses delegate-free interpreter construction:
+  - `experimental_op_resolver_type = BUILTIN_WITHOUT_DEFAULT_DELEGATES`
+  - `experimental_delegates = []`
+  - `num_threads = 1`
+- This change is implemented globally in `src/eval/eval_tflite.py` (not paper-only), so paper runs/smoke/other shared calls avoid XNNPACK `DELEGATE` pseudo-op artifacts.
+- CLI op checker now uses the same delegate-free policy in `src/deploy/tflm_check_ops.py`.
+- TFLite eval metrics now persist:
+  - `interpreter_ops`
+  - `interpreter_op_count`
+- Strict deploy-gate allowlist is now config-driven:
+  - `deploy.allowed_ops_profile`
+  - `deploy.allowed_ops` (optional explicit override)
+- PTQ/QAT export artifacts now persist:
+  - `allowed_ops_profile`
+  - `allowed_ops_used`
+- All 5 paper notebooks now print a dedicated PTQ operator visibility block per protocol:
+  - `interpreter_ops` (delegate-free runtime view)
+  - `tflm_ops` (flatbuffer/deploy-gate view)
+  - non-fatal mismatch warning with op-count deltas.
+- Strict deploy-gate status semantics remain unchanged:
+  - `ptq_status` / `qat_status` are strict MCU deployability statuses, not host-accuracy statuses.
+- Arduino resolver alignment:
+  - `deploy/arduino_infer/arduino_infer.ino` and `deploy/arduino_tinyol/arduino_tinyol.ino` now register Conv2D-model common ops (`DepthwiseConv2D`, `MaxPool2D`, `Mean`) to stay aligned with the extended gate profile.
+- Converter warning policy:
+  - quantization conversion warnings/log lines are documented as informational; pass/fail is controlled by strict gate checks (integer I/O + configured compatibility allowlist).
+
 ## GitHub Verification Log
 | paper | official_repo | status | checked_date | notes |
 |---|---|---|---|---|
@@ -217,6 +244,8 @@
   - `user_holdout` (strict no-user-overlap)
 - Metrics per run:
   - accuracy, macro-F1, classification report, confusion matrix
+  - delegate-free TFLite op visibility (`interpreter_ops`, `interpreter_op_count`)
+  - strict allowlist metadata (`allowed_ops_profile`, `allowed_ops_used`)
   - params count, `.tflite` size KB
   - PTQ/QAT status
   - deploy-gate flags (`full_integer_io`, `tflm_compatible`, unsupported ops)

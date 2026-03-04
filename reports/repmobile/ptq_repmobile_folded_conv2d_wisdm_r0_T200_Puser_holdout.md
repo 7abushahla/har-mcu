@@ -7,8 +7,10 @@
 
 - Input dtype: `<class 'numpy.int8'>`
 - Output dtype: `<class 'numpy.int8'>`
-- Inference latency median: 0.408 ms/sample
-- Inference latency p95: 0.441 ms/sample
+- Interpreter op count: 9
+- Interpreter ops: `['CONV_2D', 'DEPTHWISE_CONV_2D', 'FULLY_CONNECTED', 'MEAN', 'PACK', 'RESHAPE', 'SHAPE', 'SOFTMAX', 'STRIDED_SLICE']`
+- Inference latency median: 0.416 ms/sample
+- Inference latency p95: 0.466 ms/sample
 - Timed samples: 256
 - Warmup samples: 32
 - Confusion matrix plot: `/home/dellio/github/har-mcu/reports/repmobile/confusion_ptq_repmobile_folded_conv2d_wisdm_r0_T200_Puser_holdout.png`

@@ -39,9 +39,26 @@ def _dequantize_output(y: np.ndarray, scale: float, zero_point: int) -> np.ndarr
     return scale * (y.astype(np.float32) - float(zero_point))
 
 
-def _run_tflite_predict(model_path: str | Path, X: np.ndarray) -> tuple[np.ndarray, str, str]:
-    interpreter = tf.lite.Interpreter(model_path=str(model_path))
+def _build_tflite_interpreter(model_path: str | Path) -> tf.lite.Interpreter:
+    return tf.lite.Interpreter(
+        model_path=str(model_path),
+        experimental_op_resolver_type=tf.lite.experimental.OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES,
+        experimental_delegates=[],
+        num_threads=1,
+    )
+
+
+def _interpreter_ops(interpreter: tf.lite.Interpreter) -> list[str]:
+    if not hasattr(interpreter, "_get_ops_details"):
+        return []
+    details = interpreter._get_ops_details()  # pylint: disable=protected-access
+    return sorted({str(d.get("op_name", "UNKNOWN")) for d in details})
+
+
+def _run_tflite_predict(model_path: str | Path, X: np.ndarray) -> tuple[np.ndarray, str, str, list[str]]:
+    interpreter = _build_tflite_interpreter(model_path)
     interpreter.allocate_tensors()
+    ops = _interpreter_ops(interpreter)
 
     input_info = interpreter.get_input_details()[0]
     output_info = interpreter.get_output_details()[0]
@@ -71,7 +88,7 @@ def _run_tflite_predict(model_path: str | Path, X: np.ndarray) -> tuple[np.ndarr
 
         preds.append(int(np.argmax(out, axis=1)[0]))
 
-    return np.asarray(preds, dtype=np.int64), str(input_dtype), str(output_dtype)
+    return np.asarray(preds, dtype=np.int64), str(input_dtype), str(output_dtype), ops
 
 
 def _summarize_latency_ms(latencies_ms: list[float]) -> dict[str, float | None]:
@@ -96,7 +113,7 @@ def _measure_tflite_latency_ms(
     warmup_samples: int,
     timed_samples: int,
 ) -> dict[str, float | int | None]:
-    interpreter = tf.lite.Interpreter(model_path=str(model_path))
+    interpreter = _build_tflite_interpreter(model_path)
     interpreter.allocate_tensors()
     input_info = interpreter.get_input_details()[0]
     output_info = interpreter.get_output_details()[0]
@@ -163,7 +180,7 @@ def evaluate_tflite(
     arrays = load_split_arrays(processed_dir, window_size, protocol)
     X_test, y_test = arrays["X_test"], arrays["y_test"]
 
-    y_pred, input_dtype, output_dtype = _run_tflite_predict(model_path, X_test)
+    y_pred, input_dtype, output_dtype, interpreter_ops = _run_tflite_predict(model_path, X_test)
     class_names = cfg.get("classes")
     labels = list(range(len(class_names)))
 
@@ -222,6 +239,8 @@ def evaluate_tflite(
         "model_size_kb": float(size_kb),
         "input_dtype": input_dtype,
         "output_dtype": output_dtype,
+        "interpreter_ops": interpreter_ops,
+        "interpreter_op_count": int(len(interpreter_ops)),
         "accuracy": acc,
         "macro_f1": macro_f1,
         "confusion_matrix": cm.tolist(),
@@ -251,6 +270,8 @@ def evaluate_tflite(
         f.write(f"- Macro-F1: {macro_f1:.4f}\n\n")
         f.write(f"- Input dtype: `{input_dtype}`\n")
         f.write(f"- Output dtype: `{output_dtype}`\n")
+        f.write(f"- Interpreter op count: {metrics['interpreter_op_count']}\n")
+        f.write(f"- Interpreter ops: `{metrics['interpreter_ops']}`\n")
         if metrics.get("inference_latency_ms_median") is not None:
             f.write(f"- Inference latency median: {metrics['inference_latency_ms_median']:.3f} ms/sample\n")
             f.write(f"- Inference latency p95: {metrics['inference_latency_ms_p95']:.3f} ms/sample\n")

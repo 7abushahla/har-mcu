@@ -6,8 +6,20 @@
   "model_size_kb": 43.4140625,
   "input_dtype": "<class 'numpy.int8'>",
   "output_dtype": "<class 'numpy.int8'>",
+  "interpreter_ops": [
+    "CONV_2D",
+    "DEPTHWISE_CONV_2D",
+    "FULLY_CONNECTED",
+    "MEAN",
+    "PACK",
+    "RESHAPE",
+    "SHAPE",
+    "SOFTMAX",
+    "STRIDED_SLICE"
+  ],
+  "interpreter_op_count": 9,
   "accuracy": 0.7688335358444714,
-  "macro_f1": 0.5744271191201293,
+  "macro_f1": 0.5744658932531931,
   "confusion_matrix": [
     [
       1333,
@@ -26,8 +38,8 @@
       0
     ],
     [
-      308,
-      18,
+      309,
+      17,
       0,
       0,
       1,
@@ -61,15 +73,15 @@
   "confusion_plot": "/home/dellio/github/har-mcu/reports/repmobile/confusion_ptq_repmobile_folded_conv2d_wisdm_r0_T200_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.6524718551150269,
+      "precision": 0.6521526418786693,
       "recall": 0.9918154761904762,
-      "f1": 0.7871272512547978,
+      "f1": 0.7868949232585596,
       "support": 1344
     },
     "Jogging": {
-      "precision": 0.9649484536082474,
+      "precision": 0.9659442724458205,
       "recall": 0.9026036644165863,
-      "f1": 0.9327354260089686,
+      "f1": 0.9332003988035892,
       "support": 1037
     },
     "Upstairs": {
@@ -99,15 +111,15 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.6524718551150269,
+      "precision": 0.6521526418786693,
       "recall": 0.9918154761904762,
-      "f1-score": 0.7871272512547978,
+      "f1-score": 0.7868949232585596,
       "support": 1344.0
     },
     "Jogging": {
-      "precision": 0.9649484536082474,
+      "precision": 0.9659442724458205,
       "recall": 0.9026036644165863,
-      "f1-score": 0.9327354260089686,
+      "f1-score": 0.9332003988035892,
       "support": 1037.0
     },
     "Upstairs": {
@@ -136,21 +148,21 @@
     },
     "accuracy": 0.7688335358444714,
     "macro avg": {
-      "precision": 0.5883244707162809,
+      "precision": 0.5884372383164835,
       "recall": 0.5797317236366072,
-      "f1-score": 0.5744271191201293,
+      "f1-score": 0.5744658932531931,
       "support": 3292.0
     },
     "weighted avg": {
-      "precision": 0.6651581759757631,
+      "precision": 0.6653415421801673,
       "recall": 0.7688335358444714,
-      "f1-score": 0.7014090326276982,
+      "f1-score": 0.7014606510848906,
       "support": 3292.0
     }
   },
-  "inference_latency_ms_median": 0.4046955000376329,
-  "inference_latency_ms_p95": 0.4454810004972387,
-  "inference_latency_ms_mean": 0.4121229447946462,
+  "inference_latency_ms_median": 0.4126460000861698,
+  "inference_latency_ms_p95": 0.4808159999356576,
+  "inference_latency_ms_mean": 0.42388582420649357,
   "warmup_samples": 32,
   "timed_samples": 256
 }

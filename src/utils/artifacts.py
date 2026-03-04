@@ -170,6 +170,18 @@ def model_ptq_tflite_path(
     )
 
 
+def model_fp32_tflite_path(
+    models_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str | None = None,
+    variant: str | None = None,
+) -> Path:
+    suffix = variant_suffix(variant)
+    return Path(models_dir) / f"{run_prefix(model_name, window_size, protocol, run_id)}_fp32{suffix}.tflite"
+
+
 def qat_tflite_path(
     models_dir: str | Path,
     window_size: int,

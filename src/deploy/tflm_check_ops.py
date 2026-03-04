@@ -1,35 +1,35 @@
-"""Check whether TFLite operators are in allowed TFLM resolver set."""
+"""Check whether TFLite operators are supported by micro_mutable reference set."""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
-import tensorflow as tf
+from src.deploy.tflm_reference_ops import REFERENCE_OPS_MICRO_MUTABLE_MAIN
 from src.utils.repro import dump_json
 
-DEFAULT_ALLOWED_OPS = {
-    "ADD",
-    "CONV_2D",
-    "DEQUANTIZE",
-    "FULLY_CONNECTED",
-    "LOGISTIC",
-    "MUL",
-    "PACK",
-    "QUANTIZE",
-    "RESHAPE",
-    "SHAPE",
-    "SOFTMAX",
-    "SPLIT",
-    "STRIDED_SLICE",
-    "TANH",
-    "TRANSPOSE",
-    "UNIDIRECTIONAL_SEQUENCE_LSTM",
-}
+
+def get_allowed_ops(
+    *,
+    allowed_ops_profile: str | None = None,
+    allowed_ops_override: Any = None,
+) -> tuple[set[str], str]:
+    # Legacy parameters intentionally ignored in micro-mutable-only mode.
+    _ = allowed_ops_profile
+    _ = allowed_ops_override
+    return set(REFERENCE_OPS_MICRO_MUTABLE_MAIN), "micro_mutable_main"
 
 
 def get_model_ops(model_path: str) -> list[str]:
-    interpreter = tf.lite.Interpreter(model_path=model_path)
+    import tensorflow as tf
+
+    interpreter = tf.lite.Interpreter(
+        model_path=model_path,
+        experimental_op_resolver_type=tf.lite.experimental.OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES,
+        experimental_delegates=[],
+        num_threads=1,
+    )
     interpreter.allocate_tensors()
 
     if not hasattr(interpreter, "_get_ops_details"):
@@ -43,15 +43,28 @@ def get_model_ops(model_path: str) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="TFLM op compatibility checker")
     parser.add_argument("--model", required=True, help="Path to tflite model")
-    parser.add_argument("--allowed-ops", default=None, help="Comma-separated override list")
+    parser.add_argument(
+        "--allowed-ops-profile",
+        default="micro_mutable_main",
+        help="Deprecated in micro-mutable-only mode; retained for backward CLI compatibility.",
+    )
+    parser.add_argument(
+        "--allowed-ops",
+        default=None,
+        help="Deprecated in micro-mutable-only mode; retained for backward CLI compatibility.",
+    )
     parser.add_argument("--strict", action="store_true", help="Fail on unsupported ops")
     parser.add_argument("--report-json", default="reports/tflm_ops_check.json")
     parser.add_argument("--report-md", default="reports/tflm_ops_check.md")
     args = parser.parse_args()
 
-    allowed = set(DEFAULT_ALLOWED_OPS)
+    override = None
     if args.allowed_ops:
-        allowed = {x.strip() for x in args.allowed_ops.split(",") if x.strip()}
+        override = [x.strip() for x in args.allowed_ops.split(",") if x.strip()]
+    allowed, profile_used = get_allowed_ops(
+        allowed_ops_profile=args.allowed_ops_profile,
+        allowed_ops_override=override,
+    )
 
     ops = get_model_ops(args.model)
     unsupported = sorted([op for op in ops if op not in allowed])
@@ -59,7 +72,11 @@ def main() -> None:
     payload = {
         "model": args.model,
         "ops": ops,
+        "allowed_ops_profile": profile_used,
         "allowed_ops": sorted(allowed),
+        "compatibility_scope": "micro_mutable_main",
+        "deprecated_profile_arg": args.allowed_ops_profile,
+        "deprecated_allowed_ops_arg": args.allowed_ops,
         "unsupported_ops": unsupported,
         "compatible": len(unsupported) == 0,
     }
@@ -83,7 +100,7 @@ def main() -> None:
 
     if args.strict and unsupported:
         raise SystemExit(
-            "Unsupported ops detected for configured TFLM resolver: " + ", ".join(unsupported)
+            "Unsupported ops detected for micro_mutable_op_resolver.h source: " + ", ".join(unsupported)
         )
 
     print(f"compatible: {payload['compatible']}")

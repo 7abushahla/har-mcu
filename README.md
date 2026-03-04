@@ -211,14 +211,59 @@ This repository keeps the production replication path on Conv2D-safe RepMobile (
 
 Recommended run modes in each notebook:
 
-- `RUN_MODE="sanity_check"`: quick validation runs; GPU can be used for non-QAT stages, QAT on CPU.
-- `RUN_MODE="full_run"`: final benchmark runs on CPU for all stages.
+- `RUN_MODE="sanity_check"`: quick validation runs; GPU-first execution for all stages (including QAT), with CPU fallback when configured.
+- `RUN_MODE="full_run"`: full-length runs; GPU-first execution for all stages (including QAT), with CPU fallback when configured.
+
+QAT runtime fallback behavior:
+- `quant.qat.device_preference` controls whether QAT attempts `gpu` or `cpu` first.
+- `quant.qat.auto_fallback_to_cpu=true` enables automatic retry on CPU when GPU QAT hits known deterministic fake-quant limitations or GPU is unavailable.
+- QAT export JSON now records `qat_device_attempted`, `qat_device_used`, `fallback_triggered`, and `fallback_reason`.
 
 Comparison and reporting in these 5 notebooks follow the same style as `replication_deepconvlstm.ipynb`, adapted to paper-specific framing:
 - `paper target` rows (when available) + `WISDM replication` rows for FP32/PTQ/QAT.
 - accuracy comparison bar chart, quantized size table, latency (median+p95) chart.
 - reproducibility drift table from repeat FP32 checkpoint evaluation.
 - markdown exports are generated without optional `tabulate` dependency.
+
+Notebook report rendering is centralized in:
+- `src/eval/notebook_reporting.py`
+- `render_paper_notebook_report(cfg, out, drift_tol=1e-9)`
+
+Each paper notebook now keeps the experiment run cell and delegates report rendering to this shared helper so UX changes propagate across all 5 notebooks.
+
+DeepConv parity note for strict deploy checks:
+- The 5 paper notebooks now print strict-gate config inputs up front (`strict_full_int8`, `require_tflm_compatible`, accepted integer I/O dtypes, plus legacy profile/override config fields for audit visibility).
+- Each notebook shows a standardized **Strict Deploy-Gate Details** table per protocol and tier (PTQ/QAT), sourced from `ptq_report_json` and `qat_report_json`.
+- `failed` in that table means strict MCU deployability failed under the configured gate, even when host TFLite metrics are strong.
+- With fixed `run_id=wisdm_r0`, rerun notebooks top-to-bottom to overwrite older artifacts; notebooks warn if legacy report payload fields are detected.
+
+TFLite interpreter policy for paper/utility evaluation:
+- Shared `evaluate_tflite` now uses `tf.lite.experimental.OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES` with `experimental_delegates=[]`.
+- This prevents desktop XNNPACK delegate injection from showing `DELEGATE` pseudo-ops and keeps op inspection MCU-relevant.
+- PTQ reporting in paper notebooks prints two op views per protocol:
+  - `interpreter_ops`: delegate-free runtime op list from `_get_ops_details()`.
+  - `tflm_ops`: flatbuffer op list from strict deploy-gate compatibility inspection.
+- The CLI op checker (`python -m src.deploy.tflm_check_ops`) now uses the same delegate-free interpreter settings for consistency.
+- Strict gate compatibility source-of-truth is now:
+  - `micro_mutable_op_resolver.h` from TFLM main:
+    https://github.com/tensorflow/tflite-micro/blob/main/tensorflow/lite/micro/micro_mutable_op_resolver.h
+- `deploy.allowed_ops_profile` and `deploy.allowed_ops` remain in config as legacy/non-gating fields during transition.
+- PTQ/QAT export reports persist `allowed_ops_profile` / `allowed_ops_used` for backward compatibility and audit trails.
+
+TFLM support gate source of truth:
+- Deploy-gate pass/fail is derived from micro-mutable op capability (`micro_mutable_op_resolver.h`) only.
+- `failed` means unsupported by that TFLM-version capability list.
+- Caveat: this is still not a universal per-MCU runtime guarantee; MCU memory/toolchain/firmware resolver constraints can still block deployment.
+- PTQ/QAT export payloads include transparency fields:
+  - `compatibility_scope`
+  - `unsupported_ops_micro_mutable` (canonical unsupported list)
+  - `unsupported_ops` (backward-compatible alias)
+  - `possibly_supported_upstream_tflm`
+  - `unsupported_in_reference`
+
+Arduino resolver synchronization:
+- Arduino sketches in `deploy/` now include additional resolver registrations aligned with surfaced model ops and micro-mutable capability (`AddBatchMatMul`, `AddBatchToSpaceND`, `AddSpaceToBatchNd`, `AddConcatenation`, `AddFill`, `AddPad`, `AddRsqrt`, `AddSquaredDifference`, `AddSub`).
+- If your pinned Arduino TFLM package is older and missing one of these methods, set `HAR_TFLM_ENABLE_MICRO_MUTABLE_ONLY_EXTRA_OPS` to `0` in the sketch and rebuild.
 
 If QAT fails with a message about `Conv1D`/`SeparableConv1D` not being supported, verify that the notebook is using the Conv2D-safe `model_variant` from `configs/papers/*.yaml` (`*_conv2d`).
 
@@ -247,6 +292,8 @@ Paper-run result rows include `ptq_status` and `qat_status`. These are **strict 
 
 In short: `ptq_status=failed` or `qat_status=failed` means **strict MCU deployability check failed** under the configured gate (`strict_full_int8` and/or `require_tflm_compatible`), not that notebook execution failed.
 
+For Conv2D-safe paper models, Arduino resolver registration in this repo's `deploy/` sketches has been expanded to include commonly surfaced kernels (`MAX_POOL_2D`, `MEAN`, `DEPTHWISE_CONV_2D`, and additional ops used by attention-style models), but strict deploy-gate pass/fail remains micro-mutable-only.
+
 ### What is saved and where
 
 Primary save locations:
@@ -256,6 +303,7 @@ Primary save locations:
   - FP32 history JSON
   - QAT checkpoint + QAT history JSON
 - `models_tflite/`
+  - FP32 float `.tflite` (used for `fp32_model_size_kb` measurement)
   - PTQ INT8 `.tflite`
   - QAT INT8 `.tflite`
 - `reports/<paper_slug>/`
@@ -278,7 +326,9 @@ Each run records:
 
 - FP32/PTQ/QAT: `accuracy`, `macro_f1`
 - Classification report JSON and confusion matrix plot paths
-- Quantized model size (`ptq_model_size_kb`, `qat_model_size_kb`)
+- Model size:
+  - `fp32_model_size_kb` (measured from exported float `.tflite`)
+  - `ptq_model_size_kb`, `qat_model_size_kb`
 - Training time:
   - `fp32_training_time_sec`
   - `qat_training_time_sec`
@@ -287,10 +337,20 @@ Each run records:
   - `inference_latency_ms_p95`
   - `inference_latency_ms_mean`
   - `warmup_samples`, `timed_samples`
+- TFLite op-inspection fields:
+  - `interpreter_ops` (delegate-free runtime op names from evaluator)
+  - `interpreter_op_count`
 - Deploy-gate fields:
-  - `status`, `full_integer_io`, `tflm_compatible`, `unsupported_ops`
+  - `status`, `full_integer_io`, `tflm_compatible`
+  - `unsupported_ops_micro_mutable` (canonical)
+  - `unsupported_ops` (backward-compatible alias)
+  - `allowed_ops_profile`, `allowed_ops_used` (legacy/non-gating)
 - Row-level quant stage statuses:
   - `ptq_status`, `qat_status` (`ok` / `failed` / `skipped`; strict deploy-gate meaning)
+
+Converter logs/warnings:
+- Messages such as `Statistics for quantized inputs were expected...`, `Ignored output_format`, and SavedModel loading traces are informational.
+- Deploy-gate pass/fail is determined by integer I/O checks and micro-mutable compatibility checks, not by those warnings.
 
 ### Arduino deployment
 

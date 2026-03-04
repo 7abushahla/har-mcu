@@ -111,11 +111,13 @@ def train_model_for_protocol(
     ckpt.parent.mkdir(parents=True, exist_ok=True)
     model.save(ckpt)
     dump_json(hist_path, history.history)
+    checkpoint_size_kb = float(ckpt.stat().st_size / 1024.0) if ckpt.exists() else None
 
     return {
         "model_name": model_name,
         "run_id": run_id,
         "checkpoint": str(ckpt),
+        "checkpoint_size_kb": checkpoint_size_kb,
         "history": str(hist_path),
         "history_json": str(hist_path),
         "epochs_ran": int(len(history.history.get("loss", []))),

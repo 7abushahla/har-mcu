@@ -22,7 +22,17 @@ def test_default_config_contract():
     assert set(cfg["quant"]["qat"]["accepted_integer_io_dtypes"]) >= {"int8", "uint8"}
     assert cfg["quant"]["qat"].get("strict_full_int8") is True
     assert cfg["quant"]["qat"].get("require_tflm_compatible") is True
+    assert cfg["quant"]["qat"].get("device_preference") in {"cpu", "gpu"}
+    assert cfg["quant"]["qat"].get("auto_fallback_to_cpu") in {True, False}
     assert "deploy" in cfg
+    assert cfg["deploy"].get("allowed_ops_profile") in {
+        "default",
+        "minimal",
+        "nano33ble_minimal",
+        "nano33ble_extended",
+        "extended",
+    }
+    assert cfg["deploy"].get("allowed_ops") is None or isinstance(cfg["deploy"].get("allowed_ops"), list)
     assert cfg.get("experiment", {}).get("compression_focus") == "ptq_qat_only"
     assert "paper_targets" in cfg.get("experiment", {})
     for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
@@ -54,6 +64,8 @@ def test_smoke_config_ptq_strict_contract():
     assert "qat" in cfg["quant"]
     assert cfg["quant"]["qat"].get("strict_full_int8") is True
     assert cfg["quant"]["qat"].get("require_tflm_compatible") is True
+    assert cfg["quant"]["qat"].get("device_preference") in {"cpu", "gpu"}
+    assert cfg["quant"]["qat"].get("auto_fallback_to_cpu") in {True, False}
     assert cfg["quant"]["qat"].get("representative_source") == "train"
     assert set(cfg["quant"]["qat"].get("accepted_integer_io_dtypes", [])) >= {"int8", "uint8"}
     assert cfg.get("experiment", {}).get("compression_focus") == "ptq_qat_only"
@@ -62,6 +74,14 @@ def test_smoke_config_ptq_strict_contract():
         assert key in cfg["experiment"]["paper_targets"]
     assert cfg.get("runtime", {}).get("run_mode") in {"sanity_check", "full_run"}
     assert "eval" in cfg and "tflite_timing" in cfg["eval"]
+    assert cfg["deploy"].get("allowed_ops_profile") in {
+        "default",
+        "minimal",
+        "nano33ble_minimal",
+        "nano33ble_extended",
+        "extended",
+    }
+    assert cfg["deploy"].get("allowed_ops") is None or isinstance(cfg["deploy"].get("allowed_ops"), list)
 
 
 def test_nested_paper_config_resolves_paths_to_repo_root():
@@ -76,3 +96,33 @@ def test_nested_paper_config_resolves_paths_to_repo_root():
     assert cfg["runtime"]["run_mode"] in {"sanity_check", "full_run"}
     assert "eval" in cfg and "tflite_timing" in cfg["eval"]
     assert "annotation_policy" in cfg["quant"]["qat"]
+    assert cfg["quant"]["qat"].get("device_preference") in {"cpu", "gpu"}
+    assert cfg["quant"]["qat"].get("auto_fallback_to_cpu") in {True, False}
+    assert cfg["deploy"].get("allowed_ops_profile") in {
+        "default",
+        "minimal",
+        "nano33ble_minimal",
+        "nano33ble_extended",
+        "extended",
+    }
+    assert cfg["deploy"].get("allowed_ops") is None or isinstance(cfg["deploy"].get("allowed_ops"), list)
+
+
+def test_paper_configs_gpu_stage_routing_for_qat():
+    paper_cfgs = [
+        "configs/papers/xtinyhar_wisdm.yaml",
+        "configs/papers/repmobile_wisdm.yaml",
+        "configs/papers/tcn_attention_wisdm.yaml",
+        "configs/papers/daghero_wisdm.yaml",
+        "configs/papers/tcn_inception_wisdm.yaml",
+    ]
+    for cfg_path in paper_cfgs:
+        cfg = load_yaml(cfg_path)
+        stage_devices = cfg.get("runtime", {}).get("stage_devices", {})
+        assert stage_devices["sanity_check"]["qat"] == "gpu"
+        assert stage_devices["sanity_check"]["eval_qat"] == "gpu"
+        assert stage_devices["full_run"]["qat"] == "gpu"
+        assert stage_devices["full_run"]["eval_qat"] == "gpu"
+        assert cfg["quant"]["qat"].get("device_preference") == "gpu"
+        assert cfg["quant"]["qat"].get("auto_fallback_to_cpu") is True
+        assert cfg["deploy"].get("allowed_ops_profile") == "nano33ble_extended"

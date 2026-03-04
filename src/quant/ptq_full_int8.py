@@ -83,18 +83,42 @@ def _write_ptq_markdown(md_path: Path, metrics: dict[str, Any]) -> None:
         if metrics.get("ptq_tflite_size_kb") is not None:
             f.write(f"- PTQ size: {float(metrics['ptq_tflite_size_kb']):.2f} KB\n")
         f.write(f"- Status: `{metrics['status']}`\n")
+        f.write(f"- PTQ status alias: `{metrics.get('ptq_status', metrics['status'])}`\n")
         f.write(f"- Deployable full integer: `{metrics['deployable_full_int8']}`\n")
         f.write(f"- Full integer I/O: `{metrics['full_integer_io']}`\n")
         f.write(f"- TFLM compatible: `{metrics['tflm_compatible']}`\n")
+        f.write(f"- Compatibility scope: `{metrics.get('compatibility_scope', 'micro_mutable_main')}`\n")
         f.write(f"- Input dtype: `{metrics['input_dtype']}`\n")
         f.write(f"- Output dtype: `{metrics['output_dtype']}`\n")
         f.write(f"- Accepted integer I/O dtypes: `{metrics['accepted_integer_io_dtypes']}`\n")
+        f.write(f"- Allowed ops profile (legacy, non-gating): `{metrics.get('allowed_ops_profile', 'default')}`\n")
         f.write(f"- Representative source: `{metrics['representative_source']}`\n")
         f.write(f"- Representative samples: `{metrics['representative_samples']}`\n")
         if metrics.get("error"):
             f.write(f"- Error: `{metrics['error']}`\n")
-        if metrics.get("unsupported_ops"):
+        if metrics.get("unsupported_ops_micro_mutable"):
+            f.write(
+                "- Unsupported ops for micro_mutable source: "
+                f"`{', '.join(metrics['unsupported_ops_micro_mutable'])}`\n"
+            )
+        elif metrics.get("unsupported_ops_profile"):
+            f.write(
+                "- Unsupported ops for configured profile: "
+                f"`{', '.join(metrics['unsupported_ops_profile'])}`\n"
+            )
+        elif metrics.get("unsupported_ops"):
             f.write(f"- Unsupported ops: `{', '.join(metrics['unsupported_ops'])}`\n")
+        if metrics.get("possibly_supported_upstream_tflm"):
+            f.write(
+                "- Possibly supported upstream TFLM: "
+                f"`{metrics['possibly_supported_upstream_tflm']}`\n"
+            )
+        if metrics.get("unsupported_in_reference"):
+            f.write(
+                f"- Unsupported in reference set: `{metrics['unsupported_in_reference']}`\n"
+            )
+        if metrics.get("allowed_ops_used"):
+            f.write(f"- Allowed ops used: `{metrics['allowed_ops_used']}`\n")
         if metrics.get("notes"):
             f.write("\n## Notes\n\n")
             for note in metrics["notes"]:
@@ -152,6 +176,9 @@ def quantize_ptq_for_protocol(
     accepted_io = accepted_integer_dtypes(
         ptq_cfg.get("accepted_integer_io_dtypes", ["int8", "uint8"])
     )
+    deploy_cfg = cfg.get("deploy", {})
+    allowed_ops_profile = str(deploy_cfg.get("allowed_ops_profile", "default")).strip().lower()
+    allowed_ops_override = deploy_cfg.get("allowed_ops")
 
     reports_dir = Path(reports_dir_override) if reports_dir_override else Path(cfg["paths"]["reports_dir"])
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -202,6 +229,9 @@ def quantize_ptq_for_protocol(
             "input_dtype_normalized": None,
             "output_dtype_normalized": None,
             "accepted_integer_io_dtypes": accepted_io,
+            "allowed_ops_profile": allowed_ops_profile,
+            "allowed_ops_used": [],
+            "compatibility_scope": "micro_mutable_main",
             "full_integer_io": False,
             "representative_source": rep_source,
             "representative_samples": int(rep_count),
@@ -209,12 +239,17 @@ def quantize_ptq_for_protocol(
             "require_tflm_compatible": bool(require_tflm_compatible),
             "deployable_full_int8": False,
             "tflm_compatible": False,
+            "unsupported_ops_micro_mutable": [],
+            "unsupported_ops_profile": [],
             "unsupported_ops": [],
             "tflm_ops": [],
+            "possibly_supported_upstream_tflm": [],
+            "unsupported_in_reference": [],
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
             "status": "failed",
+            "ptq_status": "failed",
             "error": error_msg,
             "notes": notes,
         }
@@ -246,6 +281,9 @@ def quantize_ptq_for_protocol(
             "input_dtype_normalized": None,
             "output_dtype_normalized": None,
             "accepted_integer_io_dtypes": accepted_io,
+            "allowed_ops_profile": allowed_ops_profile,
+            "allowed_ops_used": [],
+            "compatibility_scope": "micro_mutable_main",
             "full_integer_io": False,
             "representative_source": rep_source,
             "representative_samples": int(rep_count),
@@ -253,12 +291,17 @@ def quantize_ptq_for_protocol(
             "require_tflm_compatible": bool(require_tflm_compatible),
             "deployable_full_int8": False,
             "tflm_compatible": False,
+            "unsupported_ops_micro_mutable": [],
+            "unsupported_ops_profile": [],
             "unsupported_ops": [],
             "tflm_ops": [],
+            "possibly_supported_upstream_tflm": [],
+            "unsupported_in_reference": [],
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
             "status": "failed",
+            "ptq_status": "failed",
             "error": error_msg,
             "notes": notes,
         }
@@ -274,6 +317,8 @@ def quantize_ptq_for_protocol(
         accepted_integer_io_dtypes=accepted_io,
         strict_full_int8=strict_full_int8,
         require_tflm_compatible=require_tflm_compatible,
+        allowed_ops_profile=allowed_ops_profile,
+        allowed_ops_override=allowed_ops_override,
     )
     if gate.get("compat_error"):
         notes.append(f"TFLM compatibility inspection failed: {gate['compat_error']}")
@@ -298,6 +343,9 @@ def quantize_ptq_for_protocol(
         "input_dtype_normalized": gate["input_dtype_normalized"],
         "output_dtype_normalized": gate["output_dtype_normalized"],
         "accepted_integer_io_dtypes": gate["accepted_integer_io_dtypes"],
+        "allowed_ops_profile": gate.get("allowed_ops_profile", allowed_ops_profile),
+        "allowed_ops_used": gate.get("allowed_ops_used", []),
+        "compatibility_scope": gate.get("compatibility_scope", "micro_mutable_main"),
         "full_integer_io": gate["full_integer_io"],
         "representative_source": rep_source,
         "representative_samples": int(rep_count),
@@ -305,12 +353,19 @@ def quantize_ptq_for_protocol(
         "require_tflm_compatible": bool(require_tflm_compatible),
         "deployable_full_int8": gate["deployable_full_int8"],
         "tflm_compatible": gate["tflm_compatible"],
+        "unsupported_ops_micro_mutable": gate.get(
+            "unsupported_ops_micro_mutable", gate.get("unsupported_ops_profile", gate["unsupported_ops"])
+        ),
+        "unsupported_ops_profile": gate.get("unsupported_ops_profile", gate["unsupported_ops"]),
         "unsupported_ops": gate["unsupported_ops"],
         "tflm_ops": gate["tflm_ops"],
+        "possibly_supported_upstream_tflm": gate.get("possibly_supported_upstream_tflm", []),
+        "unsupported_in_reference": gate.get("unsupported_in_reference", []),
         "compat_error": gate["compat_error"],
         "has_unidirectional_sequence_lstm": gate["has_unidirectional_sequence_lstm"],
         "has_while_op": gate["has_while_op"],
         "status": gate["status"],
+        "ptq_status": gate["status"],
         "error": gate["error"],
         "notes": notes,
     }

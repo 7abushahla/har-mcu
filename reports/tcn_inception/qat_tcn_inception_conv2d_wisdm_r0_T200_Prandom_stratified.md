@@ -7,8 +7,10 @@
 
 - Input dtype: `<class 'numpy.int8'>`
 - Output dtype: `<class 'numpy.int8'>`
-- Inference latency median: 3.404 ms/sample
-- Inference latency p95: 3.480 ms/sample
+- Interpreter op count: 15
+- Interpreter ops: `['ADD', 'BATCH_TO_SPACE_ND', 'CONCATENATION', 'CONV_2D', 'FULLY_CONNECTED', 'MAX_POOL_2D', 'MEAN', 'MUL', 'PACK', 'PAD', 'RESHAPE', 'SHAPE', 'SOFTMAX', 'SPACE_TO_BATCH_ND', 'STRIDED_SLICE']`
+- Inference latency median: 3.203 ms/sample
+- Inference latency p95: 3.298 ms/sample
 - Timed samples: 256
 - Warmup samples: 32
 - Confusion matrix plot: `/home/dellio/github/har-mcu/reports/tcn_inception/confusion_qat_tcn_inception_conv2d_wisdm_r0_T200_Prandom_stratified.png`

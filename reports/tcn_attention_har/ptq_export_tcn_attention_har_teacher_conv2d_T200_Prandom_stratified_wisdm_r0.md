@@ -4,16 +4,21 @@
 - TFLite: `/home/dellio/github/har-mcu/models_tflite/tcn_attention_har_teacher_conv2d_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite`
 - PTQ size: 623.99 KB
 - Status: `failed`
+- PTQ status alias: `failed`
 - Deployable full integer: `False`
 - Full integer I/O: `True`
 - TFLM compatible: `False`
+- Compatibility scope: `micro_mutable_main`
 - Input dtype: `<class 'numpy.int8'>`
 - Output dtype: `<class 'numpy.int8'>`
 - Accepted integer I/O dtypes: `['int8', 'uint8']`
+- Allowed ops profile (legacy, non-gating): `micro_mutable_main`
 - Representative source: `train`
 - Representative samples: `128`
-- Error: `Unsupported TFLM ops: BATCH_MATMUL, BATCH_TO_SPACE_ND, CONCATENATION, FILL, MEAN, PAD, REDUCE_PROD, RSQRT, SPACE_TO_BATCH_ND, SQUARED_DIFFERENCE, SUB`
-- Unsupported ops: `BATCH_MATMUL, BATCH_TO_SPACE_ND, CONCATENATION, FILL, MEAN, PAD, REDUCE_PROD, RSQRT, SPACE_TO_BATCH_ND, SQUARED_DIFFERENCE, SUB`
+- Error: `Unsupported ops for micro_mutable_op_resolver.h source: REDUCE_PROD`
+- Unsupported ops for micro_mutable source: `REDUCE_PROD`
+- Unsupported in reference set: `['REDUCE_PROD']`
+- Allowed ops used: `['ADD', 'ARG_MAX', 'ARG_MIN', 'AVERAGE_POOL_2D', 'BATCH_MATMUL', 'BATCH_TO_SPACE_ND', 'CAST', 'CEIL', 'CIRCULAR_BUFFER', 'CONCATENATION', 'CONV_2D', 'COS', 'CUMSUM', 'DEPTHWISE_CONV_2D', 'DEPTH_TO_SPACE', 'DEQUANTIZE', 'DIV', 'ELU', 'EQUAL', 'ETHOSU', 'EXP', 'EXPAND_DIMS', 'FILL', 'FLOOR', 'FLOOR_DIV', 'FLOOR_MOD', 'FULLY_CONNECTED', 'GATHER', 'GATHER_ND', 'GREATER', 'GREATER_EQUAL', 'HARD_SWISH', 'IF', 'L2_NORMALIZATION', 'L2_POOL_2D', 'LEAKY_RELU', 'LESS', 'LESS_EQUAL', 'LOG', 'LOGICAL_AND', 'LOGICAL_NOT', 'LOGICAL_OR', 'LOGISTIC', 'LOG_SOFTMAX', 'MAXIMUM', 'MAX_POOL_2D', 'MEAN', 'MINIMUM', 'MIRROR_PAD', 'MUL', 'NEG', 'NOT_EQUAL', 'PACK', 'PAD', 'PADV2', 'PRELU', 'QUANTIZE', 'READ_VARIABLE', 'REDUCE_MAX', 'REDUCE_MIN', 'RELU', 'RELU6', 'RELU_0_TO_1', 'RELU_N1_TO_1', 'RESHAPE', 'RESIZE_BILINEAR', 'RESIZE_NEAREST_NEIGHBOR', 'ROUND', 'RSQRT', 'SELECT_V2', 'SHAPE', 'SIN', 'SLICE', 'SOFTMAX', 'SPACE_TO_BATCH_ND', 'SPACE_TO_DEPTH', 'SPLIT', 'SPLIT_V', 'SQRT', 'SQUARE', 'SQUARED_DIFFERENCE', 'SQUEEZE', 'STRIDED_SLICE', 'SUB', 'SVDF', 'TANH', 'TRANSPOSE', 'TRANSPOSE_CONV', 'UNIDIRECTIONAL_SEQUENCE_LSTM', 'UNPACK', 'VAR_HANDLE', 'WHILE', 'ZEROS_LIKE']`
 
 ## Notes
 

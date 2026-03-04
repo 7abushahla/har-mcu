@@ -18,15 +18,15 @@ runtime:
       eval_fp32: gpu
       ptq: gpu
       eval_ptq: gpu
-      qat: cpu
-      eval_qat: cpu
+      qat: gpu
+      eval_qat: gpu
     full_run:
-      train: cpu
-      eval_fp32: cpu
-      ptq: cpu
-      eval_ptq: cpu
-      qat: cpu
-      eval_qat: cpu
+      train: gpu
+      eval_fp32: gpu
+      ptq: gpu
+      eval_ptq: gpu
+      qat: gpu
+      eval_qat: gpu
 seed: 42
 classes:
 - Walking
@@ -85,6 +85,8 @@ quant:
   qat:
     enabled: true
     annotation_policy: conv2d_dense
+    device_preference: gpu
+    auto_fallback_to_cpu: true
     learning_rate: 0.001
     epochs: 10
     batch_size: 32
@@ -102,6 +104,8 @@ eval:
     warmup_samples: 32
     timed_samples: 256
 deploy:
+  allowed_ops_profile: nano33ble_extended
+  allowed_ops: null
   tflm_commit: 5f9d9d6
   board_fqbn: arduino:mbed_nano:nano33ble
   tensor_arena_kb: 64

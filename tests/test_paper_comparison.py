@@ -15,6 +15,8 @@ def _sample_rows() -> list[dict]:
             "accuracy": 0.91,
             "macro_f1": 0.90,
             "fp32_training_time_sec": 12.5,
+            "fp32_model_size_kb": 210.4,
+            "fp32_tflite_status": "ok",
             "ptq_accuracy": 0.90,
             "ptq_macro_f1": 0.89,
             "ptq_model_size_kb": 45.2,
@@ -34,6 +36,8 @@ def _sample_rows() -> list[dict]:
             "accuracy": 0.87,
             "macro_f1": 0.86,
             "fp32_training_time_sec": 13.0,
+            "fp32_model_size_kb": 210.3,
+            "fp32_tflite_status": "failed",
             "ptq_accuracy": 0.86,
             "ptq_macro_f1": 0.85,
             "ptq_model_size_kb": 45.1,
@@ -70,6 +74,8 @@ def test_build_paper_comparison_rows_handles_partial_targets():
         and r["model"] == "baseline float"
     )
     assert fp32_row["acc_delta_vs_target"] == pytest.approx(0.01)
+    assert fp32_row["model_size_kb"] == pytest.approx(210.4)
+    assert fp32_row["status"] == "ok"
     qat_target = next(r for r in rows if r["pipeline"] == "paper target" and r["model"] == "QAT int8")
     assert qat_target["accuracy"] is None
 
@@ -109,6 +115,15 @@ def test_export_paper_comparison_writes_csv_md_and_plots(tmp_path: Path, monkeyp
         "inference_latency_ms_p95",
         "paper_target_accuracy",
         "acc_delta_vs_target",
+        "ptq_status",
+        "qat_status",
         "status",
     }
     assert expected_cols.issubset(set(df.columns))
+
+    ptq_row = df[(df["pipeline"] == "WISDM replication") & (df["model"] == "PTQ int8")].iloc[0]
+    assert ptq_row["ptq_status"] == "ok"
+    assert pd.isna(ptq_row["qat_status"])
+
+    qat_row = df[(df["pipeline"] == "WISDM replication") & (df["model"] == "QAT int8")].iloc[0]
+    assert pd.isna(qat_row["ptq_status"])

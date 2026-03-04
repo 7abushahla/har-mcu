@@ -3,20 +3,22 @@
 - Model: `/home/dellio/github/har-mcu/models_tflite/repmobile_folded_conv2d_T200_Prandom_stratified_wisdm_r0_ptq_int8.tflite`
 - Model size: 43.41 KB
 - Accuracy: 0.7688
-- Macro-F1: 0.5744
+- Macro-F1: 0.5745
 
 - Input dtype: `<class 'numpy.int8'>`
 - Output dtype: `<class 'numpy.int8'>`
-- Inference latency median: 0.405 ms/sample
-- Inference latency p95: 0.445 ms/sample
+- Interpreter op count: 9
+- Interpreter ops: `['CONV_2D', 'DEPTHWISE_CONV_2D', 'FULLY_CONNECTED', 'MEAN', 'PACK', 'RESHAPE', 'SHAPE', 'SOFTMAX', 'STRIDED_SLICE']`
+- Inference latency median: 0.413 ms/sample
+- Inference latency p95: 0.481 ms/sample
 - Timed samples: 256
 - Warmup samples: 32
 - Confusion matrix plot: `/home/dellio/github/har-mcu/reports/repmobile/confusion_ptq_repmobile_folded_conv2d_wisdm_r0_T200_Prandom_stratified.png`
 
 ## Per-class metrics
 
-- Walking: P=0.6525, R=0.9918, F1=0.7871, support=1344
-- Jogging: P=0.9649, R=0.9026, F1=0.9327, support=1037
+- Walking: P=0.6522, R=0.9918, F1=0.7869, support=1344
+- Jogging: P=0.9659, R=0.9026, F1=0.9332, support=1037
 - Upstairs: P=0.0000, R=0.0000, F1=0.0000, support=328
 - Downstairs: P=0.0000, R=0.0000, F1=0.0000, support=256
 - Sitting: P=0.9408, R=0.8736, F1=0.9060, support=182

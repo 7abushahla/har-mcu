@@ -36,7 +36,7 @@ from src.models import (
 from src.quant import ptq_full_int8 as ptq_module
 from src.quant import qat_train as qat_module
 from src.train import train_model as train_model_module
-from src.utils.artifacts import model_training_curve_png
+from src.utils import artifacts as artifacts_module
 from src.utils.config import apply_common_overrides, build_parser, load_yaml
 from src.utils.device_runtime import runtime_device_report, stage_device_scope
 
@@ -47,6 +47,47 @@ Builder = Callable[..., Any]
 def _read_json(path: str | Path) -> dict[str, Any]:
     with Path(path).open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def _export_fp32_tflite_from_checkpoint(checkpoint_path: str | Path, out_path: str | Path) -> float:
+    import tensorflow as tf
+
+    from src.models.serialization import load_checkpoint_model
+
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    model = load_checkpoint_model(checkpoint_path, compile=False)
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    blob = converter.convert()
+    out.write_bytes(blob)
+    return float(out.stat().st_size / 1024.0)
+
+
+def _fp32_tflite_path(
+    *,
+    models_dir: str | Path,
+    model_name: str,
+    window_size: int,
+    protocol: str,
+    run_id: str,
+) -> Path:
+    """Return FP32 TFLite artifact path with backward-compat fallback.
+
+    Some notebook sessions hold a stale `src.utils.artifacts` module object in
+    memory. If it predates `model_fp32_tflite_path`, avoid import-time failure
+    and synthesize the same path format via `run_prefix`.
+    """
+    if hasattr(artifacts_module, "model_fp32_tflite_path"):
+        return artifacts_module.model_fp32_tflite_path(
+            models_dir=models_dir,
+            model_name=model_name,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+        )
+    return Path(models_dir) / (
+        f"{artifacts_module.run_prefix(model_name, window_size, protocol, run_id)}_fp32.tflite"
+    )
 
 
 def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[str, Any]]]:
@@ -190,9 +231,26 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
                 window_size=window_size,
                 run_id=run_id,
             )
+        fp32_tflite_model = _fp32_tflite_path(
+            models_dir=cfg["paths"]["models_tflite_dir"],
+            model_name=model_variant,
+            window_size=window_size,
+            protocol=protocol,
+            run_id=run_id,
+        )
+        fp32_model_size_kb = None
+        fp32_tflite_status = "ok"
+        fp32_tflite_error = None
+        try:
+            fp32_model_size_kb = _export_fp32_tflite_from_checkpoint(
+                train_out["checkpoint"], fp32_tflite_model
+            )
+        except Exception as exc:  # pragma: no cover - guarded by tests via monkeypatch
+            fp32_tflite_status = "failed"
+            fp32_tflite_error = str(exc)
         fp32_curve_png = save_training_curves(
             train_out.get("history_json") or train_out.get("history"),
-            model_training_curve_png(
+            artifacts_module.model_training_curve_png(
                 paper_reports_dir,
                 model_name=model_variant,
                 window_size=window_size,
@@ -261,7 +319,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             if qat_out.get("history_json"):
                 qat_curve_png = save_training_curves(
                     qat_out["history_json"],
-                    model_training_curve_png(
+                    artifacts_module.model_training_curve_png(
                         paper_reports_dir,
                         model_name=model_variant,
                         window_size=window_size,
@@ -299,6 +357,10 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             "qat_device": stage_devices["qat"],
             "eval_qat_device": stage_devices["eval_qat"],
             "fp32_training_time_sec": train_out.get("training_time_sec"),
+            "fp32_model_size_kb": fp32_model_size_kb,
+            "fp32_tflite_model": str(fp32_tflite_model),
+            "fp32_tflite_status": fp32_tflite_status,
+            "fp32_tflite_error": fp32_tflite_error,
             "qat_training_time_sec": qat_out.get("training_time_sec") if qat_out else None,
             "ptq_inference_latency_ms_median": ptq_eval_metrics.get("inference_latency_ms_median"),
             "ptq_inference_latency_ms_p95": ptq_eval_metrics.get("inference_latency_ms_p95"),
@@ -323,13 +385,41 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
                     "status": ptq_report.get("status"),
                     "full_integer_io": ptq_report.get("full_integer_io"),
                     "tflm_compatible": ptq_report.get("tflm_compatible"),
+                    "compatibility_scope": ptq_report.get("compatibility_scope"),
+                    "unsupported_ops_micro_mutable": ptq_report.get(
+                        "unsupported_ops_micro_mutable",
+                        ptq_report.get("unsupported_ops_profile", ptq_report.get("unsupported_ops", [])),
+                    ),
                     "unsupported_ops": ptq_report.get("unsupported_ops", []),
+                    "unsupported_ops_profile": ptq_report.get(
+                        "unsupported_ops_profile", ptq_report.get("unsupported_ops", [])
+                    ),
+                    "allowed_ops_profile": ptq_report.get("allowed_ops_profile"),
+                    "allowed_ops_used": ptq_report.get("allowed_ops_used", []),
+                    "possibly_supported_upstream_tflm": ptq_report.get(
+                        "possibly_supported_upstream_tflm", []
+                    ),
+                    "unsupported_in_reference": ptq_report.get("unsupported_in_reference", []),
                 },
                 "qat": {
                     "status": qat_report.get("status"),
                     "full_integer_io": qat_report.get("full_integer_io"),
                     "tflm_compatible": qat_report.get("tflm_compatible"),
+                    "compatibility_scope": qat_report.get("compatibility_scope"),
+                    "unsupported_ops_micro_mutable": qat_report.get(
+                        "unsupported_ops_micro_mutable",
+                        qat_report.get("unsupported_ops_profile", qat_report.get("unsupported_ops", [])),
+                    ),
                     "unsupported_ops": qat_report.get("unsupported_ops", []),
+                    "unsupported_ops_profile": qat_report.get(
+                        "unsupported_ops_profile", qat_report.get("unsupported_ops", [])
+                    ),
+                    "allowed_ops_profile": qat_report.get("allowed_ops_profile"),
+                    "allowed_ops_used": qat_report.get("allowed_ops_used", []),
+                    "possibly_supported_upstream_tflm": qat_report.get(
+                        "possibly_supported_upstream_tflm", []
+                    ),
+                    "unsupported_in_reference": qat_report.get("unsupported_in_reference", []),
                 },
             },
         }
@@ -358,11 +448,17 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             "qat_device": stage_devices["qat"],
             "eval_qat_device": stage_devices["eval_qat"],
             "fp32_training_time_sec": train_out.get("training_time_sec"),
+            "fp32_model_size_kb": fp32_model_size_kb,
+            "fp32_tflite_model": str(fp32_tflite_model),
+            "fp32_tflite_status": fp32_tflite_status,
+            "fp32_tflite_error": fp32_tflite_error,
             "qat_training_time_sec": qat_out.get("training_time_sec") if qat_out else None,
             "accuracy": float(fp32_eval["accuracy"]),
             "macro_f1": float(fp32_eval["macro_f1"]),
             "ptq_status": str(ptq_out["status"]),
             "qat_status": qat_status,
+            "ptq_allowed_ops_profile": ptq_report.get("allowed_ops_profile"),
+            "qat_allowed_ops_profile": qat_report.get("allowed_ops_profile"),
             "ptq_accuracy": float(ptq_eval["accuracy"]),
             "ptq_macro_f1": float(ptq_eval_metrics["macro_f1"]),
             "qat_accuracy": float(qat_eval["accuracy"]) if qat_eval else None,
@@ -392,13 +488,41 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
                     "status": ptq_report.get("status"),
                     "full_integer_io": ptq_report.get("full_integer_io"),
                     "tflm_compatible": ptq_report.get("tflm_compatible"),
+                    "compatibility_scope": ptq_report.get("compatibility_scope"),
+                    "unsupported_ops_micro_mutable": ptq_report.get(
+                        "unsupported_ops_micro_mutable",
+                        ptq_report.get("unsupported_ops_profile", ptq_report.get("unsupported_ops", [])),
+                    ),
                     "unsupported_ops": ptq_report.get("unsupported_ops", []),
+                    "unsupported_ops_profile": ptq_report.get(
+                        "unsupported_ops_profile", ptq_report.get("unsupported_ops", [])
+                    ),
+                    "allowed_ops_profile": ptq_report.get("allowed_ops_profile"),
+                    "allowed_ops_used": ptq_report.get("allowed_ops_used", []),
+                    "possibly_supported_upstream_tflm": ptq_report.get(
+                        "possibly_supported_upstream_tflm", []
+                    ),
+                    "unsupported_in_reference": ptq_report.get("unsupported_in_reference", []),
                 },
                 "qat": {
                     "status": qat_report.get("status"),
                     "full_integer_io": qat_report.get("full_integer_io"),
                     "tflm_compatible": qat_report.get("tflm_compatible"),
+                    "compatibility_scope": qat_report.get("compatibility_scope"),
+                    "unsupported_ops_micro_mutable": qat_report.get(
+                        "unsupported_ops_micro_mutable",
+                        qat_report.get("unsupported_ops_profile", qat_report.get("unsupported_ops", [])),
+                    ),
                     "unsupported_ops": qat_report.get("unsupported_ops", []),
+                    "unsupported_ops_profile": qat_report.get(
+                        "unsupported_ops_profile", qat_report.get("unsupported_ops", [])
+                    ),
+                    "allowed_ops_profile": qat_report.get("allowed_ops_profile"),
+                    "allowed_ops_used": qat_report.get("allowed_ops_used", []),
+                    "possibly_supported_upstream_tflm": qat_report.get(
+                        "possibly_supported_upstream_tflm", []
+                    ),
+                    "unsupported_in_reference": qat_report.get("unsupported_in_reference", []),
                 },
             },
             "paper_target_score": paper_targets.get(

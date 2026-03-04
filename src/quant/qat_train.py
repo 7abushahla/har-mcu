@@ -44,6 +44,37 @@ def _scan_conv1d_family_layers(model: tf.keras.Model) -> tuple[list[str], list[s
     return conv1d_layers, sepconv1d_layers
 
 
+def _short_err(exc: Exception, max_len: int = 220) -> str:
+    msg = " ".join(str(exc).split())
+    return msg if len(msg) <= max_len else (msg[: max_len - 3] + "...")
+
+
+def _is_qat_gpu_determinism_error(exc: Exception) -> bool:
+    msg = str(exc)
+    return (
+        "FakeQuantWithMinMaxVarsGradient" in msg
+        and "Determinism" in msg
+    )
+
+
+def _qat_device_order(preference: str, *, has_gpu: bool, auto_fallback: bool) -> list[str]:
+    pref = str(preference).strip().lower()
+    if pref not in {"gpu", "cpu"}:
+        raise ValueError(
+            f"quant.qat.device_preference must be 'gpu' or 'cpu', got: {preference}"
+        )
+    if pref == "cpu":
+        return ["/CPU:0"]
+    if has_gpu:
+        order = ["/GPU:0"]
+        if auto_fallback:
+            order.append("/CPU:0")
+        return order
+    if auto_fallback:
+        return ["/CPU:0"]
+    return ["/GPU:0"]
+
+
 def _build_qat_model(
     fp32_model: tf.keras.Model,
     annotation_policy: str = "auto",
@@ -120,22 +151,56 @@ def _write_qat_markdown(md_path: Path, metrics: dict[str, Any]) -> None:
         if metrics.get("qat_tflite"):
             f.write(f"- QAT tflite: `{metrics['qat_tflite']}`\n")
         f.write(f"- Status: `{metrics['status']}`\n")
+        f.write(f"- QAT status alias: `{metrics.get('qat_status', metrics['status'])}`\n")
         f.write(f"- Deployable full integer: `{metrics['deployable_full_int8']}`\n")
         f.write(f"- Full integer I/O: `{metrics['full_integer_io']}`\n")
         f.write(f"- TFLM compatible: `{metrics['tflm_compatible']}`\n")
+        f.write(f"- Compatibility scope: `{metrics.get('compatibility_scope', 'micro_mutable_main')}`\n")
         f.write(f"- Input dtype: `{metrics['input_dtype']}`\n")
         f.write(f"- Output dtype: `{metrics['output_dtype']}`\n")
         f.write(f"- Accepted integer I/O dtypes: `{metrics['accepted_integer_io_dtypes']}`\n")
+        f.write(f"- Allowed ops profile (legacy, non-gating): `{metrics.get('allowed_ops_profile', 'default')}`\n")
         f.write(f"- Representative source: `{metrics['representative_source']}`\n")
         f.write(f"- Representative samples: `{metrics['representative_samples']}`\n")
+        if metrics.get("qat_device_preference") is not None:
+            f.write(f"- QAT device preference: `{metrics['qat_device_preference']}`\n")
+        if metrics.get("qat_device_attempted"):
+            f.write(f"- QAT device attempted: `{metrics['qat_device_attempted']}`\n")
+        if metrics.get("qat_device_used"):
+            f.write(f"- QAT device used: `{metrics['qat_device_used']}`\n")
+        if metrics.get("fallback_triggered") is not None:
+            f.write(f"- QAT fallback triggered: `{metrics['fallback_triggered']}`\n")
+        if metrics.get("fallback_reason"):
+            f.write(f"- QAT fallback reason: `{metrics['fallback_reason']}`\n")
         if metrics.get("training_time_sec") is not None:
             f.write(f"- QAT training time: {float(metrics['training_time_sec']):.3f} s\n")
         if metrics.get("history_json"):
             f.write(f"- QAT history JSON: `{metrics['history_json']}`\n")
         if metrics.get("error"):
             f.write(f"- Error: `{metrics['error']}`\n")
-        if metrics.get("unsupported_ops"):
+        if metrics.get("unsupported_ops_micro_mutable"):
+            f.write(
+                "- Unsupported ops for micro_mutable source: "
+                f"`{', '.join(metrics['unsupported_ops_micro_mutable'])}`\n"
+            )
+        elif metrics.get("unsupported_ops_profile"):
+            f.write(
+                "- Unsupported ops for configured profile: "
+                f"`{', '.join(metrics['unsupported_ops_profile'])}`\n"
+            )
+        elif metrics.get("unsupported_ops"):
             f.write(f"- Unsupported ops: `{', '.join(metrics['unsupported_ops'])}`\n")
+        if metrics.get("possibly_supported_upstream_tflm"):
+            f.write(
+                "- Possibly supported upstream TFLM: "
+                f"`{metrics['possibly_supported_upstream_tflm']}`\n"
+            )
+        if metrics.get("unsupported_in_reference"):
+            f.write(
+                f"- Unsupported in reference set: `{metrics['unsupported_in_reference']}`\n"
+            )
+        if metrics.get("allowed_ops_used"):
+            f.write(f"- Allowed ops used: `{metrics['allowed_ops_used']}`\n")
         f.write("\n## Notes\n\n")
         for note in metrics.get("notes", []):
             f.write(f"- {note}\n")
@@ -198,6 +263,9 @@ def qat_for_protocol(
     accepted_io = accepted_integer_dtypes(
         qat_cfg.get("accepted_integer_io_dtypes", ["int8", "uint8"])
     )
+    deploy_cfg = cfg.get("deploy", {})
+    allowed_ops_profile = str(deploy_cfg.get("allowed_ops_profile", "default")).strip().lower()
+    allowed_ops_override = deploy_cfg.get("allowed_ops")
     enforce_full_int8 = bool(qat_cfg.get("enforce_full_int8", True)) or strict_full_int8
 
     ckpt_dir = Path(cfg["paths"]["checkpoints_dir"])
@@ -256,6 +324,21 @@ def qat_for_protocol(
 
     notes: list[str] = []
     training_time_sec: float | None = None
+    qat_device_preference = str(qat_cfg.get("device_preference", "gpu")).strip().lower()
+    qat_auto_fallback_to_cpu = bool(qat_cfg.get("auto_fallback_to_cpu", True))
+    has_gpu = bool(tf.config.list_physical_devices("GPU"))
+    device_order = _qat_device_order(
+        qat_device_preference,
+        has_gpu=has_gpu,
+        auto_fallback=qat_auto_fallback_to_cpu,
+    )
+    qat_device_attempted: list[str] = []
+    qat_device_used: str | None = None
+    fallback_triggered = False
+    fallback_reason: str | None = None
+
+    if qat_device_preference == "gpu" and not has_gpu and qat_auto_fallback_to_cpu:
+        notes.append("No GPU visible to TensorFlow for QAT; falling back to CPU.")
 
     def _emit_failure(error_msg: str, *, epochs_ran: int = 0) -> dict[str, Any]:
         payload = {
@@ -271,6 +354,9 @@ def qat_for_protocol(
             "input_dtype_normalized": None,
             "output_dtype_normalized": None,
             "accepted_integer_io_dtypes": accepted_io,
+            "allowed_ops_profile": allowed_ops_profile,
+            "allowed_ops_used": [],
+            "compatibility_scope": "micro_mutable_main",
             "full_integer_io": False,
             "representative_source": rep_source,
             "representative_samples": int(rep_count),
@@ -278,15 +364,25 @@ def qat_for_protocol(
             "require_tflm_compatible": bool(require_tflm_compatible),
             "deployable_full_int8": False,
             "tflm_compatible": False,
+            "unsupported_ops_micro_mutable": [],
+            "unsupported_ops_profile": [],
             "unsupported_ops": [],
             "tflm_ops": [],
+            "possibly_supported_upstream_tflm": [],
+            "unsupported_in_reference": [],
             "compat_error": None,
             "has_unidirectional_sequence_lstm": False,
             "has_while_op": False,
             "training_time_sec": training_time_sec,
             "history_json": str(qat_history_path) if qat_history_path.exists() else None,
             "epochs_ran": int(epochs_ran),
+            "qat_device_preference": qat_device_preference,
+            "qat_device_attempted": list(qat_device_attempted),
+            "qat_device_used": qat_device_used,
+            "fallback_triggered": bool(fallback_triggered),
+            "fallback_reason": fallback_reason,
             "status": "failed",
+            "qat_status": "failed",
             "error": error_msg,
             "notes": notes,
         }
@@ -307,7 +403,23 @@ def qat_for_protocol(
             "model_name": model_name,
             "run_id": run_id,
             "variant": variant or "default",
+            "qat_device_preference": qat_device_preference,
+            "qat_device_attempted": list(qat_device_attempted),
+            "qat_device_used": qat_device_used,
+            "fallback_triggered": bool(fallback_triggered),
+            "fallback_reason": fallback_reason,
         }
+
+    if qat_device_preference == "gpu" and not has_gpu and not qat_auto_fallback_to_cpu:
+        error_msg = (
+            "QAT device_preference='gpu' but no GPU is visible and "
+            "quant.qat.auto_fallback_to_cpu=false."
+        )
+        notes.append(error_msg)
+        if raise_on_strict_failure:
+            _emit_failure(error_msg, epochs_ran=0)
+            raise RuntimeError(error_msg)
+        return _failure_return(error_msg, epochs_ran=0)
 
     conv1d_layers, sepconv1d_layers = _scan_conv1d_family_layers(fp32_model)
     if conv1d_layers or sepconv1d_layers:
@@ -323,36 +435,68 @@ def qat_for_protocol(
             raise RuntimeError(error_msg)
         return _failure_return(error_msg, epochs_ran=0)
 
-    try:
-        policy = annotation_policy or str(qat_cfg.get("annotation_policy", "auto"))
-        qat_model, strategy = _build_qat_model(fp32_model, annotation_policy=policy)
-        notes.append(f"QAT strategy: {strategy}")
-    except Exception as exc:
-        error_msg = f"Unable to construct QAT model: {exc}"
+    policy = annotation_policy or str(qat_cfg.get("annotation_policy", "auto"))
+    qat_model: tf.keras.Model | None = None
+    hist = None
+    strategy: str | None = None
+    last_exc: Exception | None = None
+
+    for device_name in device_order:
+        qat_device_attempted.append(device_name)
+        try:
+            with tf.device(device_name):
+                qat_model, strategy = _build_qat_model(
+                    fp32_model,
+                    annotation_policy=policy,
+                )
+
+                qat_model.compile(
+                    optimizer=tf.keras.optimizers.RMSprop(
+                        learning_rate=float(qat_cfg.get("learning_rate", 1e-4))
+                    ),
+                    loss="categorical_crossentropy",
+                    metrics=["accuracy"],
+                )
+
+                train_t0 = time.perf_counter()
+                hist = qat_model.fit(
+                    X_train,
+                    y_train_oh,
+                    validation_data=(X_val, y_val_oh),
+                    epochs=int(qat_cfg.get("epochs", 10)),
+                    batch_size=int(qat_cfg.get("batch_size", cfg["train"].get("batch_size", 64))),
+                    verbose=2,
+                )
+                training_time_sec = float(time.perf_counter() - train_t0)
+
+            qat_device_used = device_name
+            if strategy:
+                notes.append(f"QAT strategy: {strategy}")
+            break
+        except Exception as exc:
+            last_exc = exc
+            if (
+                device_name.startswith("/GPU")
+                and qat_auto_fallback_to_cpu
+                and "/CPU:0" in device_order
+                and _is_qat_gpu_determinism_error(exc)
+            ):
+                fallback_triggered = True
+                fallback_reason = _short_err(exc)
+                notes.append(
+                    "QAT GPU deterministic FakeQuant limitation detected; retrying on CPU."
+                )
+                continue
+            break
+
+    if qat_model is None or hist is None:
+        err_detail = str(last_exc) if last_exc is not None else "unknown error"
+        error_msg = f"Unable to construct QAT model: {err_detail}"
         notes.append(error_msg)
         if raise_on_strict_failure:
             _emit_failure(error_msg, epochs_ran=0)
-            raise RuntimeError(error_msg) from exc
+            raise RuntimeError(error_msg) from last_exc
         return _failure_return(error_msg, epochs_ran=0)
-
-    qat_model.compile(
-        optimizer=tf.keras.optimizers.RMSprop(
-            learning_rate=float(qat_cfg.get("learning_rate", 1e-4))
-        ),
-        loss="categorical_crossentropy",
-        metrics=["accuracy"],
-    )
-
-    train_t0 = time.perf_counter()
-    hist = qat_model.fit(
-        X_train,
-        y_train_oh,
-        validation_data=(X_val, y_val_oh),
-        epochs=int(qat_cfg.get("epochs", 10)),
-        batch_size=int(qat_cfg.get("batch_size", cfg["train"].get("batch_size", 64))),
-        verbose=2,
-    )
-    training_time_sec = float(time.perf_counter() - train_t0)
 
     qat_model.save(qat_ckpt)
     dump_json(qat_history_path, hist.history)
@@ -396,6 +540,8 @@ def qat_for_protocol(
         accepted_integer_io_dtypes=accepted_io,
         strict_full_int8=strict_full_int8,
         require_tflm_compatible=require_tflm_compatible,
+        allowed_ops_profile=allowed_ops_profile,
+        allowed_ops_override=allowed_ops_override,
     )
     if gate.get("compat_error"):
         notes.append(f"TFLM compatibility inspection failed: {gate['compat_error']}")
@@ -413,6 +559,9 @@ def qat_for_protocol(
         "input_dtype_normalized": gate["input_dtype_normalized"],
         "output_dtype_normalized": gate["output_dtype_normalized"],
         "accepted_integer_io_dtypes": gate["accepted_integer_io_dtypes"],
+        "allowed_ops_profile": gate.get("allowed_ops_profile", allowed_ops_profile),
+        "allowed_ops_used": gate.get("allowed_ops_used", []),
+        "compatibility_scope": gate.get("compatibility_scope", "micro_mutable_main"),
         "full_integer_io": gate["full_integer_io"],
         "representative_source": rep_source,
         "representative_samples": int(rep_count),
@@ -420,15 +569,27 @@ def qat_for_protocol(
         "require_tflm_compatible": bool(require_tflm_compatible),
         "deployable_full_int8": gate["deployable_full_int8"],
         "tflm_compatible": gate["tflm_compatible"],
+        "unsupported_ops_micro_mutable": gate.get(
+            "unsupported_ops_micro_mutable", gate.get("unsupported_ops_profile", gate["unsupported_ops"])
+        ),
+        "unsupported_ops_profile": gate.get("unsupported_ops_profile", gate["unsupported_ops"]),
         "unsupported_ops": gate["unsupported_ops"],
         "tflm_ops": gate["tflm_ops"],
+        "possibly_supported_upstream_tflm": gate.get("possibly_supported_upstream_tflm", []),
+        "unsupported_in_reference": gate.get("unsupported_in_reference", []),
         "compat_error": gate["compat_error"],
         "has_unidirectional_sequence_lstm": gate["has_unidirectional_sequence_lstm"],
         "has_while_op": gate["has_while_op"],
         "training_time_sec": training_time_sec,
         "history_json": str(qat_history_path),
         "epochs_ran": int(len(hist.history.get("loss", []))),
+        "qat_device_preference": qat_device_preference,
+        "qat_device_attempted": list(qat_device_attempted),
+        "qat_device_used": qat_device_used,
+        "fallback_triggered": bool(fallback_triggered),
+        "fallback_reason": fallback_reason,
         "status": gate["status"],
+        "qat_status": gate["status"],
         "error": gate["error"],
         "notes": notes,
     }
@@ -448,6 +609,11 @@ def qat_for_protocol(
         "history_json": str(qat_history_path),
         "training_time_sec": training_time_sec,
         "epochs_ran": int(len(hist.history.get("loss", []))),
+        "qat_device_preference": qat_device_preference,
+        "qat_device_attempted": list(qat_device_attempted),
+        "qat_device_used": qat_device_used,
+        "fallback_triggered": bool(fallback_triggered),
+        "fallback_reason": fallback_reason,
         "status": gate["status"],
         "model_name": model_name,
         "run_id": run_id,

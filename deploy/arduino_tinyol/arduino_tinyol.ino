@@ -19,6 +19,13 @@
 
 constexpr int kTensorArenaSize = 64 * 1024;
 
+// If your Arduino TFLM package is older and misses one of the methods below,
+// set this to 0 and rebuild. The deploy gate in Python follows upstream
+// micro_mutable_op_resolver.h capability semantics.
+#ifndef HAR_TFLM_ENABLE_MICRO_MUTABLE_ONLY_EXTRA_OPS
+#define HAR_TFLM_ENABLE_MICRO_MUTABLE_ONLY_EXTRA_OPS 1
+#endif
+
 float head_w[NUM_CLASSES][EMBEDDING_DIM];
 float head_b[NUM_CLASSES];
 
@@ -48,8 +55,11 @@ void setup_model() {
     return;
   }
 
-  static tflite::MicroMutableOpResolver<16> resolver;
+  static tflite::MicroMutableOpResolver<36> resolver;
   resolver.AddConv2D();
+  resolver.AddDepthwiseConv2D();
+  resolver.AddMaxPool2D();
+  resolver.AddMean();
   resolver.AddReshape();
   resolver.AddFullyConnected();
   resolver.AddStridedSlice();
@@ -63,6 +73,17 @@ void setup_model() {
   resolver.AddQuantize();
   resolver.AddDequantize();
   resolver.AddUnidirectionalSequenceLSTM();
+#if HAR_TFLM_ENABLE_MICRO_MUTABLE_ONLY_EXTRA_OPS
+  resolver.AddBatchMatMul();
+  resolver.AddBatchToSpaceND();
+  resolver.AddSpaceToBatchNd();
+  resolver.AddConcatenation();
+  resolver.AddFill();
+  resolver.AddPad();
+  resolver.AddRsqrt();
+  resolver.AddSquaredDifference();
+  resolver.AddSub();
+#endif
 
   static tflite::MicroInterpreter static_interpreter(
       model, resolver, tensor_arena, kTensorArenaSize, error_reporter);

@@ -107,3 +107,28 @@ def test_runtime_device_report_and_scope_expose_selected_devices():
     with stage_device_scope(cfg, "qat", tf_module=fake_tf):
         pass
     assert fake_tf.entered_devices[-2:] == ["/GPU:0", "/CPU:0"]
+
+
+def test_runtime_stage_overrides_can_enable_gpu_for_qat_in_full_run():
+    cfg = {
+        "runtime": {
+            "run_mode": "full_run",
+            "gpu_fallback_to_cpu": True,
+            "fail_if_gpu_missing": False,
+            "stage_devices": {
+                "full_run": {
+                    "train": "gpu",
+                    "eval_fp32": "gpu",
+                    "ptq": "gpu",
+                    "eval_ptq": "gpu",
+                    "qat": "gpu",
+                    "eval_qat": "gpu",
+                }
+            },
+        }
+    }
+    fake_tf = _FakeTF(gpu_count=1)
+    report = runtime_device_report(cfg, tf_module=fake_tf)
+    assert report["run_mode"] == "full_run"
+    for stage in STAGES:
+        assert report["resolved_stage_devices"][stage] == "gpu"

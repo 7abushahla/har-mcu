@@ -6,6 +6,24 @@
   "model_size_kb": 384.8125,
   "input_dtype": "<class 'numpy.int8'>",
   "output_dtype": "<class 'numpy.int8'>",
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_TO_SPACE_ND",
+    "CONCATENATION",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "MAX_POOL_2D",
+    "MEAN",
+    "MUL",
+    "PACK",
+    "PAD",
+    "RESHAPE",
+    "SHAPE",
+    "SOFTMAX",
+    "SPACE_TO_BATCH_ND",
+    "STRIDED_SLICE"
+  ],
+  "interpreter_op_count": 15,
   "accuracy": 0.99726609963548,
   "macro_f1": 0.9941675641266796,
   "confusion_matrix": [
@@ -148,9 +166,9 @@
       "support": 3292.0
     }
   },
-  "inference_latency_ms_median": 3.4041519975289702,
-  "inference_latency_ms_p95": 3.479932747723069,
-  "inference_latency_ms_mean": 3.4004699180059106,
+  "inference_latency_ms_median": 3.203451000217683,
+  "inference_latency_ms_p95": 3.2976932500332623,
+  "inference_latency_ms_mean": 3.2130068007898416,
   "warmup_samples": 32,
   "timed_samples": 256
 }

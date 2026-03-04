@@ -56,11 +56,13 @@ def build_paper_comparison_rows(
                 "model": "baseline float",
                 "accuracy": row.get("accuracy"),
                 "macro_f1": row.get("macro_f1"),
-                "model_size_kb": None,
+                "model_size_kb": row.get("fp32_model_size_kb"),
                 "training_time_sec": row.get("fp32_training_time_sec"),
                 "inference_latency_ms_median": None,
                 "inference_latency_ms_p95": None,
-                "status": "ok",
+                "status": row.get("fp32_tflite_status", "ok"),
+                "ptq_status": row.get("ptq_status"),
+                "qat_status": row.get("qat_status"),
                 "paper_target_accuracy": fp32_target,
                 "acc_delta_vs_target": _delta_vs_target(row.get("accuracy"), fp32_target),
             }
@@ -77,6 +79,8 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_median": row.get("ptq_inference_latency_ms_median"),
                 "inference_latency_ms_p95": row.get("ptq_inference_latency_ms_p95"),
                 "status": row.get("ptq_status"),
+                "ptq_status": row.get("ptq_status"),
+                "qat_status": None,
                 "paper_target_accuracy": ptq_target,
                 "acc_delta_vs_target": _delta_vs_target(row.get("ptq_accuracy"), ptq_target),
             }
@@ -93,6 +97,8 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_median": row.get("qat_inference_latency_ms_median"),
                 "inference_latency_ms_p95": row.get("qat_inference_latency_ms_p95"),
                 "status": row.get("qat_status"),
+                "ptq_status": None,
+                "qat_status": row.get("qat_status"),
                 "paper_target_accuracy": qat_target,
                 "acc_delta_vs_target": _delta_vs_target(row.get("qat_accuracy"), qat_target),
             }
@@ -111,6 +117,8 @@ def build_paper_comparison_rows(
                 "inference_latency_ms_median": None,
                 "inference_latency_ms_p95": None,
                 "status": "reference",
+                "ptq_status": None,
+                "qat_status": None,
                 "paper_target_accuracy": _target_for_tier(targets, model),
                 "acc_delta_vs_target": None,
             }
@@ -193,7 +201,7 @@ def _plot_accuracy(df: pd.DataFrame, out_path: Path) -> None:
 def _plot_model_size(df: pd.DataFrame, out_path: Path) -> None:
     rows = df[
         (df["pipeline"] == "WISDM replication")
-        & (df["model"].isin(["PTQ int8", "QAT int8"]))
+        & (df["model"].isin(["baseline float", "PTQ int8", "QAT int8"]))
         & (df["model_size_kb"].notna())
     ].copy()
     fig, ax = plt.subplots(figsize=(max(8, len(rows) * 1.1), 4.8))
@@ -203,11 +211,19 @@ def _plot_model_size(df: pd.DataFrame, out_path: Path) -> None:
     else:
         labels = [f"{r.protocol}\n{r.model}" for r in rows.itertuples()]
         values = rows["model_size_kb"].astype(float).tolist()
-        bars = ax.bar(labels, values, color="#4c78a8", edgecolor="white")
+        colors = []
+        for r in rows.itertuples():
+            if r.model == "baseline float":
+                colors.append("#1f77b4")
+            elif r.model == "PTQ int8":
+                colors.append("#ff7f0e")
+            else:
+                colors.append("#2ca02c")
+        bars = ax.bar(labels, values, color=colors, edgecolor="white")
         for bar, val in zip(bars, values):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2, f"{val:.2f}", ha="center", va="bottom", fontsize=8)
         ax.set_ylabel("Model size (KB)")
-        ax.set_title("Quantized Model Size (PTQ/QAT)")
+        ax.set_title("Model Size (FP32/PTQ/QAT)")
         ax.grid(axis="y", alpha=0.3)
         plt.xticks(fontsize=8)
     fig.tight_layout()
@@ -281,6 +297,8 @@ def export_paper_comparison(
             "inference_latency_ms_p95",
             "paper_target_accuracy",
             "acc_delta_vs_target",
+            "ptq_status",
+            "qat_status",
             "status",
         ]
         f.write(dataframe_to_pipe_markdown(df[keep_cols]))

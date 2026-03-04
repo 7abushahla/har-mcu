@@ -80,6 +80,8 @@ quant:
   qat:
     enabled: true
     annotation_policy: auto
+    device_preference: gpu
+    auto_fallback_to_cpu: true
     learning_rate: 0.0001
     epochs: 1
     batch_size: 64
@@ -97,6 +99,8 @@ eval:
     warmup_samples: 8
     timed_samples: 32
 deploy:
+  allowed_ops_profile: nano33ble_extended
+  allowed_ops: null
   tflm_commit: 5f9d9d6
   board_fqbn: arduino:mbed_nano:nano33ble
   tensor_arena_kb: 64
