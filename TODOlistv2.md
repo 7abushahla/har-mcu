@@ -42,6 +42,16 @@
 | Daghero Quantized+Adaptive | none single official training repo in paper | no single official repo found | 2026-03-03 | toolchain context repos: PLiNIO/DORY/PULP-NN |
 | TCN-Inception | none declared by paper | no official repo found | 2026-03-03 | paper DOI: https://doi.org/10.1016/j.future.2024.05.023 |
 
+## MCU Deployment Extraction Log (HAR-papers folder, verified 2026-03-05)
+| paper | deployment hardware reported in paper | mcu deployment status | notes |
+|---|---|---|---|
+| XTinyHAR | Raspberry Pi 4B (ARM Cortex-A72 @1.5 GHz), NVIDIA Jetson Nano | no true MCU deployment reported | paper explicitly states Cortex-M deployment was not covered |
+| RepMobile | Raspberry Pi 4 | no MCU deployment reported | deployment section benchmarks latency on Raspberry Pi platform |
+| TCN-attention-HAR | Windows 11 workstation (i7-11800H CPU, 64 GB RAM) | no on-device/MCU deployment reported | paper reports training/testing environment only |
+| Daghero Quantized+Adaptive | single-core PULPissimo (RI5CY, RISC-V), 22 nm implementation with 520 kB memory; deployment metrics on Quentin @205.1 MHz, 0.54 V | yes (MCU-class target) | this is the primary MCU-focused deployment paper in v2 scope |
+| TCN-Inception | NVIDIA RTX 3090 GPU (training/inference environment) | no MCU deployment reported | paper focuses on algorithmic accuracy across datasets |
+| DeepConvLSTM (HAR-papers context only; not in current 5-paper v2 notebook scope) | Arduino Nano 33 BLE Sense Rev2 via Edge Impulse | yes (MCU deployed) | reported on-device metrics include ~21 ms inference, 29.1 KB RAM, 189.6 KB flash |
+
 ## Known Contradictions
 - TCN-attention-HAR reports `heads=8` in one parameter section, but its tuning discussion selects `heads=4` as final; both must be logged and tested.
 - XTinyHAR paper final settings must override any quick/demo defaults from repo scripts.
@@ -58,6 +68,7 @@
 ### Paper Facts (verbatim-verified)
 - Citation: Scientific Reports (2025), DOI https://doi.org/10.1038/s41598-025-26297-2
 - Original datasets: UTD-MHAD, MM-Fit.
+- Deployment hardware in paper: Raspberry Pi 4B and NVIDIA Jetson Nano; paper states deployment on ultra-constrained Cortex-M MCUs was not covered.
 - Protocol highlights:
   - 3-second windows, 50% overlap.
   - inertial resampling to 50 Hz.
@@ -103,6 +114,7 @@
 ### Paper Facts (verbatim-verified)
 - Citation: IEEE Sensors Journal (2024), DOI https://doi.org/10.1109/JSEN.2024.3424578
 - Original datasets: PAMAP2, UniMiB-SHAR, WISDM, USC-HAD.
+- Deployment hardware in paper: Raspberry Pi 4 real-time system benchmark; no microcontroller board deployment reported.
 - Key paper/repo values:
   - structural reparameterization: multi-branch training-time blocks folded to plain inference graph.
   - data windows from repo preprocessing: WISDM=200, UniMiB=151, PAMAP2=342, USC-HAD=512.
@@ -136,6 +148,7 @@
 ### Paper Facts (verbatim-verified)
 - Citation: Scientific Reports (2024), DOI https://doi.org/10.1038/s41598-024-57912-3
 - Original datasets: WISDM, PAMAP2, USC-HAD.
+- Deployment hardware in paper: no edge/MCU deployment reported; experiments run on Windows 11 with i7-11800H CPU and 64 GB RAM.
 - Protocol values reported:
   - window size 128, overlap 50%.
   - train:test = 8:2.
@@ -171,6 +184,7 @@
 ### Paper Facts (verbatim-verified)
 - Citation: ACM TECS (2022), DOI https://doi.org/10.1145/3542819
 - Original datasets: UniMiB-SHAR, UCI-HAPT, WISDM, WALK.
+- Deployment hardware in paper: ultra-low-power MCU-class RISC-V target based on single-core PULPissimo (RI5CY); deployment metrics reported on Quentin at 205.1 MHz and 0.54 V.
 - Methodology highlights:
   - 1D CNN template search + QAT with PACT quantization.
   - fixed precisions explored: {8,4,2,1}.
@@ -208,6 +222,7 @@
 ### Paper Facts (verbatim-verified)
 - Citation: Future Generation Computer Systems (2024), DOI https://doi.org/10.1016/j.future.2024.05.023
 - Original datasets: UCI-HAR, MobiAct, Daphnet, DSADS.
+- Deployment hardware in paper: no MCU deployment reported; model training/inference performed on NVIDIA RTX 3090 GPU.
 - Core hyperparameters (paper table):
   - max kernel size (Inception): 68
   - bottleneck size: 32
