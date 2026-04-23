@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""
+Convert TinyML-style project JSON into a WISDM-like raw CSV:
+
+  user,activity,timestamp,x-axis,y-axis,z-axis
+
+Uses accelerometer only (JSON keys "0","1","2"). Gyroscope is ignored.
+
+Timestamps are synthetic, spaced by captureSettings.captureDelay (seconds),
+defaulting to 0.05 s (50 ms), matching the ~50 ms step seen in WISDM_ar_v1.1_raw.csv.
+
+Activity text is derived from each capture label: if the label starts with
+"{user}_", the remainder is used (e.g. layth + layth_sitting -> Sitting).
+Otherwise the full label is turned into Title Case with spaces for underscores.
+
+Default output is one merged CSV (all classes). Use --per-class for separate files.
+
+Accelerometer axes are copied from the JSON unchanged by default (no unit conversion).
+Optional --acc-scale multiplies all three axes when you explicitly want scaling later.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+
+
+def load_project(json_path: Path) -> dict:
+    with json_path.open() as f:
+        return json.load(f)
+
+
+def activity_from_label(label: str, user: str) -> str:
+    """WISDM-style activity name (e.g. Sitting, Standing)."""
+    label_s = str(label).strip()
+    prefix = f"{user.strip()}_"
+    if label_s.lower().startswith(prefix.lower()):
+        rest = label_s[len(prefix) :]
+    else:
+        rest = label_s
+    rest = rest.replace("_", " ").strip()
+    if not rest:
+        return label_s
+    return rest.title()
+
+
+def acc_xyz(sample: dict, scale: float) -> tuple[float, float, float]:
+    x, y, z = float(sample["0"]), float(sample["1"]), float(sample["2"])
+    if scale == 1.0:
+        return x, y, z
+    return (x * scale, y * scale, z * scale)
+
+
+def write_wisdm_rows(
+    writer: csv.DictWriter,
+    sessions: list,
+    user: str,
+    activity: str,
+    acc_scale: float,
+    timestamp_ns: int,
+    step_ns: int,
+) -> tuple[int, int]:
+    """
+    Write all samples for this label. Returns (end_timestamp_ns, num_rows).
+    """
+    rows = 0
+    t = timestamp_ns
+    for session in sessions:
+        for sample in session:
+            x, y, z = acc_xyz(sample, acc_scale)
+            writer.writerow(
+                {
+                    "user": user,
+                    "activity": activity,
+                    "timestamp": t,
+                    "x-axis": x,
+                    "y-axis": y,
+                    "z-axis": z,
+                }
+            )
+            t += step_ns
+            rows += 1
+    return t, rows
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument(
+        "json_path",
+        nargs="?",
+        default="TinyMLProject.json",
+        type=Path,
+        help="Path to project JSON (default: TinyMLProject.json)",
+    )
+    p.add_argument(
+        "--user",
+        default="layth",
+        help='Value for the "user" column (default: layth)',
+    )
+    p.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=None,
+        help="Output CSV path for merged mode (default: <json_stem>_wisdm_raw.csv next to JSON)",
+    )
+    p.add_argument(
+        "--per-class",
+        action="store_true",
+        help="Write one CSV per capture label instead of a single merged file",
+    )
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="Directory for outputs (default: same folder as JSON); used with --per-class or as base for -o",
+    )
+    p.add_argument(
+        "--start-timestamp",
+        type=int,
+        default=4_991_922_345_000,
+        help="First timestamp in nanoseconds (default matches WISDM scale; monotonic from there)",
+    )
+    p.add_argument(
+        "--acc-scale",
+        type=float,
+        default=1.0,
+        help="default 1.0: raw JSON values (no scaling). Set e.g. 9.80665 only if you choose to convert g→m/s² later",
+    )
+    args = p.parse_args()
+
+    json_path: Path = args.json_path
+    if not json_path.is_file():
+        print(f"Error: file not found: {json_path}", file=sys.stderr)
+        return 1
+
+    data = load_project(json_path)
+    labels = data.get("capture.labels")
+    recordings = data.get("capture.recordings")
+    if not isinstance(labels, list) or not isinstance(recordings, list):
+        print("Error: JSON must contain capture.labels and capture.recordings lists.", file=sys.stderr)
+        return 1
+    if len(labels) != len(recordings):
+        print("Error: capture.labels and capture.recordings length mismatch.", file=sys.stderr)
+        return 1
+
+    delay_s = float(data.get("captureSettings.captureDelay", 0.05))
+    step_ns = int(round(delay_s * 1e9))
+    # Confirm ~50 ms when delay is 0.05 (WISDM rows are ~50 ms apart)
+    if abs(delay_s - 0.05) < 1e-9:
+        print(f"Using sample spacing {delay_s} s -> timestamp step {step_ns} ns (~{step_ns / 1e6:.0f} ms)", flush=True)
+
+    if args.acc_scale == 1.0:
+        print("Accelerometer: raw from JSON (--acc-scale 1.0, default)", flush=True)
+    else:
+        print(f"Accelerometer: axes multiplied by --acc-scale {args.acc_scale}", flush=True)
+
+    out_dir = args.out_dir if args.out_dir is not None else json_path.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = ["user", "activity", "timestamp", "x-axis", "y-axis", "z-axis"]
+    user = args.user
+
+    if args.per_class:
+        total_rows = 0
+        for label, sessions in zip(labels, recordings):
+            activity = activity_from_label(label, user)
+            safe = str(label).replace(" ", "_")
+            out_path = out_dir / f"{safe}_wisdm_raw.csv"
+            t = args.start_timestamp
+            with out_path.open("w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+                w.writeheader()
+                t, n = write_wisdm_rows(w, sessions, user, activity, args.acc_scale, t, step_ns)
+                total_rows += n
+            print(f"{out_path}  activity={activity!r}  rows={n}")
+        print(f"Total rows: {total_rows}")
+        return 0
+
+    out_path = args.output
+    if out_path is None:
+        out_path = out_dir / f"{json_path.stem}_wisdm_raw.csv"
+    else:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    t = args.start_timestamp
+    total_rows = 0
+    with out_path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for label, sessions in zip(labels, recordings):
+            activity = activity_from_label(label, user)
+            t, n = write_wisdm_rows(w, sessions, user, activity, args.acc_scale, t, step_ns)
+            total_rows += n
+
+    print(f"{out_path}  rows={total_rows}  user={user!r}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
