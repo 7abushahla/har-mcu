@@ -10,6 +10,42 @@ Expects keys like:
 
 Output: one CSV per label, same layout as typical motion captures:
   header row, then blocks of N samples separated by blank lines.
+
+Usage
+-----
+
+Run from the directory that contains the JSON (default input name)::
+
+    python3 json_to_imu_csvs.py
+
+Read a specific project file; CSVs are written next to the JSON::
+
+    python3 json_to_imu_csvs.py /path/to/TinyMLProject.json
+
+Write all generated CSVs into another folder::
+
+    python3 json_to_imu_csvs.py TinyMLProject.json -o /path/to/output_dir
+    python3 json_to_imu_csvs.py TinyMLProject.json --out-dir /path/to/output_dir
+
+Show CLI help (positional + flags)::
+
+    python3 json_to_imu_csvs.py -h
+
+Arguments
+---------
+
+``json_path`` (optional positional)
+    Path to the project ``.json``. Default: ``TinyMLProject.json`` in the
+    current working directory.
+
+``-o`` / ``--out-dir`` (optional)
+    Directory for output files. Default: same directory as ``json_path``.
+
+Each output filename is::
+
+    <label>_numSamples_<N>_threshold_<T>_delay_<D>.csv
+
+where ``N``, ``T``, and ``D`` come from ``captureSettings`` inside the JSON.
 """
 
 from __future__ import annotations

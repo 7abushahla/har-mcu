@@ -17,6 +17,69 @@ Default output is one merged CSV (all classes). Use --per-class for separate fil
 
 Accelerometer axes are copied from the JSON unchanged by default (no unit conversion).
 Optional --acc-scale multiplies all three axes when you explicitly want scaling later.
+
+Usage
+-----
+
+Default: one merged file ``<json_stem>_wisdm_raw.csv`` beside the JSON::
+
+    python3 json_to_wisdm_csv.py
+    python3 json_to_wisdm_csv.py TinyMLProject.json
+
+Explicit input path and merged output path::
+
+    python3 json_to_wisdm_csv.py /path/to/TinyMLProject.json -o /path/to/out.csv
+
+Another participant name in the ``user`` column (still used to strip ``user_``
+prefix from labels when deriving ``activity``)::
+
+    python3 json_to_wisdm_csv.py TinyMLProject.json --user alice
+
+One WISDM-style CSV per capture label (filenames like ``layth_sitting_wisdm_raw.csv``)::
+
+    python3 json_to_wisdm_csv.py TinyMLProject.json --per-class
+    python3 json_to_wisdm_csv.py TinyMLProject.json --per-class --out-dir /path/to/csvs
+
+Optional scaling on all three accelerometer axes (default is raw, scale ``1.0``)::
+
+    python3 json_to_wisdm_csv.py TinyMLProject.json --acc-scale 9.80665
+
+Custom first timestamp (nanoseconds) and help::
+
+    python3 json_to_wisdm_csv.py TinyMLProject.json --start-timestamp 5000000000000
+    python3 json_to_wisdm_csv.py -h
+
+Arguments
+---------
+
+``json_path`` (optional positional)
+    Path to the project ``.json``. Default: ``TinyMLProject.json``.
+
+``--user`` (string, default ``layth``)
+    Value written in the ``user`` column. If a label is ``layth_sitting`` and
+    ``--user layth``, ``activity`` becomes ``Sitting``.
+
+``-o`` / ``--output`` (path, merged mode only)
+    Output CSV path. Default: ``<directory>/<json_stem>_wisdm_raw.csv`` (directory
+    is from ``--out-dir`` or the JSON's folder).
+
+``--per-class``
+    If set, write one CSV per label under ``--out-dir`` (or next to the JSON),
+    each restarting at ``--start-timestamp``. If omitted, one continuous merged
+    file with timestamps increasing across all labels.
+
+``--out-dir`` (path)
+    Base directory for outputs. Default: same directory as ``json_path``.
+    Used for default merged output name, for ``-o`` parent creation, and for
+    ``--per-class`` files.
+
+``--start-timestamp`` (integer, default ``4991922345000``)
+    First row's ``timestamp`` in nanoseconds; each sample adds one step derived
+    from ``captureSettings.captureDelay`` in the JSON (e.g. ``0.05`` s → 50_000_000 ns).
+
+``--acc-scale`` (float, default ``1.0``)
+    Multiply ``x-axis``, ``y-axis``, and ``z-axis`` by this factor. ``1.0`` means
+    raw JSON values (no scaling).
 """
 
 from __future__ import annotations
