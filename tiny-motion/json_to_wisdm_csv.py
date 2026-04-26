@@ -16,7 +16,11 @@ Otherwise the full label is turned into Title Case with spaces for underscores.
 Default output is one merged CSV (all classes). Use --per-class for separate files.
 
 Accelerometer axes are copied from the JSON unchanged by default (no unit conversion).
-Optional --acc-scale multiplies all three axes when you explicitly want scaling later.
+
+Some firmware (e.g. tf4micro-motion-kit ``data_provider.cpp``) stores ``readAcceleration``
+output in **g** but **divided by 4** (±4 g range → values roughly in [-1, 1]). Use
+``--acc-pre-multiply 4`` to undo that before ``--acc-scale``. Approximate **m/s²**
+like WISDM: ``--acc-pre-multiply 4 --acc-scale 9.80665`` (i.e. stored × 4 × g_Earth).
 
 Usage
 -----
@@ -40,9 +44,13 @@ One WISDM-style CSV per capture label (filenames like ``layth_sitting_wisdm_raw.
     python3 json_to_wisdm_csv.py TinyMLProject.json --per-class
     python3 json_to_wisdm_csv.py TinyMLProject.json --per-class --out-dir /path/to/csvs
 
-Optional scaling on all three accelerometer axes (default is raw, scale ``1.0``)::
+Optional scaling (default: raw JSON, no change)::
 
     python3 json_to_wisdm_csv.py TinyMLProject.json --acc-scale 9.80665
+
+tf4micro-motion-kit style (stored = g/4) → approximate WISDM m/s²::
+
+    python3 json_to_wisdm_csv.py TinyMLProject.json --acc-pre-multiply 4 --acc-scale 9.80665
 
 Custom first timestamp (nanoseconds) and help::
 
@@ -77,9 +85,14 @@ Arguments
     First row's ``timestamp`` in nanoseconds; each sample adds one step derived
     from ``captureSettings.captureDelay`` in the JSON (e.g. ``0.05`` s → 50_000_000 ns).
 
+``--acc-pre-multiply`` (float, default ``1.0``)
+    Multiply each axis **before** ``--acc-scale``. Use ``4`` if JSON values are
+    ``g/4`` from firmware (undo the divide-by-4).
+
 ``--acc-scale`` (float, default ``1.0``)
-    Multiply ``x-axis``, ``y-axis``, and ``z-axis`` by this factor. ``1.0`` means
-    raw JSON values (no scaling).
+    Multiply each axis **after** ``--acc-pre-multiply``. ``1.0`` leaves values
+    unchanged aside from pre-multiply. Use ``9.80665`` with pre-multiply ``4``
+    to go from stored ``g/4`` to approximate **m/s²**.
 """
 
 from __future__ import annotations
@@ -110,8 +123,10 @@ def activity_from_label(label: str, user: str) -> str:
     return rest.title()
 
 
-def acc_xyz(sample: dict, scale: float) -> tuple[float, float, float]:
+def acc_xyz(sample: dict, pre_mult: float, scale: float) -> tuple[float, float, float]:
     x, y, z = float(sample["0"]), float(sample["1"]), float(sample["2"])
+    if pre_mult != 1.0:
+        x, y, z = x * pre_mult, y * pre_mult, z * pre_mult
     if scale == 1.0:
         return x, y, z
     return (x * scale, y * scale, z * scale)
@@ -122,6 +137,7 @@ def write_wisdm_rows(
     sessions: list,
     user: str,
     activity: str,
+    acc_pre_mult: float,
     acc_scale: float,
     timestamp_ns: int,
     step_ns: int,
@@ -133,7 +149,7 @@ def write_wisdm_rows(
     t = timestamp_ns
     for session in sessions:
         for sample in session:
-            x, y, z = acc_xyz(sample, acc_scale)
+            x, y, z = acc_xyz(sample, acc_pre_mult, acc_scale)
             writer.writerow(
                 {
                     "user": user,
@@ -188,10 +204,22 @@ def main() -> int:
         help="First timestamp in nanoseconds (default matches WISDM scale; monotonic from there)",
     )
     p.add_argument(
+        "--acc-pre-multiply",
+        type=float,
+        default=1.0,
+        help="multiply each axis first (default 1.0). Use 4 to undo tf4micro g/4 normalization",
+    )
+    p.add_argument(
         "--acc-scale",
         type=float,
         default=1.0,
-        help="default 1.0: raw JSON values (no scaling). Set e.g. 9.80665 only if you choose to convert g→m/s² later",
+        help="multiply after --acc-pre-multiply (default 1.0: no extra scaling). E.g. 9.80665 for g→m/s²",
+    )
+    p.add_argument(
+        "--wisdm-suffix",
+        type=str,
+        default="_wisdm_raw",
+        help="Filename suffix: per-class {label}{suffix}.csv; merged default {json_stem}{suffix}.csv",
     )
     args = p.parse_args()
 
@@ -216,10 +244,12 @@ def main() -> int:
     if abs(delay_s - 0.05) < 1e-9:
         print(f"Using sample spacing {delay_s} s -> timestamp step {step_ns} ns (~{step_ns / 1e6:.0f} ms)", flush=True)
 
-    if args.acc_scale == 1.0:
-        print("Accelerometer: raw from JSON (--acc-scale 1.0, default)", flush=True)
-    else:
-        print(f"Accelerometer: axes multiplied by --acc-scale {args.acc_scale}", flush=True)
+    if args.acc_pre_multiply != 1.0:
+        print(f"Accelerometer: --acc-pre-multiply {args.acc_pre_multiply} (applied first)", flush=True)
+    if args.acc_scale == 1.0 and args.acc_pre_multiply == 1.0:
+        print("Accelerometer: raw from JSON (pre-multiply and acc-scale both 1.0)", flush=True)
+    elif args.acc_scale != 1.0:
+        print(f"Accelerometer: then × --acc-scale {args.acc_scale}", flush=True)
 
     out_dir = args.out_dir if args.out_dir is not None else json_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -232,12 +262,14 @@ def main() -> int:
         for label, sessions in zip(labels, recordings):
             activity = activity_from_label(label, user)
             safe = str(label).replace(" ", "_")
-            out_path = out_dir / f"{safe}_wisdm_raw.csv"
+            out_path = out_dir / f"{safe}{args.wisdm_suffix}.csv"
             t = args.start_timestamp
             with out_path.open("w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=fieldnames)
                 w.writeheader()
-                t, n = write_wisdm_rows(w, sessions, user, activity, args.acc_scale, t, step_ns)
+                t, n = write_wisdm_rows(
+                    w, sessions, user, activity, args.acc_pre_multiply, args.acc_scale, t, step_ns
+                )
                 total_rows += n
             print(f"{out_path}  activity={activity!r}  rows={n}")
         print(f"Total rows: {total_rows}")
@@ -245,7 +277,7 @@ def main() -> int:
 
     out_path = args.output
     if out_path is None:
-        out_path = out_dir / f"{json_path.stem}_wisdm_raw.csv"
+        out_path = out_dir / f"{json_path.stem}{args.wisdm_suffix}.csv"
     else:
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -256,7 +288,9 @@ def main() -> int:
         w.writeheader()
         for label, sessions in zip(labels, recordings):
             activity = activity_from_label(label, user)
-            t, n = write_wisdm_rows(w, sessions, user, activity, args.acc_scale, t, step_ns)
+            t, n = write_wisdm_rows(
+                w, sessions, user, activity, args.acc_pre_multiply, args.acc_scale, t, step_ns
+            )
             total_rows += n
 
     print(f"{out_path}  rows={total_rows}  user={user!r}")
