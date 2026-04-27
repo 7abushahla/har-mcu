@@ -11,7 +11,7 @@ data/processed/*.npy
 data/processed/*.npz
 data/processed/*.json
 checkpoints/*
-models_tflite/*
+# models_tflite tracked (TFLite exports for deployment/repro)
 reports/*.json
 reports/*.md
 reports/*.png
