@@ -1,2 +1,3 @@
-/arduino-code/libraries/Arduino_TensorFlowLite
+# Vendored for reproducible builds; large ~80MB (install via Library Manager is alternative).
+# /arduino-code/libraries/Arduino_TensorFlowLite
 .DS_Store
