@@ -1,0 +1,173 @@
+{
+  "tag": "ptq_tcn_attention_har_teacher_conv2d_E05_tcn_attention_har_teacher_conv2d_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E05_legacy_arduino_to_mps2/arch_seq/tcn_attention_har_teacher_conv2d/e05/tcn_attention_har_teacher_conv2d_T100_Prandom_stratified_E05_tcn_attention_har_teacher_conv2d_r0_ptq_int8.tflite",
+  "model_size_kb": 578.3984375,
+  "input_dtype": "<class 'numpy.int8'>",
+  "output_dtype": "<class 'numpy.int8'>",
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_MATMUL",
+    "CONCATENATION",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "MEAN",
+    "MUL",
+    "PAD",
+    "RESHAPE",
+    "RSQRT",
+    "SOFTMAX",
+    "SQUARED_DIFFERENCE",
+    "SUB",
+    "TRANSPOSE"
+  ],
+  "interpreter_op_count": 14,
+  "accuracy": 0.5916561314791403,
+  "macro_f1": 0.5986758979613379,
+  "confusion_matrix": [
+    [
+      90,
+      11,
+      147,
+      13,
+      0,
+      3
+    ],
+    [
+      7,
+      225,
+      21,
+      10,
+      0,
+      0
+    ],
+    [
+      24,
+      11,
+      178,
+      48,
+      2,
+      1
+    ],
+    [
+      14,
+      15,
+      189,
+      46,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      264,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      128,
+      2,
+      133
+    ]
+  ],
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_attention_har_teacher_conv2d/e05/m3/confusion_ptq_tcn_attention_har_teacher_conv2d_E05_tcn_attention_har_teacher_conv2d_r0_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.6666666666666666,
+      "recall": 0.3409090909090909,
+      "f1": 0.45112781954887216,
+      "support": 264
+    },
+    "Jogging": {
+      "precision": 0.8587786259541985,
+      "recall": 0.8555133079847909,
+      "f1": 0.8571428571428571,
+      "support": 263
+    },
+    "Upstairs": {
+      "precision": 0.33271028037383177,
+      "recall": 0.6742424242424242,
+      "f1": 0.4455569461827284,
+      "support": 264
+    },
+    "Downstairs": {
+      "precision": 0.18775510204081633,
+      "recall": 0.17424242424242425,
+      "f1": 0.1807465618860511,
+      "support": 264
+    },
+    "Sitting": {
+      "precision": 0.9850746268656716,
+      "recall": 1.0,
+      "f1": 0.9924812030075187,
+      "support": 264
+    },
+    "Standing": {
+      "precision": 0.9708029197080292,
+      "recall": 0.5057034220532319,
+      "f1": 0.665,
+      "support": 263
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.6666666666666666,
+      "recall": 0.3409090909090909,
+      "f1-score": 0.45112781954887216,
+      "support": 264.0
+    },
+    "Jogging": {
+      "precision": 0.8587786259541985,
+      "recall": 0.8555133079847909,
+      "f1-score": 0.8571428571428571,
+      "support": 263.0
+    },
+    "Upstairs": {
+      "precision": 0.33271028037383177,
+      "recall": 0.6742424242424242,
+      "f1-score": 0.4455569461827284,
+      "support": 264.0
+    },
+    "Downstairs": {
+      "precision": 0.18775510204081633,
+      "recall": 0.17424242424242425,
+      "f1-score": 0.1807465618860511,
+      "support": 264.0
+    },
+    "Sitting": {
+      "precision": 0.9850746268656716,
+      "recall": 1.0,
+      "f1-score": 0.9924812030075187,
+      "support": 264.0
+    },
+    "Standing": {
+      "precision": 0.9708029197080292,
+      "recall": 0.5057034220532319,
+      "f1-score": 0.665,
+      "support": 263.0
+    },
+    "accuracy": 0.5916561314791403,
+    "macro avg": {
+      "precision": 0.6669647036015357,
+      "recall": 0.591768444905327,
+      "f1-score": 0.5986758979613379,
+      "support": 1582.0
+    },
+    "weighted avg": {
+      "precision": 0.6666513963079458,
+      "recall": 0.5916561314791403,
+      "f1-score": 0.598470593877128,
+      "support": 1582.0
+    }
+  },
+  "inference_latency_ms_median": 8.602775000099427,
+  "inference_latency_ms_p95": 8.87815700008332,
+  "inference_latency_ms_mean": 8.60705339063017,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}

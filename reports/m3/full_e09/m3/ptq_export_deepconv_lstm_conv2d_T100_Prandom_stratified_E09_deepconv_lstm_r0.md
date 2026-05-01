@@ -1,7 +1,7 @@
 # PTQ Export (T=100, protocol=random_stratified, variant=default)
 
-- Checkpoint: `/shared/b00088568/github/har-mcu/checkpoints/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0.keras`
-- TFLite: `/shared/b00088568/github/har-mcu/models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite`
+- Checkpoint: `/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0.keras`
+- TFLite: `/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite`
 - PTQ size: 136.92 KB
 - Status: `ok`
 - PTQ status alias: `ok`

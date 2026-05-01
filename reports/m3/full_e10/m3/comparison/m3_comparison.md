@@ -4,9 +4,10 @@
 
 | pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | ptq_status | qat_status | status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| WISDM replication | random_stratified | baseline float | 0.9924146649810367 | 0.9924203624956377 | 513.6171875 | 18.598442543999994 | — | — | — | — | ok | ok | ok |
-| WISDM replication | random_stratified | PTQ int8 | 0.9532237673830595 | 0.9539966090499323 | 136.921875 | — | 4.252698499996654 | 4.328750499986711 | — | — | ok | — | ok |
-| WISDM replication | random_stratified | QAT int8 | 0.49620733249051835 | 0.47515354509578117 | 137.34375 | 6.610608259999992 | 4.254467999999179 | 4.298254999987705 | — | — | — | ok | ok |
+| WISDM replication | random_stratified | baseline float | 0.9867256637168141 | 0.9867292080185682 | 513.6171875 | 11.780589357000053 | — | — | — | — | ok | ok | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9424778761061947 | 0.9438209755706034 | 136.921875 | — | 4.24161599994477 | 4.288297499897453 | — | — | ok | — | ok |
+| WISDM replication | random_stratified | QAT int8 | 0.3381795195954488 | 0.31235392168815374 | 137.34375 | 6.689478254000051 | 4.244566000011218 | 4.280973999982507 | — | — | — | ok | ok |
 | paper target | — | baseline float | — | — | — | — | — | — | — | — | — | — | reference |
 | paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | — | — | reference |
 | paper target | — | QAT int8 | — | — | — | — | — | — | — | — | — | — | reference |
+

@@ -2,7 +2,7 @@
   "tag": "ptq_deepconv_lstm_conv2d_E08_deepconv_lstm_r0",
   "window_size": 50,
   "protocol": "random_stratified",
-  "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_ptq_int8.tflite",
+  "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_ptq_int8.tflite",
   "model_size_kb": 107.625,
   "input_dtype": "<class 'numpy.int8'>",
   "output_dtype": "<class 'numpy.int8'>",
@@ -66,7 +66,7 @@
       0
     ]
   ],
-  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/full_e08/m3/confusion_ptq_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e08/m3/confusion_ptq_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
       "precision": 0.1668769716088328,
@@ -156,9 +156,9 @@
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 2.040066000006391,
-  "inference_latency_ms_p95": 2.0824967499919467,
-  "inference_latency_ms_mean": 2.0454230898427905,
+  "inference_latency_ms_median": 2.0426199999974415,
+  "inference_latency_ms_p95": 2.10186425010761,
+  "inference_latency_ms_mean": 2.0515411679671303,
   "warmup_samples": 32,
   "timed_samples": 256
 }

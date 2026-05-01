@@ -1,7 +1,7 @@
 # PTQ Export (T=50, protocol=random_stratified, variant=default)
 
-- Checkpoint: `/shared/b00088568/github/har-mcu/checkpoints/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0.keras`
-- TFLite: `/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_ptq_int8.tflite`
+- Checkpoint: `/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0.keras`
+- TFLite: `/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_ptq_int8.tflite`
 - PTQ size: 107.62 KB
 - Status: `ok`
 - PTQ status alias: `ok`

@@ -1,6 +1,6 @@
 # QAT_DEEPCONV_LSTM_CONV2D_E08_DEEPCONV_LSTM_R0 TFLite Evaluation (T=50, protocol=random_stratified)
 
-- Model: `/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_qat.tflite`
+- Model: `/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/full_e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_qat.tflite`
 - Model size: 108.05 KB
 - Accuracy: 0.1669
 - Macro-F1: 0.0477
@@ -10,10 +10,10 @@
 - Interpreter op count: 5
 - Interpreter ops: `['CONV_2D', 'FULLY_CONNECTED', 'RESHAPE', 'SOFTMAX', 'UNIDIRECTIONAL_SEQUENCE_LSTM']`
 - Inference latency median: 2.045 ms/sample
-- Inference latency p95: 2.091 ms/sample
+- Inference latency p95: 2.093 ms/sample
 - Timed samples: 256
 - Warmup samples: 32
-- Confusion matrix plot: `/shared/b00088568/github/har-mcu/reports/m3/full_e08/m3/confusion_qat_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png`
+- Confusion matrix plot: `/shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e08/m3/confusion_qat_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png`
 
 ## Per-class metrics
 

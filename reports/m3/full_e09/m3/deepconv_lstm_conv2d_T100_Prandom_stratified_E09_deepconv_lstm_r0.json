@@ -5,8 +5,8 @@
   "window_size": 100,
   "protocol": "random_stratified",
   "seed": 42,
-  "accuracy": 0.995575221238938,
-  "macro_f1": 0.9955735520260941,
+  "accuracy": 0.9936788874841972,
+  "macro_f1": 0.9936816489332262,
   "per_class": {
     "Walking": {
       "precision": 0.9924812030075187,
@@ -15,21 +15,21 @@
       "support": 264
     },
     "Jogging": {
-      "precision": 0.9961685823754789,
+      "precision": 1.0,
       "recall": 0.9885931558935361,
-      "f1": 0.9923664122137404,
+      "f1": 0.994263862332696,
       "support": 263
     },
     "Upstairs": {
-      "precision": 0.9924242424242424,
-      "recall": 0.9924242424242424,
-      "f1": 0.9924242424242424,
+      "precision": 0.9776951672862454,
+      "recall": 0.9962121212121212,
+      "f1": 0.9868667917448405,
       "support": 264
     },
     "Downstairs": {
-      "precision": 0.9924242424242424,
-      "recall": 0.9924242424242424,
-      "f1": 0.9924242424242424,
+      "precision": 0.9923076923076923,
+      "recall": 0.9772727272727273,
+      "f1": 0.9847328244274809,
       "support": 264
     },
     "Sitting": {
@@ -64,8 +64,8 @@
     ],
     [
       1,
-      1,
-      262,
+      0,
+      263,
       0,
       0,
       0
@@ -73,8 +73,8 @@
     [
       0,
       0,
-      2,
-      262,
+      6,
+      258,
       0,
       0
     ],
@@ -95,7 +95,7 @@
       263
     ]
   ],
-  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/full_e09/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0.png",
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e09/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0.png",
   "classification_report": {
     "Walking": {
       "precision": 0.9924812030075187,
@@ -104,21 +104,21 @@
       "support": 264.0
     },
     "Jogging": {
-      "precision": 0.9961685823754789,
+      "precision": 1.0,
       "recall": 0.9885931558935361,
-      "f1-score": 0.9923664122137404,
+      "f1-score": 0.994263862332696,
       "support": 263.0
     },
     "Upstairs": {
-      "precision": 0.9924242424242424,
-      "recall": 0.9924242424242424,
-      "f1-score": 0.9924242424242424,
+      "precision": 0.9776951672862454,
+      "recall": 0.9962121212121212,
+      "f1-score": 0.9868667917448405,
       "support": 264.0
     },
     "Downstairs": {
-      "precision": 0.9924242424242424,
-      "recall": 0.9924242424242424,
-      "f1-score": 0.9924242424242424,
+      "precision": 0.9923076923076923,
+      "recall": 0.9772727272727273,
+      "f1-score": 0.9847328244274809,
       "support": 264.0
     },
     "Sitting": {
@@ -133,17 +133,17 @@
       "f1-score": 1.0,
       "support": 263.0
     },
-    "accuracy": 0.995575221238938,
+    "accuracy": 0.9936788874841972,
     "macro avg": {
-      "precision": 0.9955830450385804,
-      "recall": 0.9955736067903368,
-      "f1-score": 0.9955735520260941,
+      "precision": 0.9937473437669094,
+      "recall": 0.9936796673963975,
+      "f1-score": 0.9936816489332262,
       "support": 1582.0
     },
     "weighted avg": {
-      "precision": 0.9955798829069128,
-      "recall": 0.995575221238938,
-      "f1-score": 0.9955727812876861,
+      "precision": 0.993739439018195,
+      "recall": 0.9936788874841972,
+      "f1-score": 0.9936772870087849,
       "support": 1582.0
     }
   }

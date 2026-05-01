@@ -5,8 +5,8 @@
   "window_size": 100,
   "protocol": "random_stratified",
   "seed": 42,
-  "accuracy": 0.16940581542351454,
-  "macro_f1": 0.05495834189992266,
+  "accuracy": 0.2054361567635904,
+  "macro_f1": 0.09729769752071199,
   "per_class": {
     "Walking": {
       "precision": 0.0,
@@ -21,15 +21,15 @@
       "support": 263
     },
     "Upstairs": {
-      "precision": 0.05747126436781609,
-      "recall": 0.01893939393939394,
-      "f1": 0.02849002849002849,
+      "precision": 0.02631578947368421,
+      "recall": 0.007575757575757576,
+      "f1": 0.011764705882352941,
       "support": 264
     },
     "Downstairs": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1": 0.0,
+      "precision": 0.12552301255230125,
+      "recall": 0.22727272727272727,
+      "f1": 0.16172506738544473,
       "support": 264
     },
     "Sitting": {
@@ -39,9 +39,9 @@
       "support": 264
     },
     "Standing": {
-      "precision": 0.17734322319622386,
+      "precision": 0.25809617271835134,
       "recall": 1.0,
-      "f1": 0.30126002290950743,
+      "f1": 0.41029641185647425,
       "support": 263
     }
   },
@@ -50,41 +50,41 @@
       0,
       0,
       0,
+      39,
       0,
-      0,
-      264
+      225
     ],
     [
       0,
       0,
-      78,
-      12,
-      0,
-      173
+      73,
+      54,
+      1,
+      135
     ],
     [
       0,
       0,
-      5,
-      0,
-      0,
-      259
+      2,
+      64,
+      6,
+      192
     ],
     [
       0,
       0,
-      4,
-      0,
-      0,
-      260
+      1,
+      60,
+      2,
+      201
     ],
     [
       0,
       0,
       0,
+      261,
       0,
-      0,
-      264
+      3
     ],
     [
       0,
@@ -95,7 +95,7 @@
       263
     ]
   ],
-  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/full_e06/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E06_deepconv_lstm_r0.png",
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e06/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E06_deepconv_lstm_r0.png",
   "classification_report": {
     "Walking": {
       "precision": 0.0,
@@ -110,15 +110,15 @@
       "support": 263.0
     },
     "Upstairs": {
-      "precision": 0.05747126436781609,
-      "recall": 0.01893939393939394,
-      "f1-score": 0.02849002849002849,
+      "precision": 0.02631578947368421,
+      "recall": 0.007575757575757576,
+      "f1-score": 0.011764705882352941,
       "support": 264.0
     },
     "Downstairs": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1-score": 0.0,
+      "precision": 0.12552301255230125,
+      "recall": 0.22727272727272727,
+      "f1-score": 0.16172506738544473,
       "support": 264.0
     },
     "Sitting": {
@@ -128,22 +128,22 @@
       "support": 264.0
     },
     "Standing": {
-      "precision": 0.17734322319622386,
+      "precision": 0.25809617271835134,
       "recall": 1.0,
-      "f1-score": 0.30126002290950743,
+      "f1-score": 0.41029641185647425,
       "support": 263.0
     },
-    "accuracy": 0.16940581542351454,
+    "accuracy": 0.2054361567635904,
     "macro avg": {
-      "precision": 0.03913574792733999,
-      "recall": 0.16982323232323235,
-      "f1-score": 0.05495834189992266,
+      "precision": 0.0683224957907228,
+      "recall": 0.2058080808080808,
+      "f1-score": 0.09729769752071199,
       "support": 1582.0
     },
     "weighted avg": {
-      "precision": 0.039073123573773905,
-      "recall": 0.16940581542351454,
-      "f1-score": 0.05483739162235649,
+      "precision": 0.06824572513260845,
+      "recall": 0.2054361567635904,
+      "f1-score": 0.09716135048100588,
       "support": 1582.0
     }
   }

@@ -1,0 +1,993 @@
+{
+  "fp32_metrics": {
+    "accuracy": 0.1665615141955836,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Standing": {
+        "f1-score": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528.0
+      },
+      "Upstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "accuracy": 0.1665615141955836,
+      "macro avg": {
+        "f1-score": 0.04759329367225527,
+        "precision": 0.0277602523659306,
+        "recall": 0.16666666666666666,
+        "support": 3170.0
+      },
+      "weighted avg": {
+        "f1-score": 0.04756326635763555,
+        "precision": 0.027742738011125596,
+        "recall": 0.1665615141955836,
+        "support": 3170.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ]
+    ],
+    "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/confusion_tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0.png",
+    "macro_f1": 0.04759329367225527,
+    "model_name": "tcn_inception_conv2d",
+    "paper_slug": "m3",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Standing": {
+        "f1": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528
+      },
+      "Upstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      }
+    },
+    "protocol": "random_stratified",
+    "run_id": "E08_tcn_inception_conv2d_r0",
+    "seed": 42,
+    "window_size": 50
+  },
+  "fp32_tflite_error": null,
+  "fp32_tflite_eval_error": null,
+  "fp32_tflite_eval_metrics": {
+    "accuracy": 0.1665615141955836,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Standing": {
+        "f1-score": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528.0
+      },
+      "Upstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "accuracy": 0.1665615141955836,
+      "macro avg": {
+        "f1-score": 0.04759329367225527,
+        "precision": 0.0277602523659306,
+        "recall": 0.16666666666666666,
+        "support": 3170.0
+      },
+      "weighted avg": {
+        "f1-score": 0.04756326635763555,
+        "precision": 0.027742738011125596,
+        "recall": 0.1665615141955836,
+        "support": 3170.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ]
+    ],
+    "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/confusion_fp32_tflite_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.png",
+    "inference_latency_ms_mean": 0.8309858007846671,
+    "inference_latency_ms_median": 0.8271554999055297,
+    "inference_latency_ms_p95": 0.8522659999812277,
+    "input_dtype": "<class 'numpy.float32'>",
+    "interpreter_op_count": 10,
+    "interpreter_ops": [
+      "ADD",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PAD",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "macro_f1": 0.04759329367225527,
+    "metrics_json": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/fp32_tflite_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.json",
+    "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_fp32.tflite",
+    "model_size_kb": 1322.98828125,
+    "output_dtype": "<class 'numpy.float32'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Standing": {
+        "f1": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528
+      },
+      "Upstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "fp32_tflite_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 50
+  },
+  "fp32_tflite_eval_status": "ok",
+  "fp32_tflite_model": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_fp32.tflite",
+  "fp32_tflite_status": "ok",
+  "fp32_training_time_sec": 164.783943507,
+  "paper_slug": "m3",
+  "protocol": "random_stratified",
+  "ptq_eval_metrics": {
+    "accuracy": 0.1665615141955836,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Standing": {
+        "f1-score": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528.0
+      },
+      "Upstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "accuracy": 0.1665615141955836,
+      "macro avg": {
+        "f1-score": 0.04759329367225527,
+        "precision": 0.0277602523659306,
+        "recall": 0.16666666666666666,
+        "support": 3170.0
+      },
+      "weighted avg": {
+        "f1-score": 0.04756326635763555,
+        "precision": 0.027742738011125596,
+        "recall": 0.1665615141955836,
+        "support": 3170.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ]
+    ],
+    "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/confusion_ptq_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.png",
+    "inference_latency_ms_mean": 1.3112950859301975,
+    "inference_latency_ms_median": 1.3091499999973166,
+    "inference_latency_ms_p95": 1.3320900000621805,
+    "input_dtype": "<class 'numpy.int8'>",
+    "interpreter_op_count": 10,
+    "interpreter_ops": [
+      "ADD",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PAD",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "macro_f1": 0.04759329367225527,
+    "metrics_json": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/ptq_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.json",
+    "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_ptq_int8.tflite",
+    "model_size_kb": 369.921875,
+    "output_dtype": "<class 'numpy.int8'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Standing": {
+        "f1": 0.2855597620335316,
+        "precision": 0.1665615141955836,
+        "recall": 1.0,
+        "support": 528
+      },
+      "Upstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "ptq_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 50
+  },
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "allowed_ops_profile": "micro_mutable_main",
+    "allowed_ops_used": [
+      "ADD",
+      "ARG_MAX",
+      "ARG_MIN",
+      "AVERAGE_POOL_2D",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CAST",
+      "CEIL",
+      "CIRCULAR_BUFFER",
+      "CONCATENATION",
+      "CONV_2D",
+      "COS",
+      "CUMSUM",
+      "DEPTHWISE_CONV_2D",
+      "DEPTH_TO_SPACE",
+      "DEQUANTIZE",
+      "DIV",
+      "ELU",
+      "EQUAL",
+      "ETHOSU",
+      "EXP",
+      "EXPAND_DIMS",
+      "FILL",
+      "FLOOR",
+      "FLOOR_DIV",
+      "FLOOR_MOD",
+      "FULLY_CONNECTED",
+      "GATHER",
+      "GATHER_ND",
+      "GREATER",
+      "GREATER_EQUAL",
+      "HARD_SWISH",
+      "IF",
+      "L2_NORMALIZATION",
+      "L2_POOL_2D",
+      "LEAKY_RELU",
+      "LESS",
+      "LESS_EQUAL",
+      "LOG",
+      "LOGICAL_AND",
+      "LOGICAL_NOT",
+      "LOGICAL_OR",
+      "LOGISTIC",
+      "LOG_SOFTMAX",
+      "MAXIMUM",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MINIMUM",
+      "MIRROR_PAD",
+      "MUL",
+      "NEG",
+      "NOT_EQUAL",
+      "PACK",
+      "PAD",
+      "PADV2",
+      "PRELU",
+      "QUANTIZE",
+      "READ_VARIABLE",
+      "REDUCE_MAX",
+      "REDUCE_MIN",
+      "RELU",
+      "RELU6",
+      "RELU_0_TO_1",
+      "RELU_N1_TO_1",
+      "RESHAPE",
+      "RESIZE_BILINEAR",
+      "RESIZE_NEAREST_NEIGHBOR",
+      "ROUND",
+      "RSQRT",
+      "SELECT_V2",
+      "SHAPE",
+      "SIN",
+      "SLICE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SPACE_TO_DEPTH",
+      "SPLIT",
+      "SPLIT_V",
+      "SQRT",
+      "SQUARE",
+      "SQUARED_DIFFERENCE",
+      "SQUEEZE",
+      "STRIDED_SLICE",
+      "SUB",
+      "SVDF",
+      "TANH",
+      "TRANSPOSE",
+      "TRANSPOSE_CONV",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM",
+      "UNPACK",
+      "VAR_HANDLE",
+      "WHILE",
+      "ZEROS_LIKE"
+    ],
+    "checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0.keras",
+    "compat_error": null,
+    "compatibility_scope": "micro_mutable_main",
+    "deployable_full_int8": true,
+    "error": null,
+    "fp32_checkpoint_size_kb": 4222.2431640625,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_inception_conv2d",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "possibly_supported_upstream_tflm": [],
+    "protocol": "random_stratified",
+    "ptq_status": "ok",
+    "ptq_tflite_size_kb": 369.921875,
+    "representative_samples": 256,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "E08_tcn_inception_conv2d_r0",
+    "size_reduction_vs_ckpt_percent": 91.23873588928797,
+    "status": "ok",
+    "strict_full_int8": true,
+    "tflite_model": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_ptq_int8.tflite",
+    "tflm_compatible": true,
+    "tflm_ops": [
+      "ADD",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PAD",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "unsupported_in_reference": [],
+    "unsupported_ops": [],
+    "unsupported_ops_micro_mutable": [],
+    "unsupported_ops_profile": [],
+    "variant": "default",
+    "window_size": 50
+  },
+  "qat_eval_metrics": {
+    "accuracy": 0.1195583596214511,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528.0
+      },
+      "Standing": {
+        "f1-score": 0.19547005895128763,
+        "precision": 0.11688311688311688,
+        "recall": 0.5965909090909091,
+        "support": 528.0
+      },
+      "Upstairs": {
+        "f1-score": 0.12749003984063745,
+        "precision": 0.13473684210526315,
+        "recall": 0.12098298676748583,
+        "support": 529.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529.0
+      },
+      "accuracy": 0.1195583596214511,
+      "macro avg": {
+        "f1-score": 0.05382668313198752,
+        "precision": 0.04193665983139667,
+        "recall": 0.11959564930973249,
+        "support": 3170.0
+      },
+      "weighted avg": {
+        "f1-score": 0.05383294075772148,
+        "precision": 0.04195270510661512,
+        "recall": 0.1195583596214511,
+        "support": 3170.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        529
+      ],
+      [
+        0,
+        0,
+        117,
+        0,
+        0,
+        411
+      ],
+      [
+        0,
+        0,
+        64,
+        0,
+        0,
+        465
+      ],
+      [
+        0,
+        0,
+        81,
+        0,
+        0,
+        447
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        528
+      ],
+      [
+        0,
+        0,
+        213,
+        0,
+        0,
+        315
+      ]
+    ],
+    "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/confusion_qat_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.png",
+    "inference_latency_ms_mean": 1.3746565624952467,
+    "inference_latency_ms_median": 1.3706355002796045,
+    "inference_latency_ms_p95": 1.3929460002373162,
+    "input_dtype": "<class 'numpy.int8'>",
+    "interpreter_op_count": 10,
+    "interpreter_ops": [
+      "ADD",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PAD",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "macro_f1": 0.05382668313198752,
+    "metrics_json": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/tcn_inception_conv2d/e08/m3/qat_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0_T50_Prandom_stratified.json",
+    "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_qat.tflite",
+    "model_size_kb": 378.375,
+    "output_dtype": "<class 'numpy.int8'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 528
+      },
+      "Standing": {
+        "f1": 0.19547005895128763,
+        "precision": 0.11688311688311688,
+        "recall": 0.5965909090909091,
+        "support": 528
+      },
+      "Upstairs": {
+        "f1": 0.12749003984063745,
+        "precision": 0.13473684210526315,
+        "recall": 0.12098298676748583,
+        "support": 529
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 529
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "qat_tcn_inception_conv2d_E08_tcn_inception_conv2d_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 50
+  },
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "allowed_ops_profile": "micro_mutable_main",
+    "allowed_ops_used": [
+      "ADD",
+      "ARG_MAX",
+      "ARG_MIN",
+      "AVERAGE_POOL_2D",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CAST",
+      "CEIL",
+      "CIRCULAR_BUFFER",
+      "CONCATENATION",
+      "CONV_2D",
+      "COS",
+      "CUMSUM",
+      "DEPTHWISE_CONV_2D",
+      "DEPTH_TO_SPACE",
+      "DEQUANTIZE",
+      "DIV",
+      "ELU",
+      "EQUAL",
+      "ETHOSU",
+      "EXP",
+      "EXPAND_DIMS",
+      "FILL",
+      "FLOOR",
+      "FLOOR_DIV",
+      "FLOOR_MOD",
+      "FULLY_CONNECTED",
+      "GATHER",
+      "GATHER_ND",
+      "GREATER",
+      "GREATER_EQUAL",
+      "HARD_SWISH",
+      "IF",
+      "L2_NORMALIZATION",
+      "L2_POOL_2D",
+      "LEAKY_RELU",
+      "LESS",
+      "LESS_EQUAL",
+      "LOG",
+      "LOGICAL_AND",
+      "LOGICAL_NOT",
+      "LOGICAL_OR",
+      "LOGISTIC",
+      "LOG_SOFTMAX",
+      "MAXIMUM",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MINIMUM",
+      "MIRROR_PAD",
+      "MUL",
+      "NEG",
+      "NOT_EQUAL",
+      "PACK",
+      "PAD",
+      "PADV2",
+      "PRELU",
+      "QUANTIZE",
+      "READ_VARIABLE",
+      "REDUCE_MAX",
+      "REDUCE_MIN",
+      "RELU",
+      "RELU6",
+      "RELU_0_TO_1",
+      "RELU_N1_TO_1",
+      "RESHAPE",
+      "RESIZE_BILINEAR",
+      "RESIZE_NEAREST_NEIGHBOR",
+      "ROUND",
+      "RSQRT",
+      "SELECT_V2",
+      "SHAPE",
+      "SIN",
+      "SLICE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SPACE_TO_DEPTH",
+      "SPLIT",
+      "SPLIT_V",
+      "SQRT",
+      "SQUARE",
+      "SQUARED_DIFFERENCE",
+      "SQUEEZE",
+      "STRIDED_SLICE",
+      "SUB",
+      "SVDF",
+      "TANH",
+      "TRANSPOSE",
+      "TRANSPOSE_CONV",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM",
+      "UNPACK",
+      "VAR_HANDLE",
+      "WHILE",
+      "ZEROS_LIKE"
+    ],
+    "compat_error": null,
+    "compatibility_scope": "micro_mutable_main",
+    "deployable_full_int8": true,
+    "epochs_ran": 10,
+    "error": null,
+    "fallback_reason": null,
+    "fallback_triggered": false,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": false,
+    "has_while_op": false,
+    "history_json": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/history_tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_qat.json",
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "tcn_inception_conv2d",
+    "notes": [
+      "QAT strategy: annotate_policy_auto",
+      "Exported with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "possibly_supported_upstream_tflm": [],
+    "protocol": "random_stratified",
+    "qat_checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_qat.keras",
+    "qat_device_attempted": [
+      "/GPU:0"
+    ],
+    "qat_device_preference": "gpu",
+    "qat_device_used": "/GPU:0",
+    "qat_status": "ok",
+    "qat_tflite": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E08_T50_window/arch_seq/tcn_inception_conv2d/e08/tcn_inception_conv2d_T50_Prandom_stratified_E08_tcn_inception_conv2d_r0_qat.tflite",
+    "representative_samples": 256,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "E08_tcn_inception_conv2d_r0",
+    "status": "ok",
+    "strict_full_int8": true,
+    "tflm_compatible": true,
+    "tflm_ops": [
+      "ADD",
+      "CONCATENATION",
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MUL",
+      "PAD",
+      "RESHAPE",
+      "SOFTMAX"
+    ],
+    "training_time_sec": 138.40195900799995,
+    "unsupported_in_reference": [],
+    "unsupported_ops": [],
+    "unsupported_ops_micro_mutable": [],
+    "unsupported_ops_profile": [],
+    "variant": "default",
+    "window_size": 50
+  },
+  "run_id": "E08_tcn_inception_conv2d_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "stage_devices": {
+    "eval_fp32": "gpu",
+    "eval_ptq": "gpu",
+    "eval_qat": "cpu",
+    "ptq": "gpu",
+    "qat": "cpu",
+    "train": "gpu"
+  },
+  "transfer_mode": "zero_shot",
+  "transfer_notes": "zero_shot source=wisdm eval=arduino; target arrays normalized with source train stats",
+  "variant": "tcn_inception_conv2d",
+  "window_size": 50
+}
