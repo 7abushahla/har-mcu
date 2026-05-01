@@ -1,6 +1,6 @@
 # M3 experiment findings
 
-Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same). Per-checkpoint WISDM test scores used in §9 are also tabulated in `m3_cross_eval_wisdm.csv`.
+Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments **E00–E12** (E01 and E02 not run in this batch). **E11** / **E12** are the T=50 counterparts of **E09** / **E10** (same protocols, 2.5 s @ 20 Hz); Slurm scripts `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` and `job_m3_seq_e12_t50_all_models.sh`. Per-checkpoint WISDM test scores are in §9 and in `m3_cross_eval_wisdm.csv`.
 
 ---
 
@@ -77,7 +77,7 @@ However, in terms of **model size and inference latency**, T=50 does have real e
 - **`deepconv_lstm`** shrinks by ~29 KB and inference halves — the LSTM is the only architecture where the temporal dimension directly drives model size.
 - **TCN and RepMobile** see no size change (convolutional weights don't depend on input length), but latency nearly halves because fewer time steps are processed.
 - **XtinyHAR** variants see almost no latency gain — the bottleneck is not temporal computation.
-- **E11** and **E12** mirror E09/E10 at **T=50**; once their Slurm runs finish, the same style of comparison can be filled in from the new masters. Until then, the accuracy vs window tradeoff under fine-tuning/from-scratch at T=50 is not yet in the aggregate tables.
+- **E11** and **E12** use the same protocols as **E09** / **E10** at **T=50**; Arduino FP32 and latency numbers are summarized in **§6a** (and full rows in `m3_experiment_master_all.csv`).
 
 ---
 
@@ -112,6 +112,40 @@ Domain gap is effectively eliminated with fine-tuning. The weakest models (repmo
 | xtinyhar_relu | 0.973 | 0.973 | 0.000 |
 
 WISDM pre-training adds at most ~0.016 accuracy points. Arduino is large enough to train most architectures from scratch without meaningful penalty. Pre-training is a safe default but not critical.
+
+---
+
+## 6a. T=50 vs T=100 after adaptation (E11 vs E09, E12 vs E10)
+
+Same training recipe as §5–§6, but **window length 50 samples (2.5 s @ 20 Hz)** instead of 100. Numbers are **Arduino test FP32 accuracy** from `m3_experiment_master_all.csv` (`arch_seq` bundles; **E11/E12** include `deepconv_lstm` in the same matrix).
+
+### Fine-tune (E09 T=100 vs E11 T=50)
+
+| Model | E09 Arduino FP32 | E11 Arduino FP32 | Δ |
+|-------|------------------|------------------|---|
+| daghero | 0.996 | 0.987 | −0.008 |
+| deepconv_lstm | 0.994 | 0.981 | −0.013 |
+| repmobile | 0.979 | 0.968 | −0.012 |
+| tcn_attention | 0.995 | 0.982 | −0.013 |
+| tcn_inception | 0.994 | 0.981 | −0.013 |
+| xtinyhar | 0.979 | 0.962 | −0.018 |
+| xtinyhar_relu | 0.973 | 0.956 | −0.017 |
+
+**Takeaway:** dropping to T=50 costs roughly **0.01–0.02** Arduino accuracy under fine-tuning, while **latency roughly halves** for depthwise / TCN stacks (see §4 pattern — e.g. `tcn_attention` mean latency **8.29 ms → 4.33 ms**, `deepconv_lstm` **4.25 ms → 2.05 ms** on the same hardware path in the master CSV).
+
+### From-scratch (E10 T=100 vs E12 T=50)
+
+| Model | E10 Arduino FP32 | E12 Arduino FP32 | Δ |
+|-------|------------------|------------------|---|
+| daghero | 0.992 | 0.989 | −0.004 |
+| deepconv_lstm | 0.987 | 0.981 | −0.005 |
+| repmobile | 0.963 | 0.951 | −0.012 |
+| tcn_attention | 0.993 | 0.979 | −0.015 |
+| tcn_inception | 0.992 | 0.987 | −0.006 |
+| xtinyhar | 0.979 | 0.959 | −0.020 |
+| xtinyhar_relu | 0.973 | 0.956 | −0.018 |
+
+**Takeaway:** from-scratch shows the same qualitative trade: **small Arduino accuracy hit**, **substantial latency reduction** at T=50 for temporal-heavy models. WISDM-side behavior of these same checkpoints is in **§9.6–9.7**.
 
 ---
 
@@ -290,7 +324,7 @@ All models remain well below any usable threshold — consistent with E10. The s
 8. **`deepconv_lstm` should be PTQ-only** for Arduino-native training.
 9. **`xtinyhar_student_conv2d` (non-ReLU) cannot be quantized** — always use the `_relu` variant.
 10. **`daghero` dominates on size and speed** (26 KB, 0.08 ms) with near-top accuracy — best choice for MCU deployment.
-11. **T=50 window halves inference latency** for LSTM/TCN (§4). The T=50 fine-tune **(E11)** slightly worsens WISDM retention vs E09 for most models; T=50 from-scratch **(E12)** stays near-chance on WISDM just like E10.
+11. **T=50 vs T=100 after adaptation (§6a):** on Arduino, fine-tune **(E11)** and from-scratch **(E12)** lose about **0.004–0.020** FP32 accuracy vs **E09** / **E10**, while latency tracks the same ~2× pattern as zero-shot **(§4)**. WISDM-side retention for those checkpoints is in **§9.6–9.7**.
 12. **WISDM-side checkpoint scores (§9)** — zero-shot models (E03–E08) stay **~0.94–0.996** on WISDM while failing on Arduino; fine-tune **(E09/E11)** drops to **~0.34–0.74** on WISDM; from-scratch **(E10/E12)** is **~0.25–0.43** on WISDM (above chance **0.167** but not usable).
 
 ---

@@ -5,6 +5,8 @@ Covers:
   E08      T=50 window zero-shot                → eval on source_wisdm/  (T=50)
   E09      pretrain WISDM, finetune Arduino     → eval on pretrain_wisdm/ (T=100)
   E10      Arduino from-scratch                  → eval on E00 WISDM data  (T=100)
+  E11      same as E09, T=50                     → eval on pretrain_wisdm/ (T=50)
+  E12      same as E10, T=50                     → eval on E08 source_wisdm/ (T=50)
 
 Usage (from repo root, conda env active):
   python scripts/run_cross_eval_wisdm.py
