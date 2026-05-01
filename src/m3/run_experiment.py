@@ -104,6 +104,14 @@ def _apply_smoke_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> Non
         cfg.setdefault("quant", {}).setdefault("qat", {})["enabled"] = False
 
 
+def _apply_full_dataset_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
+    """Disable smoke window caps so build_dataset uses the full windowed dataset."""
+    if not bool(getattr(args, "full_dataset", False)):
+        return
+    cfg.setdefault("smoke", {})["enabled"] = False
+    cfg.setdefault("smoke", {})["max_windows_per_class"] = None
+
+
 def _print_summary(summary: dict[str, Any]) -> None:
     for key, value in summary.items():
         if isinstance(value, list):
@@ -120,6 +128,14 @@ def main() -> None:
         help="Validate config only; do not load data, train, evaluate, or quantize",
     )
     parser.add_argument("--smoke", action="store_true", help="Use tiny smoke settings")
+    parser.add_argument(
+        "--full-dataset",
+        action="store_true",
+        help=(
+            "Force full windowed training data: smoke.enabled=false and no max_windows_per_class cap. "
+            "Apply after other flags; use on Slurm for production runs."
+        ),
+    )
     parser.add_argument("--max-windows-per-class", type=int, default=None)
     parser.add_argument(
         "--artifact-suffix",
@@ -146,6 +162,7 @@ def main() -> None:
     cfg = load_m3_config(args.config)
     _apply_experiment_overrides(cfg, args)
     _apply_smoke_overrides(cfg, args)
+    _apply_full_dataset_overrides(cfg, args)
     errors = validate_m3_config(cfg)
     summary = asdict(summarize_m3_config(cfg))
 
