@@ -1,91 +1,201 @@
 # M3 experiment findings
 
-Interpretation of aggregated results (`m3_domain_comparison.csv`, `m3_experiment_master_all.csv`). Data are from the full M3 matrix (E00, E03–E10) across seven model variants.
+Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch).
+
+---
+
+## Experiment index
+
+| Experiment | Description |
+|------------|-------------|
+| **E00** | WISDM M2 anchor — train and evaluate entirely on WISDM (source-only baseline) |
+| **E01** | *(not run)* WISDM user holdout split |
+| **E02** | *(not run)* Arduino zero-shot at 100 Hz, T=500 window |
+| **E03** | Arduino zero-shot — raw units, no conversion, T=100, 20 Hz |
+| **E04** | Arduino zero-shot — unit fix: WISDM→g, Arduino firmware ÷4 undone (`wisdm_to_g`) |
+| **E05** | Arduino zero-shot — legacy unit fix: Arduino converted to m/s² (`arduino_to_mps2_legacy`) |
+| **E06** | Arduino zero-shot — no normalization at training or inference (ablation) |
+| **E07** | Arduino zero-shot — train with z-score but **skip** normalization at inference (ablation) |
+| **E08** | Arduino zero-shot — raw units, T=50 window (window-size ablation) |
+| **E09** | Pretrain on WISDM, **fine-tune** on Arduino train split, evaluate Arduino test split |
+| **E10** | Train **from scratch** on Arduino train split, evaluate Arduino test split |
 
 ---
 
 ## 1. Without any adaptation, domain gap is total (E03)
 
-All seven models crash to approximately **0.167 accuracy** on Arduino — exactly 1/6 chance level (there are six classes). A model that reached ~99% on WISDM is effectively guessing on Arduino. This is a clear confirmation of the domain-gap problem.
+All seven models collapse to approximately **0.167 accuracy** on Arduino — chance level for 6 classes. A model that reached ~99% on WISDM is effectively guessing on Arduino raw data. This confirms a severe domain gap even at the raw-unit level.
 
 ---
 
-## 2. Unit conversion alone recovers roughly half (E04, E05)
+## 2. Unit conversion alone recovers roughly half (E04 vs E05)
 
-Fixing physical units (WISDM raw counts → g, Arduino firmware divide-by-four undone) recovers **about 0.50–0.58** on Arduino, a large jump from chance. E04 (`wisdm_to_g`) and E05 (legacy `arduino_to_mps2`) give almost identical results — both conversions are roughly equivalent. A large fraction of the gap is therefore **sensor scaling / units**, not only abstract “domain shift.”
+Fixing physical units (WISDM raw counts → g; Arduino firmware ÷4 undone) recovers **0.48–0.58** accuracy on Arduino — a 3× jump from chance. The two conversion strategies (**E04** `wisdm_to_g` and **E05** `arduino_to_mps2_legacy`) perform almost identically across all models, indicating the dominant factor is sensor scaling, not specific conversion formula.
+
+| Model | E03 (raw, no fix) | E04 (wisdm_to_g) | E05 (legacy_mps2) |
+|-------|-------------------|------------------|-------------------|
+| daghero | 0.166 | 0.508 | 0.509 |
+| deepconv_lstm | 0.176 | 0.583 | 0.571 |
+| repmobile | 0.167 | 0.487 | 0.484 |
+| tcn_attention | 0.167 | 0.512 | 0.594 |
+| tcn_inception | 0.166 | 0.502 | 0.540 |
+| xtinyhar | 0.167 | 0.522 | 0.525 |
+| xtinyhar_relu | 0.167 | 0.571 | 0.564 |
+
+`tcn_attention` is the outlier — it benefits more from the legacy m/s² conversion (0.594 vs 0.512), suggesting its attention mechanism leverages absolute scale differences.
 
 ---
 
 ## 3. Normalization is non-negotiable (E06, E07)
 
-- **E06** — train and infer with no normalization at all → back to ~0.167, chance level for almost every model.
-- **E07** — train with z-score but skip normalizing at inference → same collapse.
-- The main exception is `tcn_attention_har_teacher` in E06, which holds at ~0.35 (attention may provide some scale robustness). Even that model collapses in E07.
+- **E06** — train with no normalization, infer with no normalization → chance level (~0.167) for almost all models.
+- **E07** — train with z-score, but **skip** normalization at inference → same collapse everywhere.
+- `tcn_attention` in E06 holds at ~0.35 FP32 (attention partially compensates). Even it fails in E07, showing that what matters is **consistency** between training and inference.
 
-**Takeaway:** z-score normalization must be applied consistently at training and inference. Omitting it at inference is as fatal as having no normalization.
+**Key takeaway:** z-score normalization must match between training and inference. Omitting it at either stage is fatal.
 
 ---
 
-## 4. Shorter windows do not fix zero-shot (E08)
+## 4. Shorter window (T=50) does not help zero-shot — but reduces latency significantly (E08)
 
-Halving the window from T=100 to T=50 under zero-shot transfer still yields chance-level performance. The dominant issue for zero-shot here is not temporal resolution.
+Under zero-shot transfer with raw units, T=50 still yields chance-level accuracy (~0.167). The window length does not address the root cause (unit/scale mismatch).
+
+However, in terms of **model size and inference latency**, T=50 does have real effects:
+
+| Model | Size T=100 (KB) | Size T=50 (KB) | Latency T=100 (ms) | Latency T=50 (ms) | Latency ratio |
+|-------|-----------------|----------------|--------------------|--------------------|---------------|
+| daghero | 26.1 | 26.1 | 0.078 | 0.045 | 1.73× |
+| deepconv_lstm | **136.9** | **107.6** | 4.26 | 2.05 | **2.08×** |
+| repmobile | 42.1 | 42.1 | 0.332 | 0.177 | 1.87× |
+| tcn_attention | 578.4 | 578.4 | 8.30 | 4.42 | 1.88× |
+| tcn_inception | 369.9 | 369.9 | 2.40 | 1.31 | 1.83× |
+| xtinyhar | 315.2 | 311.5 | 0.327 | 0.326 | 1.00× |
+| xtinyhar_relu | 312.4 | 308.6 | 0.337 | 0.325 | 1.04× |
+
+- **`deepconv_lstm`** shrinks by ~29 KB and inference halves — the LSTM is the only architecture where the temporal dimension directly drives model size.
+- **TCN and RepMobile** see no size change (convolutional weights don't depend on input length), but latency nearly halves because fewer time steps are processed.
+- **XtinyHAR** variants see almost no latency gain — the bottleneck is not temporal computation.
+- A proper accuracy comparison at T=50 for E09/E10 (fine-tuned or from-scratch) **was not run**, so the accuracy vs window tradeoff under realistic conditions is not yet established.
 
 ---
 
 ## 5. Fine-tuning closes the gap almost completely (E09)
 
-Pre-training on WISDM then fine-tuning on Arduino reaches **about 0.97–0.996** on Arduino across models — comparable to strong WISDM-side performance. The domain gap largely disappears once there is target-domain supervision.
+Pre-training on WISDM then fine-tuning on Arduino achieves **0.97–0.996** accuracy on Arduino — essentially matching the WISDM baseline for every model.
+
+| Model | WISDM (E00) | Arduino fine-tune (E09) | Gap |
+|-------|-------------|-------------------------|-----|
+| daghero | 0.992 | **0.996** | +0.004 |
+| deepconv_lstm | 0.988 | 0.994 | +0.006 |
+| repmobile | 0.942 | 0.979 | +0.037 |
+| tcn_attention | 0.994 | 0.995 | +0.001 |
+| tcn_inception | 0.997 | 0.994 | −0.003 |
+| xtinyhar | 0.957 | 0.979 | +0.022 |
+| xtinyhar_relu | 0.936 | 0.973 | +0.037 |
+
+Domain gap is effectively eliminated with fine-tuning. The weakest models (repmobile, xtinyhar variants) actually improve over their WISDM scores, likely because Arduino has a cleaner and more consistent recording setup.
 
 ---
 
 ## 6. Fine-tune vs from-scratch are nearly identical (E09 vs E10)
 
-| Model | Finetune (E09) | From scratch (E10) |
-|-------|----------------|---------------------|
-| daghero | 0.996 | 0.992 |
-| deepconv_lstm | 0.994 | 0.987 |
-| tcn_inception | 0.994 | 0.992 |
-| repmobile | 0.979 | 0.963 |
+| Model | Fine-tune (E09) | From scratch (E10) | Δ |
+|-------|-----------------|--------------------|---|
+| daghero | 0.996 | 0.992 | +0.004 |
+| deepconv_lstm | 0.994 | 0.987 | +0.007 |
+| repmobile | 0.979 | 0.963 | +0.016 |
+| tcn_attention | 0.995 | 0.993 | +0.002 |
+| tcn_inception | 0.994 | 0.992 | +0.002 |
+| xtinyhar | 0.979 | 0.979 | 0.000 |
+| xtinyhar_relu | 0.973 | 0.973 | 0.000 |
 
-Fine-tuning wins by roughly **0.003–0.016**. WISDM pre-training gives a modest benefit at best; the Arduino split appears large enough that from-scratch training reaches similar accuracy. Pre-training may still help with convergence or data efficiency, but final accuracy is close.
-
----
-
-## 7. Largest model is not the best on accuracy alone (size vs accuracy)
-
-| Model | Size | Inference (mean) | E00 WISDM FP32 acc |
-|-------|------|------------------|---------------------|
-| `daghero_cnn_2layer_conv2d` | **~26 KB** | **~0.08 ms** | ~0.992 |
-| `repmobile_folded_conv2d` | ~42 KB | ~0.33 ms | ~0.942 |
-| `deepconv_lstm_conv2d` | ~137 KB | ~4.3 ms | ~0.988 |
-| `tcn_inception_conv2d` | ~370 KB | ~2.4 ms | **~0.996** |
-| `tcn_attention_har_teacher_conv2d` | **~578 KB** | **~8.3 ms** | ~0.994 |
-
-`daghero` is vastly smaller and faster than `tcn_attention` while staying within a few points of the best WISDM accuracy. For MCU deployment it is the clearest **Pareto** choice on size, latency, and accuracy.
+WISDM pre-training adds at most ~0.016 accuracy points. Arduino is large enough to train most architectures from scratch without meaningful penalty. Pre-training is a safe default but not critical.
 
 ---
 
-## 8. DeepConv-LSTM shows severe QAT collapse on E10
+## 7. PTQ vs QAT across all models and key experiments
 
-When trained from scratch on Arduino, `deepconv_lstm` reaches high FP32 accuracy (~0.987) but QAT accuracy drops to **~0.338** — a large collapse. Under fine-tuning (E09) the QAT drop is smaller but still notable relative to other architectures. Other models in the matrix show stable QAT (small drops or comparable accuracy).
+PTQ = post-training quantization (int8 calibration). QAT = quantization-aware training (fake-quant during fine-tuning or training).
 
-**Implication:** treat this architecture with extra care for int8 QAT on Arduino-native data; consider architecture or training changes before relying on quantized deployment.
+### E00 — WISDM source-only baseline
+
+| Model | FP32 | PTQ | QAT | PTQ drop | QAT drop | Status |
+|-------|------|-----|-----|----------|----------|--------|
+| daghero | 0.9921 | 0.9921 | 0.9930 | 0.0000 | −0.0009 | ok/ok |
+| deepconv_lstm | 0.9884 | 0.9801 | 0.8238 | 0.0083 | **+0.1646** | ok/ok |
+| repmobile | 0.9416 | 0.9418 | 0.9536 | −0.0001 | −0.0120 | ok/ok |
+| tcn_attention | 0.9943 | 0.9939 | 0.9950 | 0.0004 | −0.0007 | ok/ok |
+| tcn_inception | 0.9965 | 0.9965 | 0.9977 | 0.0000 | −0.0012 | ok/ok |
+| xtinyhar | 0.9570 | 0.9562 | 0.9615 | 0.0007 | −0.0045 | **fail/fail** |
+| xtinyhar_relu | 0.9365 | 0.9362 | 0.9511 | 0.0003 | −0.0146 | ok/ok |
+
+### E09 — Fine-tune on Arduino
+
+| Model | FP32 | PTQ | QAT | PTQ drop | QAT drop | Status |
+|-------|------|-----|-----|----------|----------|--------|
+| daghero | 0.9956 | 0.9956 | 0.9956 | 0.0000 | 0.0000 | ok/ok |
+| deepconv_lstm | 0.9937 | 0.9842 | 0.8066 | 0.0095 | **+0.1871** | ok/ok |
+| repmobile | 0.9791 | 0.9798 | 0.9703 | −0.0006 | 0.0088 | ok/ok |
+| tcn_attention | 0.9949 | 0.9949 | 0.9956 | 0.0000 | −0.0006 | ok/ok |
+| tcn_inception | 0.9937 | 0.9937 | 0.9949 | 0.0000 | −0.0013 | ok/ok |
+| xtinyhar | 0.9791 | 0.9779 | 0.9823 | 0.0013 | −0.0032 | **fail/fail** |
+| xtinyhar_relu | 0.9728 | 0.9735 | 0.9747 | −0.0006 | −0.0019 | ok/ok |
+
+### E10 — Train from scratch on Arduino
+
+| Model | FP32 | PTQ | QAT | PTQ drop | QAT drop | Status |
+|-------|------|-----|-----|----------|----------|--------|
+| daghero | 0.9924 | 0.9924 | 0.9962 | 0.0000 | −0.0038 | ok/ok |
+| deepconv_lstm | 0.9867 | 0.9425 | 0.3382 | 0.0442 | **+0.6485** | ok/ok |
+| repmobile | 0.9627 | 0.9627 | 0.9583 | 0.0000 | 0.0044 | ok/ok |
+| tcn_attention | 0.9930 | 0.9924 | 0.9937 | 0.0006 | −0.0006 | ok/ok |
+| tcn_inception | 0.9924 | 0.9924 | 0.9956 | 0.0000 | −0.0032 | ok/ok |
+| xtinyhar | 0.9785 | 0.9779 | 0.9791 | 0.0006 | −0.0006 | **fail/fail** |
+| xtinyhar_relu | 0.9735 | 0.9735 | 0.9804 | 0.0000 | −0.0070 | ok/ok |
+
+**Observations:**
+- **PTQ is stable** for every model except `deepconv_lstm` from scratch (E10: 0.044 drop). PTQ is generally safe to deploy.
+- **QAT is excellent or better than FP32** for all models except `deepconv_lstm` — QAT improves most architectures by a small margin due to the regularization effect of fake-quant during training.
+- **`deepconv_lstm` QAT collapse is systematic and worsens with dataset:** WISDM (−0.165), fine-tune (−0.187), from-scratch (**−0.649**). When trained natively on Arduino data the LSTM quantization breaks completely. This is a structural incompatibility with int8 QAT, likely due to LSTM gate activation ranges. PTQ is still usable for this model.
+- **`xtinyhar_student_conv2d` (non-ReLU) fails PTQ and QAT everywhere** — across all experiments. The ReLU variant succeeds. Use `xtinyhar_student_conv2d_relu` for any quantized deployment.
 
 ---
 
-## 9. `xtinyhar_student_conv2d` (non-ReLU) fails PTQ/QAT everywhere
+## 8. Model size, latency, and Pareto analysis (T=100)
 
-Across experiments, the non-ReLU XtinyHAR variant reports **PTQ/QAT failed** while `xtinyhar_student_conv2d_relu` succeeds. Likely causes include activation ranges that are harder to quantize; the ReLU variant is the practical choice for quantized pipelines.
+All sizes and latencies from E00 (WISDM baseline, representative of architecture):
+
+| Model | Size (KB) | Latency mean (ms) | Latency p95 (ms) | E00 FP32 acc | E09 FP32 acc | Deploy viable? |
+|-------|-----------|-------------------|------------------|--------------|--------------|----------------|
+| **daghero** | **26.1** | **0.078** | 0.091 | 0.992 | 0.996 | Yes |
+| repmobile | 42.1 | 0.332 | 0.355 | 0.942 | 0.979 | Yes |
+| deepconv_lstm | 136.9 | 4.264 | 4.334 | 0.988 | 0.994 | PTQ only |
+| xtinyhar | 315.2 | 0.327 | 0.342 | 0.957 | 0.979 | No (quant fails) |
+| xtinyhar_relu | 312.4 | 0.337 | 0.348 | 0.936 | 0.973 | Yes |
+| tcn_inception | 369.9 | 2.400 | 2.425 | 0.997 | 0.994 | Yes |
+| tcn_attention | 578.4 | 8.300 | 8.572 | 0.994 | 0.995 | Yes |
+
+**`daghero`** is the clear Pareto winner: ~22× smaller than `tcn_attention`, inference is ~106× faster, and accuracy is within 0.002. For any MCU with tight memory or real-time constraints, `daghero` is the recommended deployment model.
 
 ---
 
-## One-sentence summary
+## 9. Summary of key findings
 
-**Unit conversion plus consistent z-score normalization recovers a large fraction of zero-shot performance for free; fine-tuning on Arduino data removes most of the remaining gap; for MCU deployment `daghero` dominates on size, speed, and accuracy; DeepConv-LSTM needs extra scrutiny for QAT on Arduino data; use the ReLU XtinyHAR variant for quantization.**
+1. **Domain gap at raw units is 100% catastrophic** — all models drop to chance.
+2. **Unit conversion alone is worth ~+33 accuracy points** (0.17 → 0.50) for free.
+3. **Normalization consistency (train + inference) is mandatory** — skipping either one is fatal.
+4. **Fine-tuning on Arduino data eliminates the domain gap** (0.97–0.996).
+5. **Fine-tuning vs from-scratch gives at most ~0.016 difference** — pre-training is optional.
+6. **PTQ is safe across all working architectures** — never more than 0.044 drop.
+7. **QAT improves most models** but **destroys `deepconv_lstm`** (−0.187 to −0.649 depending on training data).
+8. **`deepconv_lstm` should be PTQ-only** for Arduino-native training.
+9. **`xtinyhar_student_conv2d` (non-ReLU) cannot be quantized** — always use the `_relu` variant.
+10. **`daghero` dominates on size and speed** (26 KB, 0.08 ms) with near-top accuracy — best choice for MCU deployment.
+11. **T=50 window halves inference latency** for LSTM and TCN architectures but a proper accuracy comparison under fine-tuning/from-scratch was not run and should be a follow-up experiment.
 
 ---
 
-*Generated from the M3 aggregate tables. Re-run aggregation after new jobs:*
+*Generated from M3 aggregate tables. Re-run aggregation after new experiments:*
 
 ```bash
 cd /path/to/har-mcu
