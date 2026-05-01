@@ -11,6 +11,7 @@ from dataclasses import asdict
 from typing import Any
 
 from src.m3.config import load_m3_config, summarize_m3_config, validate_m3_config
+from src.utils.artifacts import model_slug
 
 
 def _append_path_suffix(cfg: dict[str, Any], suffix: str) -> None:
@@ -28,11 +29,38 @@ def _append_path_suffix(cfg: dict[str, Any], suffix: str) -> None:
             cfg["paths"][key] = str(value).rstrip("/") + "/" + suffix.strip("/")
 
 
+def _format_artifact_suffix(cfg: dict[str, Any], suffix: str) -> str:
+    exp = cfg.get("experiment", {})
+    m3 = cfg.get("m3", {})
+    values = {
+        "experiment_id": str(m3.get("experiment_id", "")),
+        "experiment_code": str(m3.get("experiment_id", "m3")).split("_", 1)[0].lower(),
+        "model_variant": model_slug(str(exp.get("model_variant", ""))),
+        "run_id": model_slug(str(exp.get("run_id", ""))),
+    }
+    try:
+        return suffix.format(**values)
+    except KeyError as exc:
+        valid = ", ".join(sorted(values))
+        raise ValueError(f"Unknown artifact-suffix placeholder {exc!s}. Valid placeholders: {valid}") from exc
+
+
+def _apply_experiment_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
+    exp = cfg.setdefault("experiment", {})
+    if args.model_variant:
+        exp["model_variant"] = str(args.model_variant)
+        if not args.run_id:
+            experiment_code = str(cfg.get("m3", {}).get("experiment_id", "m3")).split("_", 1)[0]
+            exp["run_id"] = f"{experiment_code}_{model_slug(args.model_variant)}_r0"
+    if args.run_id:
+        exp["run_id"] = str(args.run_id)
+
+
 def _apply_smoke_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
     if args.max_windows_per_class is not None:
         cfg.setdefault("smoke", {})["max_windows_per_class"] = int(args.max_windows_per_class)
     if args.artifact_suffix:
-        _append_path_suffix(cfg, args.artifact_suffix)
+        _append_path_suffix(cfg, _format_artifact_suffix(cfg, args.artifact_suffix))
     if args.smoke:
         cfg.setdefault("smoke", {})["enabled"] = True
         cfg.setdefault("train", {})["epochs"] = int(cfg.get("smoke", {}).get("quick_epochs", 1))
@@ -67,7 +95,16 @@ def main() -> None:
     )
     parser.add_argument("--smoke", action="store_true", help="Use tiny smoke settings")
     parser.add_argument("--max-windows-per-class", type=int, default=None)
-    parser.add_argument("--artifact-suffix", default=None)
+    parser.add_argument(
+        "--artifact-suffix",
+        default=None,
+        help=(
+            "Append this suffix to generated artifact directories. Supports "
+            "{experiment_id}, {experiment_code}, {model_variant}, and {run_id} placeholders."
+        ),
+    )
+    parser.add_argument("--model-variant", default=None, help="Override experiment.model_variant")
+    parser.add_argument("--run-id", default=None, help="Override experiment.run_id")
     parser.add_argument("--disable-qat", action="store_true")
     parser.add_argument("--representative-samples", type=int, default=16)
     parser.add_argument("--timing-warmup-samples", type=int, default=2)
@@ -75,6 +112,7 @@ def main() -> None:
     args = parser.parse_args()
 
     cfg = load_m3_config(args.config)
+    _apply_experiment_overrides(cfg, args)
     _apply_smoke_overrides(cfg, args)
     errors = validate_m3_config(cfg)
     summary = asdict(summarize_m3_config(cfg))

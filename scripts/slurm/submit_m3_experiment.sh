@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: bash scripts/slurm/submit_m3_experiment.sh configs/m3/E00_wisdm_m2_anchor.yaml [--smoke] [--max-windows-per-class N] [--artifact-suffix smoke] [--disable-qat]" >&2
+  echo "Usage: bash scripts/slurm/submit_m3_experiment.sh configs/m3/E00_wisdm_m2_anchor.yaml [--smoke] [--max-windows-per-class N] [--artifact-suffix smoke] [--model-variant MODEL] [--run-id RUN] [--disable-qat]" >&2
   exit 2
 fi
 
@@ -34,6 +34,10 @@ MEM="${M3_SLURM_MEM:-15G}"
 TIME_LIMIT="${M3_SLURM_TIME:-48:00:00}"
 MAX_ACTIVE_JOBS="${M3_MAX_ACTIVE_JOBS:-15}"
 EXCLUDE="${M3_SLURM_EXCLUDE:-}"
+SBATCH_GRES_LINE=""
+if [ -n "$GRES" ]; then
+  SBATCH_GRES_LINE="#SBATCH --gres=${GRES}"
+fi
 SBATCH_EXCLUDE_LINE=""
 if [ -n "$EXCLUDE" ]; then
   SBATCH_EXCLUDE_LINE="#SBATCH --exclude=${EXCLUDE}"
@@ -55,7 +59,7 @@ sbatch <<SBATCH
 #SBATCH --account=${ACCOUNT}
 #SBATCH --qos=${QOS}
 #SBATCH --partition=${PARTITION}
-#SBATCH --gres=${GRES}
+${SBATCH_GRES_LINE}
 #SBATCH --cpus-per-task=${CPUS}
 #SBATCH --mem=${MEM}
 #SBATCH --time=${TIME_LIMIT}

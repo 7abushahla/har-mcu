@@ -17,9 +17,16 @@ Code and config additions:
 - `src/eval/reporting.py` and `src/m3/reporting.py`: fixed-schema M3 report rows with FP32/PTQ/QAT metrics and deploy-gate status.
 - `deploy/arduino_infer/arduino_infer.ino`: live IMU inference sketch using the exported model and normalization headers.
 - `src/deploy/export_c_array.py`, `src/deploy/export_norm_header.py`: deployment header generation for `model_data.*` and `norm_stats.h`.
-- `scripts/slurm/`: Slurm-first wrappers for dry runs, experiments, notebook checks, dataset builds, and deployment export.
-- `notebooks/m3_deepconvlstm.ipynb` plus per-experiment notebooks `notebooks/m3_E*.ipynb`.
+- `scripts/slurm/`: Slurm-first wrappers for dry runs, experiments, notebook checks, dataset builds, deployment export, and architecture sweeps.
+- `notebooks/m3_deepconvlstm.ipynb`, `notebooks/m3_architecture_sweeps.ipynb`, plus per-experiment notebooks `notebooks/m3_E*.ipynb`.
 - `reports/m3/`: consolidated M3 reports, domain-gap summary, final deployment summary, and live-trial templates.
+
+Architecture-sweep safety additions:
+
+- `src/m3/run_experiment.py` accepts `--model-variant` and `--run-id` overrides, so the same M3 config can run another registered architecture without copying the YAML.
+- `--artifact-suffix` supports `{experiment_id}`, `{experiment_code}`, `{model_variant}`, and `{run_id}` placeholders.
+- `scripts/slurm/submit_m3_arch_experiment.sh` submits architecture runs with a default isolated suffix of `arch_sweeps/<model_variant>/<experiment_code>`.
+- This keeps non-DeepConvLSTM reports and TFLites out of the existing DeepConvLSTM `full_eXX` folders.
 
 Current staged deployment headers:
 
@@ -57,6 +64,12 @@ Deployment export:
 
 - Slurm job `7197` regenerated `deploy/common/model_data.*` and `deploy/common/norm_stats.h`.
 
+Architecture-wrapper validation:
+
+- `scripts/slurm/submit_m3_arch_experiment.sh` passes shell syntax validation.
+- Slurm dry-run submissions `7201` and `7202` were canceled because GPU nodes stayed in `CONFIGURING`; this was scheduler/node behavior before the batch payload ran, not a code failure.
+- Slurm dry-run submission `7204` completed with exit `0:0`, validating `daghero_cnn_2layer_conv2d` config overrides and the isolated `arch_sweeps/daghero_cnn_2layer_conv2d/e00` artifact suffix.
+
 ## Key Results
 
 The aggregate report is:
@@ -71,6 +84,22 @@ All nine full DeepConvLSTM runs exported:
 - QAT INT8 `.tflite`
 
 There are 27 full-run TFLite exports under `models_tflite/m3/`.
+
+DeepConvLSTM full-run export pattern:
+
+```text
+models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+```
+
+Example deployment candidate exports:
+
+```text
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_fp32.tflite
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_qat.tflite
+```
 
 Current best non-diagnostic Arduino-target candidate:
 
@@ -128,6 +157,41 @@ source symbolic-motifgen/scripts/aus_hpc_env.sh
 bash scripts/slurm/submit_m3_experiment.sh configs/m3/E09_wisdm_pretrain_arduino_finetune.yaml --artifact-suffix full_e09
 ```
 
+To run a different architecture without mixing outputs with DeepConvLSTM:
+
+```bash
+bash scripts/slurm/submit_m3_arch_experiment.sh \
+  configs/m3/E00_wisdm_m2_anchor.yaml \
+  daghero_cnn_2layer_conv2d
+```
+
+The architecture wrapper defaults to:
+
+```text
+reports/m3/arch_sweeps/<model_variant>/<experiment_code>/
+models_tflite/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/
+checkpoints/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/
+data/processed/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/
+```
+
+For smoke testing another model first:
+
+```bash
+bash scripts/slurm/submit_m3_arch_experiment.sh \
+  configs/m3/E00_wisdm_m2_anchor.yaml \
+  daghero_cnn_2layer_conv2d \
+  --smoke --max-windows-per-class 20 --representative-samples 16
+```
+
+Registered Conv2D-safe architecture variants:
+
+- `deepconv_lstm_conv2d`
+- `daghero_cnn_2layer_conv2d`
+- `repmobile_folded_conv2d`
+- `tcn_attention_har_teacher_conv2d`
+- `tcn_inception_conv2d`
+- `xtinyhar_student_conv2d`
+
 Monitor jobs:
 
 ```bash
@@ -148,6 +212,8 @@ export M3_SLURM_EXCLUDE=gpu-dy-g5-0-83,gpu-dy-g5-0-88
 ## Notebook Overview
 
 The notebooks are Slurm control surfaces. They are not meant to do heavy training locally in Jupyter.
+
+The current notebooks are DeepConvLSTM-oriented. For non-DeepConvLSTM runs, prefer `scripts/slurm/submit_m3_arch_experiment.sh` or add notebook cells that call that wrapper, not the plain `full_eXX` suffix commands. This avoids mixing architecture outputs with the completed DeepConvLSTM folders.
 
 Default behavior is safe: submission cells print the command but do not submit until the relevant flag is changed to `1`.
 
@@ -171,6 +237,7 @@ bash scripts/slurm/submit_m3_notebook_check.sh notebooks/m3_deepconvlstm.ipynb
 | Notebook | Purpose | What It Runs | Main Outputs |
 | --- | --- | --- | --- |
 | `notebooks/m3_deepconvlstm.ipynb` | Main DeepConvLSTM M3 dashboard/control notebook | Lists configs, submits matrix dry run, submits smoke runs, submits full runs, monitors Slurm jobs, checks artifacts | `reports/m3/m3_experiment_master.*`, per-run `reports/m3/full_e*/`, `models_tflite/m3/**/full_e*/`, optional executed notebook under `notebooks/executed/` |
+| `notebooks/m3_architecture_sweeps.ipynb` | Non-DeepConvLSTM architecture sweep control notebook | Prints/submits architecture smoke runs and full matrix runs through `submit_m3_arch_experiment.sh` | `reports/m3/arch_sweeps/<model_variant>/<experiment_code>/`, `models_tflite/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/` |
 | `notebooks/m3_E00_wisdm_m2_anchor.ipynb` | WISDM source-only M2 anchor | `configs/m3/E00_wisdm_m2_anchor.yaml` with suffix `full_e00` | `reports/m3/full_e00/`, `models_tflite/m3/E00_wisdm_m2_anchor/full_e00/` |
 | `notebooks/m3_E03_arduino_downsample_20hz_T100.ipynb` | Zero-shot WISDM to Arduino using current 20 Hz Arduino dataset, T100 | `configs/m3/E03_arduino_downsample_20hz_T100.yaml` with suffix `full_e03` | `reports/m3/full_e03/`, `models_tflite/m3/E03_arduino_downsample_20hz_T100/full_e03/` |
 | `notebooks/m3_E04_wisdm_to_g_arduino_g.ipynb` | Unit convention ablation: convert WISDM to g and use Arduino g convention | `configs/m3/E04_wisdm_to_g_arduino_g.yaml` with suffix `full_e04` | `reports/m3/full_e04/`, `models_tflite/m3/E04_wisdm_to_g_arduino_g/full_e04/` |
@@ -217,11 +284,15 @@ WISDM M2 baseline:
 Current Arduino dataset:
 
 - The merged Arduino CSVs currently used by M3 are treated as 20 Hz WISDM-style CSVs.
+- `tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv` and `tiny-motion/Arduino_layth_hamza_wisdm_raw.csv` have matching samples; the numeric-user file uses user `37`, while the raw file uses user `layth`.
+- The first Arduino timestamps differ by `50,000,000` timestamp units, which is 50 ms if interpreted as nanoseconds, matching 20 Hz.
+- The WISDM CSV also follows the WISDM-style approximately 50 ms cadence, with small timestamp jitter.
 - E03, E04, E05, E06, E07, E09, and E10 run with T100 at 20 Hz.
 - E08 runs T50 at 20 Hz for the 2.5-second window ablation.
 
 What we matched:
 
+- There is no Hz mismatch for the current merged Arduino CSVs used in the completed M3 runs; both WISDM and Arduino are operating on the 20 Hz path.
 - We matched the current Arduino dataset to the WISDM-compatible 20 Hz/T100 path for the main transfer and adaptation experiments.
 - We kept 50% overlap.
 - We evaluated unit convention matching in E04 by converting WISDM to g and keeping Arduino in g-style units.
@@ -230,8 +301,20 @@ What we matched:
 What we did not run:
 
 - We did not run true Arduino 100 Hz T500 because the current merged Arduino source available to the repo is already 20 Hz.
+- E02 remains the config/tooling path for a future true-100-Hz Arduino source.
 - We did not upsample WISDM to 100 Hz.
 - We did not run E01 user-holdout experiments.
+
+## Other Architecture Status
+
+DeepConvLSTM has completed full M3 runs across E00, E03-E10 with FP32, PTQ INT8, and QAT INT8 exports.
+
+The other architecture variants are registered in the existing model builder registry and can now be launched through the architecture wrapper without mixing output folders. They have not yet completed full M3 production sweeps in this repo state. Recommended order:
+
+1. Smoke-test E00 for each architecture with PTQ and QAT enabled.
+2. If E00 passes, smoke-test one Arduino-domain path such as E09.
+3. Run the full matrix per architecture using the architecture wrapper.
+4. Compare reports under `reports/m3/arch_sweeps/<model_variant>/`.
 
 ## On-Device Deployment Integration
 
