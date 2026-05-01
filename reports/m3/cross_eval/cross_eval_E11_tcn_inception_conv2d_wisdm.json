@@ -1,0 +1,20 @@
+{
+  "experiment_id": "E11",
+  "model_variant": "tcn_inception_conv2d",
+  "eval_domain": "wisdm",
+  "window_size": 50,
+  "protocol": "random_stratified",
+  "accuracy": 0.7049486461251168,
+  "macro_f1": 0.6289970423997175,
+  "n_test_samples": 13923,
+  "checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E11_wisdm_pretrain_arduino_finetune_T50/arch_seq/tcn_inception_conv2d/e11/tcn_inception_conv2d_T50_Prandom_stratified_E11_tcn_inception_conv2d_r0.keras",
+  "processed_dir": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/arch_seq/tcn_inception_conv2d/e11/pretrain_wisdm",
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ]
+}

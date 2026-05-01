@@ -1671,3 +1671,55 @@ Epoch 17: early stopping
 2026-05-01 21:14:10.832584: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmp6hyxkqm4
 2026-05-01 21:14:10.860403: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 113166 microseconds.
 2026-05-01 21:14:11.022170: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 2.703 M  ops, equivalently 1.351 M  MACs
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 21:14:16.953376: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 21:14:16.953399: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 21:14:16.953606: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmp1gg2ypma
+2026-05-01 21:14:16.958617: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 21:14:16.958632: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmp1gg2ypma
+2026-05-01 21:14:16.970021: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 21:14:17.035481: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmp1gg2ypma
+2026-05-01 21:14:17.062846: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 109240 microseconds.
+2026-05-01 21:14:17.217512: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 2.703 M  ops, equivalently 1.351 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 21:14:17.391675: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 2.703 M  ops, equivalently 1.351 M  MACs
+Epoch 1/10
+81/81 - 6s - loss: 0.0663 - accuracy: 0.9817 - val_loss: 0.1276 - val_accuracy: 0.9619 - 6s/epoch - 72ms/step
+Epoch 2/10
+81/81 - 1s - loss: 0.0405 - accuracy: 0.9885 - val_loss: 0.1275 - val_accuracy: 0.9619 - 1s/epoch - 14ms/step
+Epoch 3/10
+81/81 - 1s - loss: 0.0302 - accuracy: 0.9909 - val_loss: 0.1282 - val_accuracy: 0.9596 - 1s/epoch - 14ms/step
+Epoch 4/10
+81/81 - 1s - loss: 0.0245 - accuracy: 0.9924 - val_loss: 0.1378 - val_accuracy: 0.9557 - 1s/epoch - 14ms/step
+Epoch 5/10
+81/81 - 1s - loss: 0.0244 - accuracy: 0.9924 - val_loss: 0.1261 - val_accuracy: 0.9619 - 1s/epoch - 14ms/step
+Epoch 6/10
+81/81 - 1s - loss: 0.0178 - accuracy: 0.9953 - val_loss: 0.1327 - val_accuracy: 0.9650 - 1s/epoch - 14ms/step
+Epoch 7/10
+81/81 - 1s - loss: 0.0127 - accuracy: 0.9973 - val_loss: 0.1393 - val_accuracy: 0.9650 - 1s/epoch - 14ms/step
+Epoch 8/10
+81/81 - 1s - loss: 0.0269 - accuracy: 0.9903 - val_loss: 0.1492 - val_accuracy: 0.9627 - 1s/epoch - 14ms/step
+Epoch 9/10
+81/81 - 1s - loss: 0.0281 - accuracy: 0.9905 - val_loss: 0.1424 - val_accuracy: 0.9635 - 1s/epoch - 14ms/step
+Epoch 10/10
+81/81 - 1s - loss: 0.0254 - accuracy: 0.9905 - val_loss: 0.1411 - val_accuracy: 0.9643 - 1s/epoch - 14ms/step
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 21:14:42.914292: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 21:14:42.914317: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 21:14:42.914527: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmphw8mtg7t
+2026-05-01 21:14:42.923542: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 21:14:42.923561: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmphw8mtg7t
+2026-05-01 21:14:42.943430: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 21:14:43.073152: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmphw8mtg7t
+2026-05-01 21:14:43.117185: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 202657 microseconds.
+2026-05-01 21:14:43.340774: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 2.703 M  ops, equivalently 1.351 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 21:14:43.519655: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 2.703 M  ops, equivalently 1.351 M  MACs
+rows: 1
+master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e11/results_master.csv
+master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e11/results_master.md
+m3_master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e11/m3_experiment_master.csv
+m3_master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e11/m3_experiment_master.md
+Done E11 T=50 (all 7 models).

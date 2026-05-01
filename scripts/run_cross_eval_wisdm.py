@@ -124,6 +124,35 @@ def build_jobs() -> list[Job]:
             continue
         jobs.append(Job("E10", variant, ck, pd, "wisdm", 100))
 
+    # ------------------------------------------------------------------ #
+    # E11: pretrain WISDM, finetune Arduino T=50 — forgetting check
+    # ------------------------------------------------------------------ #
+    for variant in VARIANTS:
+        ck = _checkpoint("E11_wisdm_pretrain_arduino_finetune_T50", variant, "E11", window=50)
+        pd = PROC / "E11_wisdm_pretrain_arduino_finetune_T50" / "arch_seq" / variant / "e11" / "pretrain_wisdm"
+        if not ck.exists():
+            print(f"[SKIP-no-ckpt] E11 {variant}")
+            continue
+        if not pd.exists():
+            print(f"[SKIP-no-proc] E11 {variant} pretrain_wisdm")
+            continue
+        jobs.append(Job("E11", variant, ck, pd, "wisdm", 50))
+
+    # ------------------------------------------------------------------ #
+    # E12: from-scratch Arduino T=50 — eval on E08's source_wisdm split
+    # (E08 is the T=50 WISDM-trained anchor, same window size)
+    # ------------------------------------------------------------------ #
+    for variant in VARIANTS:
+        ck = _checkpoint("E12_arduino_from_scratch_T50", variant, "E12", window=50)
+        pd = PROC / "E08_T50_window" / "arch_seq" / variant / "e08" / "source_wisdm"
+        if not ck.exists():
+            print(f"[SKIP-no-ckpt] E12 {variant}")
+            continue
+        if not pd.exists():
+            print(f"[SKIP-no-proc] E12 {variant} (E08 T50 wisdm)")
+            continue
+        jobs.append(Job("E12", variant, ck, pd, "wisdm", 50))
+
     return jobs
 
 

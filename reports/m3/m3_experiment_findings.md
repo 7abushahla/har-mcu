@@ -1,6 +1,6 @@
 # M3 experiment findings
 
-Interpretation of aggregated results from `m3_domain_comparison.csv`, `m3_experiment_master_all.csv`, and (when present) **`m3_cross_eval_wisdm.csv`** — the last file lists eval-only WISDM test scores for checkpoints from E03–E10 (see §9). Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same).
+Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same). Per-checkpoint WISDM test scores used in §9 are also tabulated in `m3_cross_eval_wisdm.csv`.
 
 ---
 
@@ -77,7 +77,7 @@ However, in terms of **model size and inference latency**, T=50 does have real e
 - **`deepconv_lstm`** shrinks by ~29 KB and inference halves — the LSTM is the only architecture where the temporal dimension directly drives model size.
 - **TCN and RepMobile** see no size change (convolutional weights don't depend on input length), but latency nearly halves because fewer time steps are processed.
 - **XtinyHAR** variants see almost no latency gain — the bottleneck is not temporal computation.
-- A proper accuracy comparison at T=50 for E09/E10 (fine-tuned or from-scratch) **was not run**, so the accuracy vs window tradeoff under realistic conditions is not yet established.
+- **E11** and **E12** mirror E09/E10 at **T=50**; once their Slurm runs finish, the same style of comparison can be filled in from the new masters. Until then, the accuracy vs window tradeoff under fine-tuning/from-scratch at T=50 is not yet in the aggregate tables.
 
 ---
 
@@ -181,11 +181,100 @@ All sizes and latencies from E00 (WISDM baseline, representative of architecture
 
 ---
 
-## 9. Post-hoc WISDM cross-eval (E03–E10, CPU-only)
+## 9. WISDM test accuracy of the same checkpoints (E03–E12)
 
-Slurm configs typically set a single `eval_domain` per run, so the main aggregate tables do **not** by themselves list “same checkpoint on both WISDM and Arduino test.” After the fact, `python scripts/run_cross_eval_wisdm.py` loads each saved FP32 checkpoint and runs inference on the appropriate processed WISDM test arrays (E03–E08: `source_wisdm/`; E09: `pretrain_wisdm/` for forgetting; E10: E00 WISDM split). Re-run `python -m src.m3.aggregate_masters --reports-dir reports/m3` to refresh **`m3_cross_eval_wisdm.csv`** / `.md` from `reports/m3/cross_eval/*.json`.
+Each row is the **saved FP32 checkpoint** for that experiment and architecture, evaluated on the **WISDM** held-out test (6834 windows at T=100 except E08/E11/E12 at T=50, 13923 windows). This makes the domain gap two-sided: you can read Arduino scores from the main aggregates and WISDM scores here. **`deepconv_lstm`** is not in these numbers for E03–E10 because those checkpoints live under `full_eXX/`, not the `arch_seq/` matrix — **it is included for E11/E12** since those were run through the new consolidated Slurm script which writes into `arch_seq/`.
 
-**How this differs from `m3_domain_comparison.csv`:** the `wisdm_fp32_accuracy` column there is the **E00 source-only anchor** joined onto Arduino rows for the same `model_variant`. The cross-eval table is the **actual WISDM test accuracy** of the checkpoint trained under E03–E10 protocols — e.g. E09/E10 rows show catastrophic forgetting or no WISDM knowledge, while E06/E07 still look strong on WISDM because the collapse was on Arduino zero-shot only.
+### 9.1 Zero-shot trains (E03–E07): WISDM stays near-baseline while Arduino is broken
+
+Models are trained only on WISDM then (for reporting elsewhere) evaluated on Arduino. On **their own** WISDM test split they remain strong. Representative **E03** (raw units) WISDM accuracy:
+
+| Model | WISDM test acc (E03) |
+|-------|---------------------|
+| daghero | 0.994 |
+| repmobile | 0.941 |
+| tcn_attention | 0.994 |
+| tcn_inception | 0.996 |
+| xtinyhar | 0.954 |
+| xtinyhar_relu | 0.949 |
+
+**E04** and **E05** (unit fixes) and **E06** / **E07** (normalization ablations) stay within about **±0.01** of the E03 WISDM numbers per model — the protocol tweaks target cross-domain behavior on Arduino, not source-domain collapse.
+
+### 9.2 E06 and E07: high WISDM, catastrophic Arduino — confirms *where* the failure is
+
+E06 (no norm) and E07 (skip inference norm) still score **0.94–0.996** on WISDM for most architectures (e.g. daghero **0.994** on both; `tcn_attention` dips slightly on E06 at **0.989** vs **0.995** on E07). That matches §3: weights are not “untrained”; the failure mode is **inconsistent normalization / scale at Arduino inference**, not loss of WISDM discrimination in general.
+
+### 9.3 E08 (T=50): WISDM accuracy stays high with the shorter window
+
+| Model | WISDM test acc (E08, T=50) |
+|-------|---------------------------|
+| daghero | 0.985 |
+| repmobile | 0.952 |
+| tcn_attention | 0.990 |
+| tcn_inception | 0.988 |
+| xtinyhar | 0.953 |
+| xtinyhar_relu | 0.955 |
+
+So the T=50 window change does not wipe source-domain performance; it mainly changes window count and latency (§4).
+
+### 9.4 E09 (pretrain WISDM → fine-tune Arduino): large WISDM forgetting
+
+After fine-tuning on Arduino, the **same** final checkpoint on the **original** WISDM test split:
+
+| Model | WISDM test acc (E09) |
+|-------|---------------------|
+| daghero | 0.570 |
+| repmobile | 0.400 |
+| tcn_attention | 0.670 |
+| tcn_inception | 0.739 |
+| xtinyhar | 0.435 |
+| xtinyhar_relu | 0.441 |
+
+**Takeaway:** Arduino performance recovers (§5), but **source-domain retention is poor** — the larger conv stacks retain more WISDM signal than the compact student models.
+
+### 9.5 E10 (Arduino from scratch): ~chance-level on WISDM
+
+Checkpoints never trained on WISDM labels; evaluated on the **E00** WISDM test tensors so the test set is comparable to other rows:
+
+| Model | WISDM test acc (E10) |
+|-------|---------------------|
+| daghero | 0.394 |
+| repmobile | 0.380 |
+| tcn_attention | 0.359 |
+| tcn_inception | 0.247 |
+| xtinyhar | 0.265 |
+| xtinyhar_relu | 0.271 |
+
+Random guessing over six classes is **0.167**. These models sit **well above chance but far below a WISDM-trained model**, i.e. they pick up *some* correlated structure from accelerometer windows but **do not learn a WISDM-aligned classifier**.
+
+### 9.6 E11 (pretrain WISDM → fine-tune Arduino, T=50): more forgetting than E09
+
+E11 is identical to E09 but with a **T=50** window. WISDM forgetting is **worse** than E09 across the board, showing the shorter window makes it harder to retain the longer-range temporal patterns learned on WISDM:
+
+| Model | WISDM test acc (E09, T=100) | WISDM test acc (E11, T=50) | Δ |
+|-------|-------|-------|-------|
+| daghero | 0.570 | 0.531 | −0.039 |
+| deepconv_lstm | — | 0.622 | — |
+| repmobile | 0.400 | 0.343 | −0.057 |
+| tcn_attention | 0.670 | 0.572 | −0.098 |
+| tcn_inception | 0.739 | 0.705 | −0.034 |
+| xtinyhar | 0.435 | 0.564 | +0.129 |
+| xtinyhar_relu | 0.441 | 0.548 | +0.107 |
+
+`xtinyhar` variants are the exception — they actually retain slightly *more* WISDM signal at T=50. This likely reflects that the xtinyhar student's attention to local patterns is easier to preserve with shorter windows.
+
+### 9.7 E12 (Arduino from-scratch, T=50): still near-chance on WISDM
+
+| Model | WISDM test acc (E10, T=100) | WISDM test acc (E12, T=50) |
+|-------|-------|-------|
+| daghero | 0.394 | 0.365 |
+| repmobile | 0.380 | 0.432 |
+| tcn_attention | 0.359 | 0.350 |
+| tcn_inception | 0.247 | 0.382 |
+| xtinyhar | 0.265 | 0.349 |
+| xtinyhar_relu | 0.271 | 0.321 |
+
+All models remain well below any usable threshold — consistent with E10. The shorter T=50 window does not help or hurt meaningfully for from-scratch Arduino models on WISDM.
 
 ---
 
@@ -201,11 +290,12 @@ Slurm configs typically set a single `eval_domain` per run, so the main aggregat
 8. **`deepconv_lstm` should be PTQ-only** for Arduino-native training.
 9. **`xtinyhar_student_conv2d` (non-ReLU) cannot be quantized** — always use the `_relu` variant.
 10. **`daghero` dominates on size and speed** (26 KB, 0.08 ms) with near-top accuracy — best choice for MCU deployment.
-11. **T=50 window halves inference latency** for LSTM and TCN architectures but a proper accuracy comparison under fine-tuning/from-scratch was not run and should be a follow-up experiment.
+11. **T=50 window halves inference latency** for LSTM/TCN (§4). The T=50 fine-tune **(E11)** slightly worsens WISDM retention vs E09 for most models; T=50 from-scratch **(E12)** stays near-chance on WISDM just like E10.
+12. **WISDM-side checkpoint scores (§9)** — zero-shot models (E03–E08) stay **~0.94–0.996** on WISDM while failing on Arduino; fine-tune **(E09/E11)** drops to **~0.34–0.74** on WISDM; from-scratch **(E10/E12)** is **~0.25–0.43** on WISDM (above chance **0.167** but not usable).
 
 ---
 
-*Generated from M3 aggregate tables (including `m3_cross_eval_wisdm` when JSONs exist). Re-run aggregation after new experiments:*
+*Generated from M3 aggregate tables. Re-run aggregation after new experiments:*
 
 ```bash
 cd /path/to/har-mcu
