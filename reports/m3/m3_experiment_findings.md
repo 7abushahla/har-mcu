@@ -115,37 +115,39 @@ WISDM pre-training adds at most ~0.016 accuracy points. Arduino is large enough 
 
 ---
 
-## 6a. T=50 vs T=100 after adaptation (E11 vs E09, E12 vs E10)
+## 6a. T=50 vs T=100 after adaptation — accuracy vs latency (E11 vs E09, E12 vs E10)
 
-Same training recipe as §5–§6, but **window length 50 samples (2.5 s @ 20 Hz)** instead of 100. Numbers are **Arduino test FP32 accuracy** from `m3_experiment_master_all.csv` (`arch_seq` bundles; **E11/E12** include `deepconv_lstm` in the same matrix).
+Same protocols as **§5–§6** (fine-tune vs from-scratch), but comparing **window length** on Arduino: **T=100 (E09 / E10)** vs **T=50 (E11 / E12)**. Values are **Arduino test FP32 accuracy**, **model size (KB)**, and **mean inference latency (ms)** from `m3_experiment_master_all.csv` (`arch_seq` for all listed variants; **E09/E10 `deepconv_lstm`** from `full_e*` bundles so size/latency match the historical T=100 runs).
 
-### Fine-tune (E09 T=100 vs E11 T=50)
+### Fine-tune: E09 (T=100) vs E11 (T=50)
 
-| Model | E09 Arduino FP32 | E11 Arduino FP32 | Δ |
-|-------|------------------|------------------|---|
-| daghero | 0.996 | 0.987 | −0.008 |
-| deepconv_lstm | 0.994 | 0.981 | −0.013 |
-| repmobile | 0.979 | 0.968 | −0.012 |
-| tcn_attention | 0.995 | 0.982 | −0.013 |
-| tcn_inception | 0.994 | 0.981 | −0.013 |
-| xtinyhar | 0.979 | 0.962 | −0.018 |
-| xtinyhar_relu | 0.973 | 0.956 | −0.017 |
+| Model | Size T=100 (KB) | Size T=50 (KB) | Acc T=100 (E09) | Acc T=50 (E11) | Latency T=100 (ms) | Latency T=50 (ms) | Latency ratio |
+|-------|-----------------|----------------|-----------------|----------------|---------------------|-------------------|---------------|
+| daghero | 26.1 | 26.1 | 0.996 | 0.987 | 0.077 | 0.045 | 1.71× |
+| deepconv_lstm | **136.9** | **107.6** | 0.994 | 0.981 | 4.25 | 2.05 | **2.07×** |
+| repmobile | 42.1 | 42.1 | 0.979 | 0.968 | 0.331 | 0.176 | 1.88× |
+| tcn_attention | 578.4 | 578.4 | 0.995 | 0.982 | 8.29 | 4.33 | 1.91× |
+| tcn_inception | 369.9 | 369.9 | 0.994 | 0.981 | 2.38 | 1.29 | 1.85× |
+| xtinyhar | 315.2 | 311.5 | 0.979 | 0.962 | 0.337 | 0.334 | 1.01× |
+| xtinyhar_relu | 312.4 | 308.6 | 0.973 | 0.956 | 0.329 | 0.324 | 1.02× |
 
-**Takeaway:** dropping to T=50 costs roughly **0.01–0.02** Arduino accuracy under fine-tuning, while **latency roughly halves** for depthwise / TCN stacks (see §4 pattern — e.g. `tcn_attention` mean latency **8.29 ms → 4.33 ms**, `deepconv_lstm` **4.25 ms → 2.05 ms** on the same hardware path in the master CSV).
+### From-scratch: E10 (T=100) vs E12 (T=50)
 
-### From-scratch (E10 T=100 vs E12 T=50)
+| Model | Size T=100 (KB) | Size T=50 (KB) | Acc T=100 (E10) | Acc T=50 (E12) | Latency T=100 (ms) | Latency T=50 (ms) | Latency ratio |
+|-------|-----------------|----------------|-----------------|----------------|---------------------|-------------------|---------------|
+| daghero | 26.1 | 26.1 | 0.992 | 0.989 | 0.077 | 0.046 | 1.67× |
+| deepconv_lstm | **136.9** | **107.6** | 0.987 | 0.981 | 4.25 | 2.04 | **2.08×** |
+| repmobile | 42.1 | 42.1 | 0.963 | 0.951 | 0.340 | 0.177 | 1.92× |
+| tcn_attention | 578.4 | 578.4 | 0.993 | 0.979 | 8.09 | 4.28 | 1.89× |
+| tcn_inception | 369.9 | 369.9 | 0.992 | 0.987 | 2.42 | 1.30 | 1.86× |
+| xtinyhar | 315.2 | 311.5 | 0.979 | 0.959 | 0.327 | 0.325 | 1.01× |
+| xtinyhar_relu | 312.4 | 308.6 | 0.973 | 0.956 | 0.332 | 0.324 | 1.02× |
 
-| Model | E10 Arduino FP32 | E12 Arduino FP32 | Δ |
-|-------|------------------|------------------|---|
-| daghero | 0.992 | 0.989 | −0.004 |
-| deepconv_lstm | 0.987 | 0.981 | −0.005 |
-| repmobile | 0.963 | 0.951 | −0.012 |
-| tcn_attention | 0.993 | 0.979 | −0.015 |
-| tcn_inception | 0.992 | 0.987 | −0.006 |
-| xtinyhar | 0.979 | 0.959 | −0.020 |
-| xtinyhar_relu | 0.973 | 0.956 | −0.018 |
+- **`deepconv_lstm`** is again the only row where **size** drops with shorter windows (~29 KB); latency about **halves** in both fine-tune and from-scratch.
+- **TCN, RepMobile, DagHero** — weights unchanged or nearly unchanged, but **latency ~1.7–1.9×** faster at T=50 because fewer time steps are processed; **accuracy** falls only **~0.004–0.020** vs the T=100 run in the same protocol.
+- **XtinyHAR** — same pattern as **§4** / **E08**: almost **no latency win** and a **larger accuracy penalty** at T=50 than the tiny conv models, so the short window is a weaker trade for those architectures.
 
-**Takeaway:** from-scratch shows the same qualitative trade: **small Arduino accuracy hit**, **substantial latency reduction** at T=50 for temporal-heavy models. WISDM-side behavior of these same checkpoints is in **§9.6–9.7**.
+WISDM-side scores for the same checkpoints are in **§9.6–9.7**.
 
 ---
 
