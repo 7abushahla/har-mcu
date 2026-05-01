@@ -11,11 +11,18 @@ collects them into:
     eval_domain=wisdm) are joined onto each Arduino-experiment row for the same
     model_variant, giving `wisdm_fp32_accuracy` and `arduino_fp32_accuracy`
     side by side so domain-gap is immediately visible.
+
+  * `m3_cross_eval_wisdm.{csv,md}` — optional: eval-only WISDM test scores from
+    `reports/m3/cross_eval/*.json` (produced by `scripts/run_cross_eval_wisdm.py`).
+    These are **not** the same as `wisdm_fp32_accuracy` in `m3_domain_comparison`
+    (that column is the E00 anchor); cross-eval rows re-score checkpoints from
+    E03–E10 on WISDM splits built for those runs (or E00 WISDM for E10).
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import warnings
 from pathlib import Path
 
@@ -234,6 +241,60 @@ def build_domain_comparison(
     return {"csv": str(out_csv), "md": str(out_md)}
 
 
+def aggregate_cross_eval_wisdm(
+    reports_dir: Path,
+    *,
+    cross_eval_subdir: str = "cross_eval",
+    out_prefix: str = "m3_cross_eval_wisdm",
+) -> dict[str, str | int]:
+    """Merge `reports/m3/cross_eval/cross_eval_*.json` into one CSV/MD (if any)."""
+    reports_dir = reports_dir.resolve()
+    ce_dir = reports_dir / cross_eval_subdir
+    out_csv = reports_dir / f"{out_prefix}.csv"
+    out_md = reports_dir / f"{out_prefix}.md"
+
+    if not ce_dir.is_dir():
+        return {"csv": str(out_csv), "md": str(out_md), "rows": 0, "skipped": True}
+
+    rows: list[dict] = []
+    for jp in sorted(ce_dir.glob("cross_eval_*.json")):
+        with jp.open(encoding="utf-8") as f:
+            rec = json.load(f)
+        rows.append(
+            {
+                "source_json": jp.name,
+                "experiment_id": rec.get("experiment_id"),
+                "model_variant": rec.get("model_variant"),
+                "eval_domain": rec.get("eval_domain"),
+                "window_size": rec.get("window_size"),
+                "protocol": rec.get("protocol"),
+                "accuracy": rec.get("accuracy"),
+                "macro_f1": rec.get("macro_f1"),
+                "n_test_samples": rec.get("n_test_samples"),
+                "checkpoint": rec.get("checkpoint"),
+                "processed_dir": rec.get("processed_dir"),
+            }
+        )
+
+    if not rows:
+        return {"csv": str(out_csv), "md": str(out_md), "rows": 0, "skipped": True}
+
+    df = pd.DataFrame(rows).sort_values(
+        by=["experiment_id", "model_variant"], kind="stable"
+    ).reset_index(drop=True)
+    df.to_csv(out_csv, index=False)
+    with out_md.open("w", encoding="utf-8") as f:
+        f.write("# M3 cross-eval on WISDM (eval-only, no training)\n\n")
+        f.write(
+            "Scores from `python scripts/run_cross_eval_wisdm.py` — load a saved checkpoint "
+            "and run inference on an existing processed WISDM test split.\n\n"
+        )
+        f.write(f"- Rows: `{len(df)}`\n\n")
+        f.write(dataframe_to_pipe_markdown(df))
+        f.write("\n")
+    return {"csv": str(out_csv), "md": str(out_md), "rows": len(df), "skipped": False}
+
+
 def main() -> None:
     args = _parse_args()
     out = aggregate_m3_masters(
@@ -251,6 +312,11 @@ def main() -> None:
     )
     print(cmp["csv"])
     print(cmp["md"])
+
+    xev = aggregate_cross_eval_wisdm(Path(args.reports_dir).resolve())
+    print(xev["csv"])
+    print(xev["md"])
+    print(f"cross_eval_rows={xev.get('rows', 0)}")
 
 
 if __name__ == "__main__":

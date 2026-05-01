@@ -1,0 +1,20 @@
+{
+  "experiment_id": "E08",
+  "model_variant": "daghero_cnn_2layer_conv2d",
+  "eval_domain": "wisdm",
+  "window_size": 50,
+  "protocol": "random_stratified",
+  "accuracy": 0.9854198089492208,
+  "macro_f1": 0.9797702725888767,
+  "n_test_samples": 13923,
+  "checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E08_T50_window/arch_seq/daghero_cnn_2layer_conv2d/e08/daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E08_daghero_cnn_2layer_conv2d_r0.keras",
+  "processed_dir": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E08_T50_window/arch_seq/daghero_cnn_2layer_conv2d/e08/source_wisdm",
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ]
+}

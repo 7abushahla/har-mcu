@@ -1,6 +1,6 @@
 # M3 experiment findings
 
-Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same).
+Interpretation of aggregated results from `m3_domain_comparison.csv`, `m3_experiment_master_all.csv`, and (when present) **`m3_cross_eval_wisdm.csv`** — the last file lists eval-only WISDM test scores for checkpoints from E03–E10 (see §9). Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same).
 
 ---
 
@@ -181,7 +181,15 @@ All sizes and latencies from E00 (WISDM baseline, representative of architecture
 
 ---
 
-## 9. Summary of key findings
+## 9. Post-hoc WISDM cross-eval (E03–E10, CPU-only)
+
+Slurm configs typically set a single `eval_domain` per run, so the main aggregate tables do **not** by themselves list “same checkpoint on both WISDM and Arduino test.” After the fact, `python scripts/run_cross_eval_wisdm.py` loads each saved FP32 checkpoint and runs inference on the appropriate processed WISDM test arrays (E03–E08: `source_wisdm/`; E09: `pretrain_wisdm/` for forgetting; E10: E00 WISDM split). Re-run `python -m src.m3.aggregate_masters --reports-dir reports/m3` to refresh **`m3_cross_eval_wisdm.csv`** / `.md` from `reports/m3/cross_eval/*.json`.
+
+**How this differs from `m3_domain_comparison.csv`:** the `wisdm_fp32_accuracy` column there is the **E00 source-only anchor** joined onto Arduino rows for the same `model_variant`. The cross-eval table is the **actual WISDM test accuracy** of the checkpoint trained under E03–E10 protocols — e.g. E09/E10 rows show catastrophic forgetting or no WISDM knowledge, while E06/E07 still look strong on WISDM because the collapse was on Arduino zero-shot only.
+
+---
+
+## 10. Summary of key findings
 
 1. **Domain gap at raw units is 100% catastrophic** — all models drop to chance.
 2. **Unit conversion alone is worth ~+33 accuracy points** (0.17 → 0.50) for free.
@@ -197,7 +205,7 @@ All sizes and latencies from E00 (WISDM baseline, representative of architecture
 
 ---
 
-*Generated from M3 aggregate tables. Re-run aggregation after new experiments:*
+*Generated from M3 aggregate tables (including `m3_cross_eval_wisdm` when JSONs exist). Re-run aggregation after new experiments:*
 
 ```bash
 cd /path/to/har-mcu

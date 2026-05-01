@@ -1,0 +1,20 @@
+{
+  "experiment_id": "E10",
+  "model_variant": "tcn_attention_har_teacher_conv2d",
+  "eval_domain": "wisdm",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "accuracy": 0.35908691834942935,
+  "macro_f1": 0.2992774398562373,
+  "n_test_samples": 6834,
+  "checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E10_arduino_from_scratch/arch_seq/tcn_attention_har_teacher_conv2d/e10/tcn_attention_har_teacher_conv2d_T100_Prandom_stratified_E10_tcn_attention_har_teacher_conv2d_r0.keras",
+  "processed_dir": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E00_wisdm_m2_anchor/arch_seq/tcn_attention_har_teacher_conv2d/e00",
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ]
+}

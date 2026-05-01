@@ -1,0 +1,13 @@
+# m3 Comparison
+
+- Notes: Same protocol as E10 (train from scratch on Arduino train, eval Arduino test, train_zscore) but T=50 (2.5 s @ 20 Hz). Compare to E10 (T=100) for window-length apples-to-apples.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | ptq_status | qat_status | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.9785488958990536 | 0.9785476774451075 | 1883.1640625 | 41.08885654000005 | — | — | — | — | ok | ok | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9779179810725552 | 0.9779184388875731 | 578.3515625 | — | 4.254916999968827 | 4.424997250026763 | — | — | ok | — | ok |
+| WISDM replication | random_stratified | QAT int8 | 0.9842271293375394 | 0.984188563665629 | 585.546875 | 47.36326194200001 | 4.2763220000097135 | 4.507730000028687 | — | — | — | ok | ok |
+| paper target | — | baseline float | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | — | — | reference |
+
