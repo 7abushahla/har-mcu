@@ -36,6 +36,54 @@ def _inference_norm_applied(cfg: dict[str, Any]) -> bool:
     return not bool(_get(cfg, "normalization.diagnostic_skip_inference_norm", False))
 
 
+_SPLIT_TEST_COLUMNS = [
+    "fp32_accuracy_wisdm_test",
+    "fp32_macro_f1_wisdm_test",
+    "fp32_accuracy_arduino_test",
+    "fp32_macro_f1_arduino_test",
+    "ptq_accuracy_wisdm_test",
+    "ptq_macro_f1_wisdm_test",
+    "ptq_accuracy_arduino_test",
+    "ptq_macro_f1_arduino_test",
+    "qat_accuracy_wisdm_test",
+    "qat_macro_f1_wisdm_test",
+    "qat_accuracy_arduino_test",
+    "qat_macro_f1_arduino_test",
+]
+
+
+def _per_domain_test_columns(cfg: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+    """Fill WISDM-test vs Arduino-test accuracy/F1; transfer rows set these explicitly."""
+
+    if bool(row.get("_m3_domain_split")):
+        return {k: _nullable_float(row.get(k)) for k in _SPLIT_TEST_COLUMNS}
+
+    ds = str(_get(cfg, "data.source", ""))
+    out: dict[str, Any] = {k: None for k in _SPLIT_TEST_COLUMNS}
+    acc = _nullable_float(row.get("accuracy"))
+    f1 = _nullable_float(row.get("macro_f1"))
+    p_acc = _nullable_float(row.get("ptq_accuracy"))
+    p_f1 = _nullable_float(row.get("ptq_macro_f1"))
+    q_acc = _nullable_float(row.get("qat_accuracy"))
+    q_f1 = _nullable_float(row.get("qat_macro_f1"))
+
+    if ds == "wisdm":
+        out["fp32_accuracy_wisdm_test"] = acc
+        out["fp32_macro_f1_wisdm_test"] = f1
+        out["ptq_accuracy_wisdm_test"] = p_acc
+        out["ptq_macro_f1_wisdm_test"] = p_f1
+        out["qat_accuracy_wisdm_test"] = q_acc
+        out["qat_macro_f1_wisdm_test"] = q_f1
+    elif ds == "arduino":
+        out["fp32_accuracy_arduino_test"] = acc
+        out["fp32_macro_f1_arduino_test"] = f1
+        out["ptq_accuracy_arduino_test"] = p_acc
+        out["ptq_macro_f1_arduino_test"] = p_f1
+        out["qat_accuracy_arduino_test"] = q_acc
+        out["qat_macro_f1_arduino_test"] = q_f1
+    return out
+
+
 def _notes(cfg: dict[str, Any], row: dict[str, Any]) -> str:
     parts: list[str] = []
     run_id = row.get("run_id") or _get(cfg, "experiment.run_id")
@@ -98,6 +146,7 @@ def m3_row_from_run(cfg: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
         "deploy_gate_status": deploy_gate_status,
         "notes": _notes(cfg, row),
     }
+    mapped.update(_per_domain_test_columns(cfg, row))
     return {col: mapped.get(col) for col in M3_MASTER_COLUMNS}
 
 

@@ -59,6 +59,20 @@ M3_MASTER_COLUMNS = [
     "latency_mean_ms",
     "latency_median_ms",
     "latency_p95_ms",
+    # Optional split: same checkpoint/TFLites evaluated on WISDM vs Arduino test
+    # windows (null = not applicable for that domain).
+    "fp32_accuracy_wisdm_test",
+    "fp32_macro_f1_wisdm_test",
+    "fp32_accuracy_arduino_test",
+    "fp32_macro_f1_arduino_test",
+    "ptq_accuracy_wisdm_test",
+    "ptq_macro_f1_wisdm_test",
+    "ptq_accuracy_arduino_test",
+    "ptq_macro_f1_arduino_test",
+    "qat_accuracy_wisdm_test",
+    "qat_macro_f1_wisdm_test",
+    "qat_accuracy_arduino_test",
+    "qat_macro_f1_arduino_test",
     "deploy_gate_status",
     "notes",
 ]
