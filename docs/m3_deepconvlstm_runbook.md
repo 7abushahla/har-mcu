@@ -1,6 +1,6 @@
-# M3 DeepConvLSTM Runbook
+# M3 DeepConvLSTM And Architecture Sweep Runbook
 
-This document summarizes the Milestone 3 DeepConvLSTM implementation, notebooks, Slurm workflow, experiment outputs, and Arduino deployment path.
+This document summarizes the Milestone 3 DeepConvLSTM implementation, all-architecture sweep workflow, notebooks, Slurm workflow, experiment outputs, and Arduino deployment path.
 
 ## What We Changed
 
@@ -24,9 +24,18 @@ Code and config additions:
 Architecture-sweep safety additions:
 
 - `src/m3/run_experiment.py` accepts `--model-variant` and `--run-id` overrides, so the same M3 config can run another registered architecture without copying the YAML.
+- `src/m3/run_experiment.py` also accepts repeated `--model-kwarg KEY=VALUE` overrides for small architecture-specific settings.
 - `--artifact-suffix` supports `{experiment_id}`, `{experiment_code}`, `{model_variant}`, and `{run_id}` placeholders.
 - `scripts/slurm/submit_m3_arch_experiment.sh` submits architecture runs with a default isolated suffix of `arch_sweeps/<model_variant>/<experiment_code>`.
+- `scripts/slurm/submit_m3_arch_experiment.sh` injects `patch_size=10` for XTinyHAR E08 T50 runs, because the default `patch_size=20` does not divide T50.
 - This keeps non-DeepConvLSTM reports and TFLites out of the existing DeepConvLSTM `full_eXX` folders.
+- Generated `reports/m3/arch_sweeps/` and `models_tflite/m3/*/arch_sweeps/` folders are ignored by Git. They remain available in the workspace for viewing, but are reproducible Slurm outputs rather than source files.
+
+XTinyHAR compatibility additions:
+
+- The default `xtinyhar_student_conv2d` path remains GELU, matching `notebooks/replication_xtinyhar.ipynb`.
+- The XTinyHAR replication notebook and reports show FP32/PTQ/QAT TFLite export/evaluation, but the TFLM deploy gate fails for GELU. The recorded unsupported ops are `GELU` and, in the T200 replication path, `REDUCE_PROD`.
+- A separate `xtinyhar_student_conv2d_relu` variant was added for TFLM compatibility testing. This is not a silent replacement for the GELU replication model.
 
 Current staged deployment headers:
 
@@ -70,6 +79,30 @@ Architecture-wrapper validation:
 - Slurm dry-run submissions `7201` and `7202` were canceled because GPU nodes stayed in `CONFIGURING`; this was scheduler/node behavior before the batch payload ran, not a code failure.
 - Slurm dry-run submission `7204` completed with exit `0:0`, validating `daghero_cnn_2layer_conv2d` config overrides and the isolated `arch_sweeps/daghero_cnn_2layer_conv2d/e00` artifact suffix.
 
+All-architecture smoke tests:
+
+- Smoke jobs `7205`-`7213`: `deepconv_lstm_conv2d`, all 9 runnable configs completed `0:0`.
+- Smoke jobs `7214`-`7222`: `daghero_cnn_2layer_conv2d`, all 9 runnable configs completed `0:0`.
+- Smoke jobs `7225`-`7233`: `repmobile_folded_conv2d`, all 9 runnable configs completed `0:0`.
+- Smoke jobs `7234`-`7242`: `tcn_attention_har_teacher_conv2d`, all 9 runnable configs completed `0:0`.
+- Smoke jobs `7243`-`7251`: `tcn_inception_conv2d`, all 9 runnable configs completed `0:0`.
+- Smoke jobs `7273`-`7281`: default-GELU `xtinyhar_student_conv2d`, all 9 runnable configs completed `0:0`; 9 rows exported FP32/PTQ/QAT TFLites but marked PTQ/QAT deploy gate failed because TFLM does not support GELU in our current resolver path.
+- Smoke jobs `7283`-`7291`: `xtinyhar_student_conv2d_relu`, all 9 runnable configs completed `0:0`; 9 rows report FP32/PTQ/QAT deploy gate ok.
+
+All-architecture full runs:
+
+| Model variant | Jobs | Report rows | FP32/PTQ/QAT deploy ok | Expected deploy failures |
+| --- | --- | ---: | ---: | ---: |
+| `deepconv_lstm_conv2d` | `7292`-`7300` | 9 | 9 | 0 |
+| `daghero_cnn_2layer_conv2d` | `7301`-`7309` | 9 | 9 | 0 |
+| `repmobile_folded_conv2d` | `7310`-`7318` | 9 | 9 | 0 |
+| `tcn_attention_har_teacher_conv2d` | `7319`-`7327` | 9 | 9 | 0 |
+| `tcn_inception_conv2d` | `7328`-`7336` | 9 | 9 | 0 |
+| `xtinyhar_student_conv2d` | `7338`-`7346` | 9 | 0 | 9 |
+| `xtinyhar_student_conv2d_relu` | `7347`-`7355` | 9 | 9 | 0 |
+
+All 63 full-run Slurm jobs completed with exit `0:0`. E01 user-holdout and E02 true-100-Hz runs were not submitted.
+
 ## Key Results
 
 The aggregate report is:
@@ -101,7 +134,7 @@ models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv
 models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/full_e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_qat.tflite
 ```
 
-Current best non-diagnostic Arduino-target candidate:
+Current staged DeepConvLSTM deployment candidate:
 
 - Experiment: `E09_wisdm_pretrain_arduino_finetune`
 - Candidate export: PTQ INT8
@@ -110,7 +143,35 @@ Current best non-diagnostic Arduino-target candidate:
 - QAT accuracy / macro-F1: `0.9298356510745891` / `0.9298920081134151`
 - Deployment summary: `reports/m3/final_deployment_summary.md`
 
-E07 is diagnostic-only and must not be selected as the final deployed model.
+This is the model currently exported into `deploy/common/model_data.*`. After the architecture sweep, compare `reports/m3/arch_sweeps/<model_variant>/e09/m3_experiment_master.csv` before replacing the staged deployment headers. E07 is diagnostic-only and must not be selected as the final deployed model.
+
+Architecture sweep outputs:
+
+- Full reports: 63 `m3_experiment_master.csv` files under `reports/m3/arch_sweeps/<model_variant>/<experiment_code>/`.
+- Full TFLite exports: 189 `.tflite` files under `models_tflite/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/`.
+- Smoke reports: 63 `m3_experiment_master.csv` files under `reports/m3/smoke_arch_sweeps/<model_variant>/<experiment_code>/`.
+- Smoke TFLite exports: 189 `.tflite` files under `models_tflite/m3/<experiment_id>/smoke_arch_sweeps/<model_variant>/<experiment_code>/`.
+- All non-GELU architecture variants completed with `fp32_tflite=ok; ptq=ok; qat=ok`.
+- Default-GELU `xtinyhar_student_conv2d` completed conversion/evaluation but has 9 rows with `fp32_tflite=ok; ptq=failed; qat=failed` because the TFLM deploy gate rejects `GELU`.
+
+Example full architecture-sweep export location:
+
+```text
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/arch_sweeps/<model_variant>/e09/
+```
+
+For an XTinyHAR deployment-compatible candidate, use the explicit ReLU variant rather than the GELU replication variant:
+
+```text
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/arch_sweeps/xtinyhar_student_conv2d_relu/e09/
+```
+
+E09 Arduino fine-tune quick comparison:
+
+- Best deploy-eligible E09 macro-F1 in this sweep is `daghero_cnn_2layer_conv2d`, with PTQ macro-F1 `0.9962107846145144` and QAT macro-F1 `0.9962107846145146`.
+- `tcn_inception_conv2d` is very close, with PTQ macro-F1 `0.9949398022317159` and QAT macro-F1 `0.9962036380132565`.
+- Default-GELU `xtinyhar_student_conv2d` is not deploy eligible despite valid host-side TFLite evaluation because the TFLM deploy gate fails.
+- Before replacing the staged DeepConvLSTM deployment headers, compare E09 accuracy, macro-F1, model size, latency, and Arduino live-trial behavior.
 
 ## Slurm And Environment Notes
 
@@ -157,6 +218,8 @@ source symbolic-motifgen/scripts/aus_hpc_env.sh
 bash scripts/slurm/submit_m3_experiment.sh configs/m3/E09_wisdm_pretrain_arduino_finetune.yaml --artifact-suffix full_e09
 ```
 
+The wrappers also contain the same Slurm defaults, so if `symbolic-motifgen/scripts/aus_hpc_env.sh` is unavailable on another checkout, set the `M3_SLURM_*`, `M3_REPO_ROOT`, and `M3_CONDA_ENV` variables directly before submitting.
+
 To run a different architecture without mixing outputs with DeepConvLSTM:
 
 ```bash
@@ -191,6 +254,7 @@ Registered Conv2D-safe architecture variants:
 - `tcn_attention_har_teacher_conv2d`
 - `tcn_inception_conv2d`
 - `xtinyhar_student_conv2d`
+- `xtinyhar_student_conv2d_relu`
 
 Monitor jobs:
 
@@ -307,14 +371,14 @@ What we did not run:
 
 ## Other Architecture Status
 
-DeepConvLSTM has completed full M3 runs across E00, E03-E10 with FP32, PTQ INT8, and QAT INT8 exports.
+The architecture sweep is now complete for the runnable M3 matrix: E00 and E03-E10 for each registered Conv2D-safe architecture variant plus the explicit XTinyHAR ReLU compatibility variant. Outputs are separated by model under `reports/m3/arch_sweeps/<model_variant>/<experiment_code>/` and `models_tflite/m3/<experiment_id>/arch_sweeps/<model_variant>/<experiment_code>/`.
 
-The other architecture variants are registered in the existing model builder registry and can now be launched through the architecture wrapper without mixing output folders. They have not yet completed full M3 production sweeps in this repo state. Recommended order:
+Summary:
 
-1. Smoke-test E00 for each architecture with PTQ and QAT enabled.
-2. If E00 passes, smoke-test one Arduino-domain path such as E09.
-3. Run the full matrix per architecture using the architecture wrapper.
-4. Compare reports under `reports/m3/arch_sweeps/<model_variant>/`.
+- `deepconv_lstm_conv2d`, `daghero_cnn_2layer_conv2d`, `repmobile_folded_conv2d`, `tcn_attention_har_teacher_conv2d`, `tcn_inception_conv2d`, and `xtinyhar_student_conv2d_relu` all report FP32/PTQ/QAT deploy gate ok for all 9 runnable experiments.
+- Default-GELU `xtinyhar_student_conv2d` matches the XTinyHAR replication notebook behavior: TFLite conversion and host evaluation run, but PTQ/QAT deploy gate fails for TFLM because of unsupported `GELU`.
+- `xtinyhar_student_conv2d_relu` is the compatibility variant to use if XTinyHAR is selected for on-device deployment.
+- E08 XTinyHAR runs use `patch_size=10`; non-E08 XTinyHAR runs keep the default `patch_size=20`.
 
 ## On-Device Deployment Integration
 
@@ -376,5 +440,7 @@ Do not commit or push:
 - executed notebook outputs under `notebooks/executed/`
 - smoke-run artifacts under `reports/m3/smoke*/`
 - smoke-run TFLites under `models_tflite/m3/*/smoke*/`
+- generated architecture-sweep reports under `reports/m3/arch_sweeps/`
+- generated architecture-sweep TFLites under `models_tflite/m3/*/arch_sweeps/`
 
 The first three exclusions were explicitly requested for this repo handoff. The generated data and executed notebook outputs are also local/reproducible artifacts and are ignored to keep the Git history lightweight.

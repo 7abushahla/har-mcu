@@ -54,6 +54,32 @@ def _apply_experiment_overrides(cfg: dict[str, Any], args: argparse.Namespace) -
             exp["run_id"] = f"{experiment_code}_{model_slug(args.model_variant)}_r0"
     if args.run_id:
         exp["run_id"] = str(args.run_id)
+    for item in args.model_kwarg or []:
+        key, value = _parse_model_kwarg(item)
+        exp.setdefault("model_kwargs", {})[key] = value
+
+
+def _parse_model_kwarg(item: str) -> tuple[str, Any]:
+    if "=" not in item:
+        raise ValueError(f"--model-kwarg must be KEY=VALUE, got: {item!r}")
+    key, raw_value = item.split("=", 1)
+    key = key.strip()
+    value = raw_value.strip()
+    if not key:
+        raise ValueError("--model-kwarg key must not be empty")
+    lower = value.lower()
+    if lower in {"true", "false"}:
+        return key, lower == "true"
+    if lower in {"none", "null"}:
+        return key, None
+    try:
+        return key, int(value)
+    except ValueError:
+        pass
+    try:
+        return key, float(value)
+    except ValueError:
+        return key, value
 
 
 def _apply_smoke_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
@@ -105,6 +131,12 @@ def main() -> None:
     )
     parser.add_argument("--model-variant", default=None, help="Override experiment.model_variant")
     parser.add_argument("--run-id", default=None, help="Override experiment.run_id")
+    parser.add_argument(
+        "--model-kwarg",
+        action="append",
+        default=[],
+        help="Override experiment.model_kwargs entry as KEY=VALUE. May be repeated.",
+    )
     parser.add_argument("--disable-qat", action="store_true")
     parser.add_argument("--representative-samples", type=int, default=16)
     parser.add_argument("--timing-warmup-samples", type=int, default=2)

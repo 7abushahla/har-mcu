@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: bash scripts/slurm/submit_m3_experiment.sh configs/m3/E00_wisdm_m2_anchor.yaml [--smoke] [--max-windows-per-class N] [--artifact-suffix smoke] [--model-variant MODEL] [--run-id RUN] [--disable-qat]" >&2
+  echo "Usage: bash scripts/slurm/submit_m3_experiment.sh configs/m3/E00_wisdm_m2_anchor.yaml [--smoke] [--max-windows-per-class N] [--artifact-suffix smoke] [--model-variant MODEL] [--run-id RUN] [--model-kwarg KEY=VALUE] [--disable-qat]" >&2
   exit 2
 fi
 
@@ -52,6 +52,9 @@ fi
 mkdir -p "$REPO_ROOT/slurm_logs"
 JOB_BASENAME="$(basename "$CONFIG" .yaml)"
 JOB_NAME="m3_${JOB_BASENAME}"
+if [ -n "${M3_JOB_NAME_SUFFIX:-}" ]; then
+  JOB_NAME="${JOB_NAME}_${M3_JOB_NAME_SUFFIX}"
+fi
 
 sbatch <<SBATCH
 #!/usr/bin/env bash

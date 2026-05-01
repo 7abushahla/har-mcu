@@ -16,6 +16,7 @@ class TransformerEncoderBlock(layers.Layer):
         num_heads: int,
         mlp_ratio: float = 2.0,
         dropout: float = 0.1,
+        mlp_activation: str = "gelu",
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -23,6 +24,7 @@ class TransformerEncoderBlock(layers.Layer):
         self.num_heads = int(num_heads)
         self.mlp_ratio = float(mlp_ratio)
         self.dropout = float(dropout)
+        self.mlp_activation = str(mlp_activation)
         self.norm1 = layers.LayerNormalization(epsilon=1e-6)
         self.attn = layers.MultiHeadAttention(
             num_heads=self.num_heads,
@@ -35,7 +37,7 @@ class TransformerEncoderBlock(layers.Layer):
         hidden_dim = int(self.embed_dim * self.mlp_ratio)
         self.mlp = tf.keras.Sequential(
             [
-                layers.Dense(hidden_dim, activation="gelu"),
+                layers.Dense(hidden_dim, activation=self.mlp_activation),
                 layers.Dropout(self.dropout),
                 layers.Dense(self.embed_dim),
                 layers.Dropout(self.dropout),
@@ -56,6 +58,7 @@ class TransformerEncoderBlock(layers.Layer):
                 "num_heads": self.num_heads,
                 "mlp_ratio": self.mlp_ratio,
                 "dropout": self.dropout,
+                "mlp_activation": self.mlp_activation,
             }
         )
         return cfg
@@ -71,6 +74,7 @@ def build_xtinyhar_student(
     num_layers: int = 2,
     mlp_ratio: float = 2.0,
     dropout: float = 0.1,
+    mlp_activation: str = "gelu",
 ) -> tf.keras.Model:
     """Builds an inertial-transformer-like student model.
 
@@ -98,6 +102,7 @@ def build_xtinyhar_student(
             num_heads=num_heads,
             mlp_ratio=mlp_ratio,
             dropout=dropout,
+            mlp_activation=mlp_activation,
             name=f"encoder_{i}",
         )(x)
 
@@ -119,6 +124,7 @@ def build_xtinyhar_student_conv2d(
     num_layers: int = 2,
     mlp_ratio: float = 2.0,
     dropout: float = 0.1,
+    mlp_activation: str = "gelu",
 ) -> tf.keras.Model:
     """Conv2D-equivalent XTinyHAR student for QAT-safe execution.
 
@@ -148,6 +154,7 @@ def build_xtinyhar_student_conv2d(
             num_heads=num_heads,
             mlp_ratio=mlp_ratio,
             dropout=dropout,
+            mlp_activation=mlp_activation,
             name=f"encoder_{i}",
         )(x)
 

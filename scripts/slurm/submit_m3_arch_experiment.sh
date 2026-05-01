@@ -33,8 +33,15 @@ if [ "$HAS_SUFFIX" -eq 0 ]; then
   CMD+=(--artifact-suffix "${M3_ARTIFACT_SUFFIX:-$DEFAULT_SUFFIX}")
 fi
 
+case "$MODEL_VARIANT:$EXPERIMENT_CODE" in
+  xtinyhar_student_conv2d:e08|xtinyhar_student_conv2d_relu:e08)
+    CMD+=(--model-kwarg patch_size=10)
+    ;;
+esac
+
 CMD+=("$@")
 
 printf '%q ' "${CMD[@]}"
 printf '\n'
+export M3_JOB_NAME_SUFFIX="${M3_JOB_NAME_SUFFIX:-$MODEL_VARIANT}"
 "${CMD[@]}"

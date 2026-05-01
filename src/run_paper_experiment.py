@@ -139,6 +139,12 @@ def _evaluate_fp32_tflite_if_available(
         return None, None, "failed", str(exc)
 
 
+def _build_xtinyhar_student_conv2d_relu(**kwargs: Any) -> Any:
+    kwargs = dict(kwargs)
+    kwargs["mlp_activation"] = "relu"
+    return build_xtinyhar_student_conv2d(**kwargs)
+
+
 def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[str, Any]]]:
     return {
         "deepconv_lstm": (
@@ -158,6 +164,11 @@ def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[s
         ),
         "xtinyhar_student_conv2d": (
             build_xtinyhar_student_conv2d,
+            compile_xtinyhar_student,
+            {"learning_rate": 1e-4},
+        ),
+        "xtinyhar_student_conv2d_relu": (
+            _build_xtinyhar_student_conv2d_relu,
             compile_xtinyhar_student,
             {"learning_rate": 1e-4},
         ),

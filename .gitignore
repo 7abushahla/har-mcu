@@ -29,7 +29,9 @@ reports/*.csv
 slurm_logs/
 notebooks/executed/
 reports/m3/smoke*/
+reports/m3/arch_sweeps/
 models_tflite/m3/*/smoke*/
+models_tflite/m3/*/arch_sweeps/
 *.pdf
 *.PDF
 DeepConv+LSTM.ipynb
