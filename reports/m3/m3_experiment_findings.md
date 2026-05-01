@@ -1,6 +1,6 @@
 # M3 experiment findings
 
-Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments **E00–E12** (E01 and E02 not run in this batch). **E11** / **E12** are the T=50 counterparts of **E09** / **E10** (same protocols, 2.5 s @ 20 Hz); Slurm scripts `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` and `job_m3_seq_e12_t50_all_models.sh`. Per-checkpoint WISDM test scores are in §9 and in `m3_cross_eval_wisdm.csv`.
+Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments **E00–E12** (E01 and E02 not run in this batch). **E11** / **E12** are the T=50 counterparts of **E09** / **E10** (same protocols, 2.5 s @ 20 Hz); Slurm scripts `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` and `job_m3_seq_e12_t50_all_models.sh`. Per-checkpoint cross-eval scores (WISDM and Arduino) are in §9 and in `m3_cross_eval.csv`.
 
 ---
 
@@ -217,9 +217,12 @@ All sizes and latencies from E00 (WISDM baseline, representative of architecture
 
 ---
 
-## 9. WISDM test accuracy of the same checkpoints (E03–E12)
+## 9. Cross-eval: second-domain scores for saved checkpoints (E00–E12)
 
-Each row is the **saved FP32 checkpoint** for that experiment and architecture, evaluated on the **WISDM** held-out test (6834 windows at T=100 except E08/E11/E12 at T=50, 13923 windows). This makes the domain gap two-sided: you can read Arduino scores from the main aggregates and WISDM scores here. **`deepconv_lstm`** is not in these numbers for E03–E10 because those checkpoints live under `full_eXX/`, not the `arch_seq/` matrix — **it is included for E11/E12** since those were run through the new consolidated Slurm script which writes into `arch_seq/`.
+Eval-only inference: load the **saved FP32 checkpoint** and run it on an already-built processed **test** split. Full table: **`m3_cross_eval.csv`** (and duplicate **`m3_cross_eval_wisdm.csv`**), column **`eval_domain`** = `wisdm` or `arduino`.
+
+- **WISDM** rows: E03–E12 as below (6834 test windows at T=100 except E08/E11/E12 at T=50 → 13923 windows). **`deepconv_lstm`** uses **`full_eXX/`** checkpoints for E03–E10 and E12; **E11** uses `arch_seq/`.
+- **Arduino** rows: **E00 only** — every E00 WISDM-trained checkpoint on the **same E03 `eval_arduino`** tensors used for zero-shot (T=100, **n=1582**). All sit at **~0.167** accuracy (chance), matching §1.
 
 ### 9.1 Zero-shot trains (E03–E07): WISDM stays near-baseline while Arduino is broken
 
@@ -228,6 +231,7 @@ Models are trained only on WISDM then (for reporting elsewhere) evaluated on Ard
 | Model | WISDM test acc (E03) |
 |-------|---------------------|
 | daghero | 0.994 |
+| deepconv_lstm | 0.988 |
 | repmobile | 0.941 |
 | tcn_attention | 0.994 |
 | tcn_inception | 0.996 |
@@ -245,6 +249,7 @@ E06 (no norm) and E07 (skip inference norm) still score **0.94–0.996** on WISD
 | Model | WISDM test acc (E08, T=50) |
 |-------|---------------------------|
 | daghero | 0.985 |
+| deepconv_lstm | 0.984 |
 | repmobile | 0.952 |
 | tcn_attention | 0.990 |
 | tcn_inception | 0.988 |
@@ -260,6 +265,7 @@ After fine-tuning on Arduino, the **same** final checkpoint on the **original** 
 | Model | WISDM test acc (E09) |
 |-------|---------------------|
 | daghero | 0.570 |
+| deepconv_lstm | 0.530 |
 | repmobile | 0.400 |
 | tcn_attention | 0.670 |
 | tcn_inception | 0.739 |
@@ -275,6 +281,7 @@ Checkpoints never trained on WISDM labels; evaluated on the **E00** WISDM test t
 | Model | WISDM test acc (E10) |
 |-------|---------------------|
 | daghero | 0.394 |
+| deepconv_lstm | 0.282 |
 | repmobile | 0.380 |
 | tcn_attention | 0.359 |
 | tcn_inception | 0.247 |
@@ -290,7 +297,7 @@ E11 is identical to E09 but with a **T=50** window. WISDM forgetting is **worse*
 | Model | WISDM test acc (E09, T=100) | WISDM test acc (E11, T=50) | Δ |
 |-------|-------|-------|-------|
 | daghero | 0.570 | 0.531 | −0.039 |
-| deepconv_lstm | — | 0.622 | — |
+| deepconv_lstm | 0.530 | 0.622 | +0.092 |
 | repmobile | 0.400 | 0.343 | −0.057 |
 | tcn_attention | 0.670 | 0.572 | −0.098 |
 | tcn_inception | 0.739 | 0.705 | −0.034 |
@@ -304,6 +311,7 @@ E11 is identical to E09 but with a **T=50** window. WISDM forgetting is **worse*
 | Model | WISDM test acc (E10, T=100) | WISDM test acc (E12, T=50) |
 |-------|-------|-------|
 | daghero | 0.394 | 0.365 |
+| deepconv_lstm | 0.282 | 0.353 |
 | repmobile | 0.380 | 0.432 |
 | tcn_attention | 0.359 | 0.350 |
 | tcn_inception | 0.247 | 0.382 |

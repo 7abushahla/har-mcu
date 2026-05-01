@@ -12,11 +12,11 @@ collects them into:
     model_variant, giving `wisdm_fp32_accuracy` and `arduino_fp32_accuracy`
     side by side so domain-gap is immediately visible.
 
-  * `m3_cross_eval_wisdm.{csv,md}` — optional: eval-only WISDM test scores from
-    `reports/m3/cross_eval/*.json` (produced by `scripts/run_cross_eval_wisdm.py`).
+  * `m3_cross_eval.{csv,md}` — optional: eval-only scores from
+    `reports/m3/cross_eval/cross_eval_*.json` (see `eval_domain` column: `wisdm`
+    or `arduino`), produced by `scripts/run_cross_eval_wisdm.py`.
     These are **not** the same as `wisdm_fp32_accuracy` in `m3_domain_comparison`
-    (that column is the E00 anchor); cross-eval rows re-score checkpoints from
-    E03–E10 on WISDM splits built for those runs (or E00 WISDM for E10).
+    (that column is the E00 anchor).
 """
 
 from __future__ import annotations
@@ -245,7 +245,7 @@ def aggregate_cross_eval_wisdm(
     reports_dir: Path,
     *,
     cross_eval_subdir: str = "cross_eval",
-    out_prefix: str = "m3_cross_eval_wisdm",
+    out_prefix: str = "m3_cross_eval",
 ) -> dict[str, str | int]:
     """Merge `reports/m3/cross_eval/cross_eval_*.json` into one CSV/MD (if any)."""
     reports_dir = reports_dir.resolve()
@@ -280,18 +280,24 @@ def aggregate_cross_eval_wisdm(
         return {"csv": str(out_csv), "md": str(out_md), "rows": 0, "skipped": True}
 
     df = pd.DataFrame(rows).sort_values(
-        by=["experiment_id", "model_variant"], kind="stable"
+        by=["experiment_id", "model_variant", "eval_domain"], kind="stable"
     ).reset_index(drop=True)
     df.to_csv(out_csv, index=False)
     with out_md.open("w", encoding="utf-8") as f:
-        f.write("# M3 cross-eval on WISDM (eval-only, no training)\n\n")
+        f.write("# M3 cross-eval (eval-only, no training)\n\n")
         f.write(
             "Scores from `python scripts/run_cross_eval_wisdm.py` — load a saved checkpoint "
-            "and run inference on an existing processed WISDM test split.\n\n"
+            "and run inference on an existing processed test split.  "
+            "Column `eval_domain` is `wisdm` or `arduino`.\n\n"
         )
         f.write(f"- Rows: `{len(df)}`\n\n")
         f.write(dataframe_to_pipe_markdown(df))
         f.write("\n")
+    # Historical filename — same table (includes both eval_domain values).
+    legacy_csv = reports_dir / "m3_cross_eval_wisdm.csv"
+    legacy_md = reports_dir / "m3_cross_eval_wisdm.md"
+    df.to_csv(legacy_csv, index=False)
+    legacy_md.write_text(out_md.read_text(encoding="utf-8"), encoding="utf-8")
     return {"csv": str(out_csv), "md": str(out_md), "rows": len(df), "skipped": False}
 
 

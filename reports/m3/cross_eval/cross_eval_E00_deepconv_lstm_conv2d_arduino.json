@@ -1,0 +1,20 @@
+{
+  "experiment_id": "E00",
+  "model_variant": "deepconv_lstm_conv2d",
+  "eval_domain": "arduino",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "accuracy": 0.16624525916561314,
+  "macro_f1": 0.05677892918825561,
+  "n_test_samples": 1582,
+  "checkpoint": "/shared/b00090279/TinyML-Course/har-mcu/checkpoints/m3/E00_wisdm_m2_anchor/full_e00/deepconv_lstm_conv2d_T100_Prandom_stratified_E00_deepconv_lstm_r0.keras",
+  "processed_dir": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E03_arduino_downsample_20hz_T100/full_e03/eval_arduino",
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ]
+}
