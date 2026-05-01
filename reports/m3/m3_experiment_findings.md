@@ -1,6 +1,6 @@
 # M3 experiment findings
 
-Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch).
+Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_experiment_master_all.csv`. Covers all seven model variants across experiments E00–E10 (E01 and E02 not run in this batch). **E11/E12** (T=50 finetune / from-scratch) are optional Slurm follow-ups: `scripts/slurm/job_m3_seq_e11_t50_all_models.sh` (seven models in one job), `scripts/slurm/job_m3_seq_e12_t50_all_models.sh` (same).
 
 ---
 
@@ -17,8 +17,10 @@ Interpretation of aggregated results from `m3_domain_comparison.csv` and `m3_exp
 | **E06** | Arduino zero-shot — no normalization at training or inference (ablation) |
 | **E07** | Arduino zero-shot — train with z-score but **skip** normalization at inference (ablation) |
 | **E08** | Arduino zero-shot — raw units, T=50 window (window-size ablation) |
-| **E09** | Pretrain on WISDM, **fine-tune** on Arduino train split, evaluate Arduino test split |
-| **E10** | Train **from scratch** on Arduino train split, evaluate Arduino test split |
+| **E09** | Pretrain on WISDM, **fine-tune** on Arduino train split, evaluate Arduino test split (**T=100**) |
+| **E10** | Train **from scratch** on Arduino train split, evaluate Arduino test split (**T=100**) |
+| **E11** | Same protocol as **E09**, **T=50** (2.5 s @ 20 Hz) — apples-to-apples window comparison vs E09 |
+| **E12** | Same protocol as **E10**, **T=50** — apples-to-apples window comparison vs E10 |
 
 ---
 

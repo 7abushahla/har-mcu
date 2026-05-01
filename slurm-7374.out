@@ -1,0 +1,23 @@
+========== E11 T=50: deepconv_lstm_conv2d ==========
+status: valid
+experiment_id: E11_wisdm_pretrain_arduino_finetune_T50
+model_variant: deepconv_lstm_conv2d
+data_source: wisdm_arduino
+train_domain: arduino
+eval_domain: arduino
+transfer_mode: finetune
+split_protocols: random_stratified
+window_size_samples: 50
+window_duration_seconds: 2.5
+sample_rate_hz: 20.0
+target_sample_rate_hz: 20.0
+unit_mode: raw_no_conversion
+normalization_mode: train_zscore
+diagnostic_only: False
+enabled: True
+tooling_only: False
+2026-05-01 20:46:40.058289: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-01 20:46:40.058332: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-01 20:46:40.058369: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-01 20:46:40.125202: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
