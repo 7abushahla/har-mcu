@@ -22,7 +22,24 @@
 #define NUM_CLASSES 6
 #endif
 
-constexpr int kSampleRateHz = 20;
+#ifndef SAMPLE_RATE_HZ
+#define SAMPLE_RATE_HZ 20
+#endif
+
+#ifndef APPLY_NORMALIZATION
+#define APPLY_NORMALIZATION 1
+#endif
+
+#ifndef UNIT_PRE_MULTIPLY
+#define UNIT_PRE_MULTIPLY 1.0f
+#endif
+
+#ifndef UNIT_SCALE
+#define UNIT_SCALE 1.0f
+#endif
+
+constexpr int kSampleRateHz = SAMPLE_RATE_HZ;
+constexpr uint32_t kSamplePeriodUs = 1000000UL / SAMPLE_RATE_HZ;
 constexpr int kHopSize = WINDOW_SIZE / 2;
 constexpr int kTensorArenaSize = 64 * 1024;
 
@@ -41,6 +58,9 @@ float ring_buffer[WINDOW_SIZE][NUM_FEATURES];
 int ring_head = 0;
 int samples_seen = 0;
 int samples_since_last_infer = 0;
+uint32_t next_sample_us = 0;
+uint32_t inference_count = 0;
+float invoke_ms_sum = 0.0f;
 
 namespace {
 tflite::MicroErrorReporter micro_error_reporter;
@@ -107,10 +127,18 @@ void setup_model() {
 }
 
 float normalize_value(float v, int axis) {
+#if APPLY_NORMALIZATION
   return (v - kNormMean[axis]) / kNormStd[axis];
+#else
+  (void)axis;
+  return v;
+#endif
 }
 
 void push_sample(float x, float y, float z) {
+  x = x * UNIT_PRE_MULTIPLY * UNIT_SCALE;
+  y = y * UNIT_PRE_MULTIPLY * UNIT_SCALE;
+  z = z * UNIT_PRE_MULTIPLY * UNIT_SCALE;
   ring_buffer[ring_head][0] = normalize_value(x, 0);
   ring_buffer[ring_head][1] = normalize_value(y, 1);
   ring_buffer[ring_head][2] = normalize_value(z, 2);
@@ -164,16 +192,28 @@ void run_inference() {
 
   float conf = (static_cast<float>(best_q - output->params.zero_point)) * output->params.scale;
   float buffering_ms = 1000.0f * static_cast<float>(WINDOW_SIZE) / static_cast<float>(kSampleRateHz);
-  float end_to_end_ms = buffering_ms + (invoke_us / 1000.0f);
+  float invoke_ms = invoke_us / 1000.0f;
+  float end_to_end_ms = buffering_ms + invoke_ms;
 
-  Serial.print("label=");
+  inference_count++;
+  invoke_ms_sum += invoke_ms;
+
+  Serial.print(millis());
+  Serial.print(",");
   Serial.print(kClassNames[best_idx]);
-  Serial.print(",confidence=");
+  Serial.print(",");
   Serial.print(conf, 4);
-  Serial.print(",invoke_ms=");
-  Serial.print(invoke_us / 1000.0f, 3);
-  Serial.print(",e2e_ms=");
+  Serial.print(",");
+  Serial.print(invoke_ms, 3);
+  Serial.print(",");
   Serial.println(end_to_end_ms, 3);
+
+  if (inference_count == 50 || (inference_count > 50 && inference_count % 50 == 0)) {
+    Serial.print("avg_invoke_ms=");
+    Serial.print(invoke_ms_sum / static_cast<float>(inference_count), 3);
+    Serial.print(",inferences=");
+    Serial.println(inference_count);
+  }
 }
 
 void setup() {
@@ -190,10 +230,26 @@ void setup() {
   }
 
   setup_model();
+  Serial.print("sample_rate_hz=");
+  Serial.println(kSampleRateHz);
+  Serial.print("unit_pre_multiply=");
+  Serial.println(UNIT_PRE_MULTIPLY, 6);
+  Serial.print("unit_scale=");
+  Serial.println(UNIT_SCALE, 6);
+  Serial.print("apply_normalization=");
+  Serial.println(APPLY_NORMALIZATION);
+  Serial.println("timestamp_ms,label,confidence,invoke_ms,e2e_ms");
   Serial.println("ready");
+  next_sample_us = micros();
 }
 
 void loop() {
+  const uint32_t now = micros();
+  if (static_cast<int32_t>(now - next_sample_us) < 0) {
+    return;
+  }
+  next_sample_us += kSamplePeriodUs;
+
   float x, y, z;
   if (IMU.accelerationAvailable()) {
     IMU.readAcceleration(x, y, z);

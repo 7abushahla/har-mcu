@@ -7,18 +7,12 @@ from pathlib import Path
 
 
 def _bytes_to_c_array(data: bytes, columns: int = 12) -> str:
-    parts = []
-    for i, b in enumerate(data):
-        if i % columns == 0:
-            parts.append("  ")
-        parts.append(f"0x{b:02x}")
-        if i != len(data) - 1:
-            parts.append(", ")
-        if (i + 1) % columns == 0:
-            parts.append("\n")
-    if not parts or parts[-1] != "\n":
-        parts.append("\n")
-    return "".join(parts)
+    lines = []
+    for start in range(0, len(data), columns):
+        chunk = data[start : start + columns]
+        suffix = "," if start + columns < len(data) else ""
+        lines.append("  " + ", ".join(f"0x{b:02x}" for b in chunk) + suffix)
+    return "\n".join(lines) + "\n"
 
 
 def export_c_array(tflite_path: str, out_dir: str, var_name: str = "g_model_data") -> dict[str, str | int]:

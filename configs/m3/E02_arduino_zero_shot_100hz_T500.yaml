@@ -1,0 +1,57 @@
+base_config: configs/default.yaml
+paths:
+  raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  wisdm_raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  arduino_raw_csv: tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv
+  processed_dir: data/processed/m3/E02_arduino_zero_shot_100hz_T500
+  checkpoints_dir: checkpoints/m3/E02_arduino_zero_shot_100hz_T500
+  reports_dir: reports/m3
+  models_tflite_dir: models_tflite/m3/E02_arduino_zero_shot_100hz_T500
+  deploy_common_dir: deploy/common/m3/E02_arduino_zero_shot_100hz_T500
+m3:
+  experiment_id: E02_arduino_zero_shot_100hz_T500
+  transfer_mode: zero_shot
+  diagnostic_only: false
+data:
+  source: wisdm_arduino
+  train_domain: wisdm
+  eval_domain: arduino
+  sample_rate_hz: 100
+  target_sample_rate_hz: 100
+  downsample: false
+  requires_true_100hz_source: true
+  window_duration_seconds: 5.0
+  unit_mode: raw_no_conversion
+  domain_unit_modes:
+    wisdm: raw_no_conversion
+    arduino: raw_no_conversion
+  unit_scales:
+    wisdm:
+      pre_multiply: 1.0
+      scale: 1.0
+    arduino:
+      pre_multiply: 1.0
+      scale: 1.0
+normalization:
+  mode: train_zscore
+  diagnostic_skip_inference_norm: false
+window_size_default: 500
+window_sizes_sweep:
+- 500
+overlap: 0.5
+split_protocols:
+- random_stratified
+paper_protocol:
+  original_window: 500
+  wisdm_window_override: 500
+experiment:
+  paper_slug: m3
+  model_variant: deepconv_lstm_conv2d
+  run_id: E02_deepconv_lstm_r0
+  compression_focus: ptq_qat_only
+  model_kwargs: {}
+  paper_targets:
+    fp32_accuracy: null
+    ptq_accuracy: null
+    qat_accuracy: null
+    notes: Duration-matched 100 Hz Arduino zero-shot config; current merged Arduino CSVs are 20 Hz unless replaced.

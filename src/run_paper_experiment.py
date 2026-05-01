@@ -12,10 +12,13 @@ from src.eval import paper_comparison as paper_comparison_module
 from src.eval import reporting as reporting_module
 from src.eval.plots import save_training_curves
 from src.models import (
+    build_deepconv_lstm,
+    build_deepconv_lstm_conv2d,
     build_daghero_2layer,
     build_daghero_2layer_conv2d,
     build_daghero_4layer,
     build_daghero_4layer_conv2d,
+    compile_deepconv_lstm,
     build_repmobile_folded,
     build_repmobile_folded_conv2d,
     build_tahar_student_cnn,
@@ -39,6 +42,10 @@ from src.train import train_model as train_model_module
 from src.utils import artifacts as artifacts_module
 from src.utils.config import apply_common_overrides, build_parser, load_yaml
 from src.utils.device_runtime import runtime_device_report, stage_device_scope
+from src.utils.tflite_export import (
+    enable_single_batch_tensor_list_ops,
+    force_single_batch_input,
+)
 
 
 Builder = Callable[..., Any]
@@ -57,8 +64,23 @@ def _export_fp32_tflite_from_checkpoint(checkpoint_path: str | Path, out_path: s
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     model = load_checkpoint_model(checkpoint_path, compile=False)
+    force_single_batch_input(model)
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    blob = converter.convert()
+    enable_single_batch_tensor_list_ops(converter)
+    try:
+        blob = converter.convert()
+    except Exception:
+        # FP32 TFLite is a host-side artifact for audit/evaluation. LSTM paths
+        # can fail builtin lowering because of TensorList ops; keep strict MCU
+        # deployability enforced in PTQ/QAT, but allow FP32 export with Flex ops.
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        enable_single_batch_tensor_list_ops(converter)
+        converter.target_spec.supported_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        converter._experimental_lower_tensor_list_ops = False
+        blob = converter.convert()
     out.write_bytes(blob)
     return float(out.stat().st_size / 1024.0)
 
@@ -90,8 +112,45 @@ def _fp32_tflite_path(
     )
 
 
+def _evaluate_fp32_tflite_if_available(
+    cfg: dict[str, Any],
+    *,
+    model_path: str | Path,
+    window_size: int,
+    protocol: str,
+    tag: str,
+    reports_dir_override: str | Path,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, str, str | None]:
+    if not Path(model_path).exists():
+        return None, None, "skipped", "FP32 TFLite artifact was not exported."
+    try:
+        eval_out = eval_tflite_module.evaluate_tflite(
+            cfg,
+            str(model_path),
+            window_size,
+            protocol,
+            tag=tag,
+            reports_dir_override=reports_dir_override,
+        )
+        metrics = _read_json(eval_out["metrics_json"])
+        metrics["metrics_json"] = eval_out["metrics_json"]
+        return eval_out, metrics, "ok", None
+    except Exception as exc:  # pragma: no cover - exercised in Slurm/runtime smoke
+        return None, None, "failed", str(exc)
+
+
 def _builder_registry() -> dict[str, tuple[Builder, Callable[[Any], Any], dict[str, Any]]]:
     return {
+        "deepconv_lstm": (
+            build_deepconv_lstm,
+            compile_deepconv_lstm,
+            {"learning_rate": 1e-3},
+        ),
+        "deepconv_lstm_conv2d": (
+            build_deepconv_lstm_conv2d,
+            compile_deepconv_lstm,
+            {"learning_rate": 1e-3},
+        ),
         "xtinyhar_student": (
             build_xtinyhar_student,
             compile_xtinyhar_student,
@@ -271,6 +330,20 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
                 reports_dir_override=paper_reports_dir,
             )
         fp32_metrics = _read_json(fp32_eval["metrics_json"])
+        with stage_device_scope(cfg, "eval_fp32"):
+            (
+                fp32_tflite_eval,
+                fp32_tflite_eval_metrics,
+                fp32_tflite_eval_status,
+                fp32_tflite_eval_error,
+            ) = _evaluate_fp32_tflite_if_available(
+                cfg,
+                model_path=fp32_tflite_model,
+                window_size=window_size,
+                protocol=protocol,
+                tag=f"fp32_tflite_{model_variant}_{run_id}",
+                reports_dir_override=paper_reports_dir,
+            )
 
         with stage_device_scope(cfg, "ptq"):
             ptq_out = ptq_module.quantize_ptq_for_protocol(
@@ -361,20 +434,30 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             "fp32_tflite_model": str(fp32_tflite_model),
             "fp32_tflite_status": fp32_tflite_status,
             "fp32_tflite_error": fp32_tflite_error,
+            "fp32_tflite_eval_status": fp32_tflite_eval_status,
+            "fp32_tflite_eval_error": fp32_tflite_eval_error,
+            "fp32_tflite_eval_metrics": fp32_tflite_eval_metrics,
             "qat_training_time_sec": qat_out.get("training_time_sec") if qat_out else None,
             "ptq_inference_latency_ms_median": ptq_eval_metrics.get("inference_latency_ms_median"),
             "ptq_inference_latency_ms_p95": ptq_eval_metrics.get("inference_latency_ms_p95"),
+            "ptq_inference_latency_ms_mean": ptq_eval_metrics.get("inference_latency_ms_mean"),
             "qat_inference_latency_ms_median": (
                 qat_eval_metrics.get("inference_latency_ms_median") if qat_eval_metrics else None
             ),
             "qat_inference_latency_ms_p95": (
                 qat_eval_metrics.get("inference_latency_ms_p95") if qat_eval_metrics else None
             ),
+            "qat_inference_latency_ms_mean": (
+                qat_eval_metrics.get("inference_latency_ms_mean") if qat_eval_metrics else None
+            ),
             "fp32_history_json": train_out.get("history_json") or train_out.get("history"),
             "qat_history_json": qat_out.get("history_json") if qat_out else None,
             "fp32_curve_png": fp32_curve_png,
             "qat_curve_png": qat_curve_png,
             "fp32_confusion_plot": fp32_metrics.get("confusion_plot"),
+            "fp32_tflite_confusion_plot": (
+                fp32_tflite_eval_metrics.get("confusion_plot") if fp32_tflite_eval_metrics else None
+            ),
             "ptq_confusion_plot": ptq_eval_metrics.get("confusion_plot"),
             "qat_confusion_plot": qat_eval_metrics.get("confusion_plot") if qat_eval_metrics else None,
             "fp32_metrics": fp32_metrics,
@@ -452,6 +535,34 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             "fp32_tflite_model": str(fp32_tflite_model),
             "fp32_tflite_status": fp32_tflite_status,
             "fp32_tflite_error": fp32_tflite_error,
+            "fp32_tflite_eval_status": fp32_tflite_eval_status,
+            "fp32_tflite_eval_error": fp32_tflite_eval_error,
+            "fp32_tflite_accuracy": (
+                float(fp32_tflite_eval["accuracy"]) if fp32_tflite_eval else None
+            ),
+            "fp32_tflite_macro_f1": (
+                float(fp32_tflite_eval["macro_f1"]) if fp32_tflite_eval else None
+            ),
+            "fp32_tflite_model_size_kb": (
+                float(fp32_tflite_eval_metrics["model_size_kb"])
+                if fp32_tflite_eval_metrics and fp32_tflite_eval_metrics.get("model_size_kb") is not None
+                else None
+            ),
+            "fp32_tflite_input_dtype": (
+                fp32_tflite_eval_metrics.get("input_dtype") if fp32_tflite_eval_metrics else None
+            ),
+            "fp32_tflite_output_dtype": (
+                fp32_tflite_eval_metrics.get("output_dtype") if fp32_tflite_eval_metrics else None
+            ),
+            "fp32_tflite_inference_latency_ms_mean": (
+                fp32_tflite_eval_metrics.get("inference_latency_ms_mean") if fp32_tflite_eval_metrics else None
+            ),
+            "fp32_tflite_inference_latency_ms_median": (
+                fp32_tflite_eval_metrics.get("inference_latency_ms_median") if fp32_tflite_eval_metrics else None
+            ),
+            "fp32_tflite_inference_latency_ms_p95": (
+                fp32_tflite_eval_metrics.get("inference_latency_ms_p95") if fp32_tflite_eval_metrics else None
+            ),
             "qat_training_time_sec": qat_out.get("training_time_sec") if qat_out else None,
             "accuracy": float(fp32_eval["accuracy"]),
             "macro_f1": float(fp32_eval["macro_f1"]),
@@ -470,17 +581,24 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             "model_size_kb": float(ptq_eval_metrics["model_size_kb"]) if ptq_eval_metrics.get("model_size_kb") is not None else None,
             "ptq_inference_latency_ms_median": ptq_eval_metrics.get("inference_latency_ms_median"),
             "ptq_inference_latency_ms_p95": ptq_eval_metrics.get("inference_latency_ms_p95"),
+            "ptq_inference_latency_ms_mean": ptq_eval_metrics.get("inference_latency_ms_mean"),
             "qat_inference_latency_ms_median": (
                 qat_eval_metrics.get("inference_latency_ms_median") if qat_eval_metrics else None
             ),
             "qat_inference_latency_ms_p95": (
                 qat_eval_metrics.get("inference_latency_ms_p95") if qat_eval_metrics else None
             ),
+            "qat_inference_latency_ms_mean": (
+                qat_eval_metrics.get("inference_latency_ms_mean") if qat_eval_metrics else None
+            ),
             "fp32_history_json": train_out.get("history_json") or train_out.get("history"),
             "qat_history_json": qat_out.get("history_json") if qat_out else None,
             "fp32_curve_png": fp32_curve_png,
             "qat_curve_png": qat_curve_png,
             "fp32_confusion_plot": fp32_metrics.get("confusion_plot"),
+            "fp32_tflite_confusion_plot": (
+                fp32_tflite_eval_metrics.get("confusion_plot") if fp32_tflite_eval_metrics else None
+            ),
             "ptq_confusion_plot": ptq_eval_metrics.get("confusion_plot"),
             "qat_confusion_plot": qat_eval_metrics.get("confusion_plot") if qat_eval_metrics else None,
             "deploy_gate": {
@@ -543,6 +661,9 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
             ),
             "notes_assumptions": cfg.get("experiment", {}).get("notes_assumptions"),
             "fp32_metrics_json": fp32_eval["metrics_json"],
+            "fp32_tflite_metrics_json": (
+                fp32_tflite_eval_metrics.get("metrics_json") if fp32_tflite_eval_metrics else None
+            ),
             "ptq_metrics_json": ptq_eval["metrics_json"],
             "qat_metrics_json": qat_eval["metrics_json"] if qat_eval else None,
             "ptq_report_json": ptq_out["report_json"],
@@ -559,6 +680,15 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         )
 
     master_paths = reporting_module.append_master_results(cfg["paths"]["reports_dir"], all_rows)
+    m3_master_paths = None
+    if cfg.get("m3"):
+        from src.m3 import reporting as m3_reporting
+
+        m3_master_paths = m3_reporting.append_m3_results(
+            cfg["paths"]["reports_dir"],
+            cfg,
+            all_rows,
+        )
     comparison_exports = paper_comparison_module.export_paper_comparison(
         cfg["paths"]["reports_dir"],
         paper_slug=paper_slug,
@@ -571,6 +701,7 @@ def run_paper_experiment(cfg: dict[str, Any]) -> dict[str, Any]:
         "paper_exports": export_paths,
         "comparison_exports": comparison_exports,
         "master_exports": master_paths,
+        "m3_master_exports": m3_master_paths,
     }
 
 

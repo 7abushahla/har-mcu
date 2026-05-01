@@ -7,6 +7,7 @@ __pycache__/
 venv/
 
 # Generated artifacts
+data/processed/
 data/processed/*.npy
 data/processed/*.npz
 data/processed/*.json
@@ -23,6 +24,15 @@ reports/*.csv
 # IDE
 .vscode/
 .idea/
+
+# Local-only M3/HPC artifacts
+slurm_logs/
+notebooks/executed/
+reports/m3/smoke*/
+models_tflite/m3/*/smoke*/
+*.pdf
+*.PDF
+DeepConv+LSTM.ipynb
 
 # NFS temporary files
 .nfs*

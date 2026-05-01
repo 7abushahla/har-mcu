@@ -28,6 +28,10 @@ from src.utils.artifacts import (
 )
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json
+from src.utils.tflite_export import (
+    enable_single_batch_tensor_list_ops,
+    force_single_batch_input,
+)
 
 
 def _make_converter(
@@ -37,13 +41,13 @@ def _make_converter(
     *,
     enforce_full_int8: bool,
 ) -> tf.lite.TFLiteConverter:
+    force_single_batch_input(model)
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.representative_dataset = lambda: representative_dataset(X_rep, rep_count)
 
     # RNN/LSTM conversion can fail with TensorList lowering when batch is dynamic.
-    if hasattr(converter, "_experimental_default_to_single_batch_in_tensor_list_ops"):
-        converter._experimental_default_to_single_batch_in_tensor_list_ops = True
+    enable_single_batch_tensor_list_ops(converter)
 
     if enforce_full_int8:
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]

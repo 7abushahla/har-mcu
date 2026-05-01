@@ -8,10 +8,12 @@ from typing import Any
 
 import numpy as np
 
-from src.data.load_wisdm import load_wisdm_dataframe
+from src.data.load_har import load_har_dataframe
 from src.data.normalize import apply_axis_stats, fit_axis_stats
 from src.data.preprocess_zhou2025 import preprocess_zhou2025
+from src.data.resample import maybe_downsample_dataframe
 from src.data.splits import build_split, save_split_indices
+from src.data.units import apply_unit_transform
 from src.data.windowing import generate_windows
 from src.utils.artifacts import arrays_prefix, datacard_path, norm_stats_path
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
@@ -27,15 +29,42 @@ def _save_arrays(prefix: Path, split_name: str, X: np.ndarray, y: np.ndarray) ->
     return str(x_path), str(y_path)
 
 
+def _active_domain(cfg: dict[str, Any]) -> str:
+    data_cfg = cfg.get("data", {})
+    source = str(data_cfg.get("source", "wisdm"))
+    if source == "arduino":
+        return "arduino"
+    if source == "wisdm_arduino":
+        return str(data_cfg.get("train_domain", "wisdm"))
+    return "wisdm"
+
+
+def _load_prepared_dataframe(cfg: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+    domain = _active_domain(cfg)
+    raw_df, raw_sanity = load_har_dataframe(cfg, domain=domain)
+    clean_df, pre_stats = preprocess_zhou2025(raw_df, cfg)
+    unit_df, unit_meta = apply_unit_transform(clean_df, cfg, domain=domain)
+    sampled_df, sampling_meta = maybe_downsample_dataframe(unit_df, cfg)
+    data_meta = {
+        "domain": domain,
+        "raw_sanity": raw_sanity,
+        "preprocess": pre_stats,
+        "unit_transform": unit_meta,
+        "sampling": sampling_meta,
+    }
+    return sampled_df, data_meta
+
+
 def build_dataset_for_protocol(
     cfg: dict[str, Any],
     window_size: int,
     protocol: str,
+    normalization_stats: dict[str, Any] | None = None,
+    normalization_stats_source: str | None = None,
 ) -> dict[str, Any]:
     set_global_seed(int(cfg["seed"]))
 
-    raw_df, sanity = load_wisdm_dataframe(cfg)
-    clean_df, pre_stats = preprocess_zhou2025(raw_df, cfg)
+    clean_df, data_meta = _load_prepared_dataframe(cfg)
 
     class_order = cfg.get("classes") or DEFAULT_CLASS_ORDER
     class_to_idx = {name: i for i, name in enumerate(class_order)}
@@ -54,6 +83,16 @@ def build_dataset_for_protocol(
     )
     if len(X) == 0:
         raise RuntimeError("No windows generated; check window size and label policy")
+    target_sample_rate_hz = float(cfg.get("data", {}).get("target_sample_rate_hz", 20))
+    win_stats.update(
+        {
+            "sample_rate_hz": float(cfg.get("data", {}).get("sample_rate_hz", target_sample_rate_hz)),
+            "target_sample_rate_hz": target_sample_rate_hz,
+            "window_size_samples": int(window_size),
+            "window_duration_seconds": float(window_size) / target_sample_rate_hz,
+            "overlap": float(cfg["overlap"]),
+        }
+    )
 
     split = build_split(
         protocol=protocol,
@@ -87,10 +126,36 @@ def build_dataset_for_protocol(
     y_val = y[split.val]
     y_test = y[split.test]
 
-    mean, std = fit_axis_stats(X_train_raw)
-    X_train = apply_axis_stats(X_train_raw, mean, std)
-    X_val = apply_axis_stats(X_val_raw, mean, std)
-    X_test = apply_axis_stats(X_test_raw, mean, std)
+    normalization_cfg = cfg.get("normalization", {})
+    normalization_mode = str(normalization_cfg.get("mode", "train_zscore"))
+    if normalization_mode == "train_zscore":
+        if normalization_stats is None:
+            mean, std = fit_axis_stats(X_train_raw)
+            stats_source = "local_train_split"
+        else:
+            mean = np.asarray(normalization_stats["mean"], dtype=np.float32).reshape(1, 1, -1)
+            std = np.asarray(normalization_stats["std"], dtype=np.float32).reshape(1, 1, -1)
+            if mean.shape[-1] != X_train_raw.shape[-1] or std.shape[-1] != X_train_raw.shape[-1]:
+                raise ValueError(
+                    "External normalization stats feature count does not match dataset features"
+                )
+            stats_source = normalization_stats_source or "external_train_split"
+        X_train = apply_axis_stats(X_train_raw, mean, std)
+        X_val = apply_axis_stats(X_val_raw, mean, std)
+        X_test = apply_axis_stats(X_test_raw, mean, std)
+        inference_norm_applied = not bool(
+            normalization_cfg.get("diagnostic_skip_inference_norm", False)
+        )
+    elif normalization_mode == "none":
+        mean = np.zeros((1, 1, X_train_raw.shape[-1]), dtype=np.float32)
+        std = np.ones((1, 1, X_train_raw.shape[-1]), dtype=np.float32)
+        X_train = X_train_raw.astype(np.float32)
+        X_val = X_val_raw.astype(np.float32)
+        X_test = X_test_raw.astype(np.float32)
+        inference_norm_applied = False
+        stats_source = "none"
+    else:
+        raise ValueError(f"Unsupported normalization.mode: {normalization_mode}")
 
     processed_dir = Path(cfg["paths"]["processed_dir"])
     prefix = arrays_prefix(processed_dir, window_size, protocol)
@@ -105,9 +170,19 @@ def build_dataset_for_protocol(
         "axis_columns": ["x-axis", "y-axis", "z-axis"],
         "mean": mean.reshape(-1).tolist(),
         "std": std.reshape(-1).tolist(),
+        "normalization_mode": normalization_mode,
+        "normalization_stats_source": stats_source,
+        "inference_norm_applied": bool(inference_norm_applied),
+        "diagnostic_skip_inference_norm": bool(
+            normalization_cfg.get("diagnostic_skip_inference_norm", False)
+        ),
+        "diagnostic_only": bool(cfg.get("m3", {}).get("diagnostic_only", False)),
         "class_order": class_order,
         "window_size": int(window_size),
+        "window_size_samples": int(window_size),
+        "window_duration_seconds": win_stats["window_duration_seconds"],
         "protocol": protocol,
+        "data": data_meta,
     }
     save_json(stats_path, norm_payload)
     artifacts["norm_stats"] = str(stats_path)
@@ -123,10 +198,21 @@ def build_dataset_for_protocol(
 
     card_path = datacard_path(processed_dir, window_size, protocol)
     datacard = {
-        "raw_sanity": sanity,
-        "preprocess": pre_stats,
+        "data": data_meta,
+        "raw_sanity": data_meta["raw_sanity"],
+        "preprocess": data_meta["preprocess"],
         "windowing": win_stats,
         "split": split_meta,
+        "normalization": {
+            "mode": normalization_mode,
+            "norm_stats": str(stats_path),
+            "normalization_stats_source": stats_source,
+            "inference_norm_applied": bool(inference_norm_applied),
+            "diagnostic_skip_inference_norm": bool(
+                normalization_cfg.get("diagnostic_skip_inference_norm", False)
+            ),
+            "diagnostic_only": bool(cfg.get("m3", {}).get("diagnostic_only", False)),
+        },
         "classes": class_order,
         "counts": counts,
     }

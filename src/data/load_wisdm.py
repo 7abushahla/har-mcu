@@ -8,28 +8,14 @@ from typing import Any
 
 import pandas as pd
 
+from src.data.load_har import load_har_dataframe
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
-from src.utils.constants import REQUIRED_WISDM_COLUMNS
 
 
-def load_wisdm_dataframe(cfg: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, int]]:
-    csv_path = Path(cfg["paths"]["raw_csv"])
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Raw CSV not found: {csv_path}")
+def load_wisdm_dataframe(cfg: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Backward-compatible WISDM loader wrapper."""
 
-    df = pd.read_csv(csv_path)
-    missing_cols = [c for c in REQUIRED_WISDM_COLUMNS if c not in df.columns]
-    if missing_cols:
-        raise ValueError(
-            f"CSV missing required columns: {missing_cols}. Available columns: {list(df.columns)}"
-        )
-
-    sanity = {
-        "rows": int(len(df)),
-        "missing_values": int(df[REQUIRED_WISDM_COLUMNS].isna().sum().sum()),
-        "zero_timestamps": int((df["timestamp"] == 0).sum()),
-    }
-    return df, sanity
+    return load_har_dataframe(cfg, domain="wisdm", csv_path=Path(cfg["paths"]["raw_csv"]))
 
 
 def main() -> None:

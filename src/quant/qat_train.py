@@ -31,6 +31,10 @@ from src.utils.artifacts import (
 )
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json
+from src.utils.tflite_export import (
+    enable_single_batch_tensor_list_ops,
+    force_single_batch_input,
+)
 
 
 def _scan_conv1d_family_layers(model: tf.keras.Model) -> tuple[list[str], list[str]]:
@@ -321,6 +325,7 @@ def qat_for_protocol(
     y_val_oh = tf.keras.utils.to_categorical(y_val, num_classes)
 
     fp32_model = load_checkpoint_model(ckpt_path, compile=False)
+    force_single_batch_input(fp32_model)
 
     notes: list[str] = []
     training_time_sec: float | None = None
@@ -511,11 +516,11 @@ def qat_for_protocol(
             raise RuntimeError(error_msg) from exc
         return _failure_return(error_msg, epochs_ran=int(len(hist.history.get("loss", []))))
 
+    force_single_batch_input(qat_model)
     converter = tf.lite.TFLiteConverter.from_keras_model(qat_model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.representative_dataset = lambda: representative_dataset(X_rep, rep_count)
-    if hasattr(converter, "_experimental_default_to_single_batch_in_tensor_list_ops"):
-        converter._experimental_default_to_single_batch_in_tensor_list_ops = True
+    enable_single_batch_tensor_list_ops(converter)
 
     if enforce_full_int8:
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]

@@ -1,0 +1,1 @@
+trial_id,experiment_id,model_variant,participant,activity_label,start_timestamp_utc,duration_seconds,window_size_samples,target_sample_rate_hz,unit_mode,normalization_mode,expected_label,predicted_label,confidence,invoke_ms,e2e_ms,notes

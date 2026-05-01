@@ -1,6 +1,12 @@
 #pragma once
 
-// Placeholder values. Regenerate with:
-// python -m src.deploy.export_norm_header --norm-json <norm_stats.json> --out deploy/common/norm_stats.h
-static constexpr float kNormMean[3] = {0.0f, 0.0f, 0.0f};
-static constexpr float kNormStd[3] = {1.0f, 1.0f, 1.0f};
+#define WINDOW_SIZE 100
+#define SAMPLE_RATE_HZ 20
+#define APPLY_NORMALIZATION 1
+#define UNIT_PRE_MULTIPLY 1.00000000f
+#define UNIT_SCALE 1.00000000f
+
+static constexpr float kNormMean[3] = {-0.15676919f, 0.03439229f, 0.07540476f};
+static constexpr float kNormStd[3] = {0.16741748f, 0.18228361f, 0.12568961f};
+static constexpr const char* kNormalizationMode = "train_zscore";
+static constexpr const char* kUnitMode = "raw_no_conversion";

@@ -1,0 +1,52 @@
+base_config: configs/default.yaml
+paths:
+  raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  wisdm_raw_csv: WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv
+  arduino_raw_csv: tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv
+  processed_dir: data/processed/m3/E00_wisdm_m2_anchor
+  checkpoints_dir: checkpoints/m3/E00_wisdm_m2_anchor
+  reports_dir: reports/m3
+  models_tflite_dir: models_tflite/m3/E00_wisdm_m2_anchor
+  deploy_common_dir: deploy/common/m3/E00_wisdm_m2_anchor
+m3:
+  experiment_id: E00_wisdm_m2_anchor
+  transfer_mode: source_only
+  diagnostic_only: false
+data:
+  source: wisdm
+  train_domain: wisdm
+  eval_domain: wisdm
+  sample_rate_hz: 20
+  target_sample_rate_hz: 20
+  downsample: false
+  window_duration_seconds: 5.0
+  unit_mode: raw_no_conversion
+  domain_unit_modes:
+    wisdm: raw_no_conversion
+  unit_scales:
+    wisdm:
+      pre_multiply: 1.0
+      scale: 1.0
+normalization:
+  mode: train_zscore
+  diagnostic_skip_inference_norm: false
+window_size_default: 100
+window_sizes_sweep:
+- 100
+overlap: 0.5
+split_protocols:
+- random_stratified
+paper_protocol:
+  original_window: 100
+  wisdm_window_override: 100
+experiment:
+  paper_slug: m3
+  model_variant: deepconv_lstm_conv2d
+  run_id: E00_deepconv_lstm_r0
+  compression_focus: ptq_qat_only
+  model_kwargs: {}
+  paper_targets:
+    fp32_accuracy: null
+    ptq_accuracy: null
+    qat_accuracy: null
+    notes: M3 WISDM M2 anchor.
