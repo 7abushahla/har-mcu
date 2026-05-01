@@ -1,0 +1,171 @@
+{
+  "tag": "ptq_xtinyhar_student_conv2d_relu_E00_xtinyhar_student_conv2d_relu_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E00_wisdm_m2_anchor/arch_seq/xtinyhar_student_conv2d_relu/e00/xtinyhar_student_conv2d_relu_T100_Prandom_stratified_E00_xtinyhar_student_conv2d_relu_r0_ptq_int8.tflite",
+  "model_size_kb": 312.3671875,
+  "input_dtype": "<class 'numpy.int8'>",
+  "output_dtype": "<class 'numpy.int8'>",
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_MATMUL",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "MEAN",
+    "MUL",
+    "RESHAPE",
+    "RSQRT",
+    "SOFTMAX",
+    "SQUARED_DIFFERENCE",
+    "SUB",
+    "TRANSPOSE"
+  ],
+  "interpreter_op_count": 12,
+  "accuracy": 0.9362013462101259,
+  "macro_f1": 0.9133031459235842,
+  "confusion_matrix": [
+    [
+      2630,
+      2,
+      39,
+      50,
+      2,
+      0
+    ],
+    [
+      15,
+      2066,
+      13,
+      15,
+      0,
+      0
+    ],
+    [
+      47,
+      36,
+      583,
+      51,
+      0,
+      13
+    ],
+    [
+      61,
+      13,
+      74,
+      438,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      379,
+      2
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      2,
+      302
+    ]
+  ],
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e00/m3/confusion_ptq_xtinyhar_student_conv2d_relu_E00_xtinyhar_student_conv2d_relu_r0_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.9553214674900109,
+      "recall": 0.9658464928387808,
+      "f1": 0.960555149744339,
+      "support": 2723
+    },
+    "Jogging": {
+      "precision": 0.9759093056211621,
+      "recall": 0.979611190137506,
+      "f1": 0.9777567439659253,
+      "support": 2109
+    },
+    "Upstairs": {
+      "precision": 0.8222849083215797,
+      "recall": 0.7986301369863014,
+      "f1": 0.8102849200833913,
+      "support": 730
+    },
+    "Downstairs": {
+      "precision": 0.7906137184115524,
+      "recall": 0.7461669505962522,
+      "f1": 0.7677475898334793,
+      "support": 587
+    },
+    "Sitting": {
+      "precision": 0.9869791666666666,
+      "recall": 0.994750656167979,
+      "f1": 0.9908496732026144,
+      "support": 381
+    },
+    "Standing": {
+      "precision": 0.9526813880126183,
+      "recall": 0.993421052631579,
+      "f1": 0.9726247987117552,
+      "support": 304
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9553214674900109,
+      "recall": 0.9658464928387808,
+      "f1-score": 0.960555149744339,
+      "support": 2723.0
+    },
+    "Jogging": {
+      "precision": 0.9759093056211621,
+      "recall": 0.979611190137506,
+      "f1-score": 0.9777567439659253,
+      "support": 2109.0
+    },
+    "Upstairs": {
+      "precision": 0.8222849083215797,
+      "recall": 0.7986301369863014,
+      "f1-score": 0.8102849200833913,
+      "support": 730.0
+    },
+    "Downstairs": {
+      "precision": 0.7906137184115524,
+      "recall": 0.7461669505962522,
+      "f1-score": 0.7677475898334793,
+      "support": 587.0
+    },
+    "Sitting": {
+      "precision": 0.9869791666666666,
+      "recall": 0.994750656167979,
+      "f1-score": 0.9908496732026144,
+      "support": 381.0
+    },
+    "Standing": {
+      "precision": 0.9526813880126183,
+      "recall": 0.993421052631579,
+      "f1-score": 0.9726247987117552,
+      "support": 304.0
+    },
+    "accuracy": 0.9362013462101259,
+    "macro avg": {
+      "precision": 0.9139649924205985,
+      "recall": 0.9130710798930664,
+      "f1-score": 0.9133031459235842,
+      "support": 6834.0
+    },
+    "weighted avg": {
+      "precision": 0.9349642261879575,
+      "recall": 0.9362013462101259,
+      "f1-score": 0.9354767540195594,
+      "support": 6834.0
+    }
+  },
+  "inference_latency_ms_median": 0.3231765000464293,
+  "inference_latency_ms_p95": 0.34764025001265964,
+  "inference_latency_ms_mean": 0.33727480468837,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}

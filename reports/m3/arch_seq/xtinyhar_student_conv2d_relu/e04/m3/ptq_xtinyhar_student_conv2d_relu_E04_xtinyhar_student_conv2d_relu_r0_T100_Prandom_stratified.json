@@ -1,0 +1,171 @@
+{
+  "tag": "ptq_xtinyhar_student_conv2d_relu_E04_xtinyhar_student_conv2d_relu_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E04_wisdm_to_g_arduino_g/arch_seq/xtinyhar_student_conv2d_relu/e04/xtinyhar_student_conv2d_relu_T100_Prandom_stratified_E04_xtinyhar_student_conv2d_relu_r0_ptq_int8.tflite",
+  "model_size_kb": 312.3671875,
+  "input_dtype": "<class 'numpy.int8'>",
+  "output_dtype": "<class 'numpy.int8'>",
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_MATMUL",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "MEAN",
+    "MUL",
+    "RESHAPE",
+    "RSQRT",
+    "SOFTMAX",
+    "SQUARED_DIFFERENCE",
+    "SUB",
+    "TRANSPOSE"
+  ],
+  "interpreter_op_count": 12,
+  "accuracy": 0.5625790139064475,
+  "macro_f1": 0.5862063868061019,
+  "confusion_matrix": [
+    [
+      99,
+      3,
+      142,
+      14,
+      4,
+      2
+    ],
+    [
+      34,
+      139,
+      56,
+      34,
+      0,
+      0
+    ],
+    [
+      8,
+      0,
+      114,
+      127,
+      15,
+      0
+    ],
+    [
+      7,
+      1,
+      108,
+      141,
+      7,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      264,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      130,
+      0,
+      133
+    ]
+  ],
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d_relu/e04/m3/confusion_ptq_xtinyhar_student_conv2d_relu_E04_xtinyhar_student_conv2d_relu_r0_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.668918918918919,
+      "recall": 0.375,
+      "f1": 0.48058252427184467,
+      "support": 264
+    },
+    "Jogging": {
+      "precision": 0.972027972027972,
+      "recall": 0.5285171102661597,
+      "f1": 0.6847290640394089,
+      "support": 263
+    },
+    "Upstairs": {
+      "precision": 0.2714285714285714,
+      "recall": 0.4318181818181818,
+      "f1": 0.3333333333333333,
+      "support": 264
+    },
+    "Downstairs": {
+      "precision": 0.31614349775784756,
+      "recall": 0.5340909090909091,
+      "f1": 0.3971830985915493,
+      "support": 264
+    },
+    "Sitting": {
+      "precision": 0.9103448275862069,
+      "recall": 1.0,
+      "f1": 0.9530685920577617,
+      "support": 264
+    },
+    "Standing": {
+      "precision": 0.9851851851851852,
+      "recall": 0.5057034220532319,
+      "f1": 0.6683417085427136,
+      "support": 263
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.668918918918919,
+      "recall": 0.375,
+      "f1-score": 0.48058252427184467,
+      "support": 264.0
+    },
+    "Jogging": {
+      "precision": 0.972027972027972,
+      "recall": 0.5285171102661597,
+      "f1-score": 0.6847290640394089,
+      "support": 263.0
+    },
+    "Upstairs": {
+      "precision": 0.2714285714285714,
+      "recall": 0.4318181818181818,
+      "f1-score": 0.3333333333333333,
+      "support": 264.0
+    },
+    "Downstairs": {
+      "precision": 0.31614349775784756,
+      "recall": 0.5340909090909091,
+      "f1-score": 0.3971830985915493,
+      "support": 264.0
+    },
+    "Sitting": {
+      "precision": 0.9103448275862069,
+      "recall": 1.0,
+      "f1-score": 0.9530685920577617,
+      "support": 264.0
+    },
+    "Standing": {
+      "precision": 0.9851851851851852,
+      "recall": 0.5057034220532319,
+      "f1-score": 0.6683417085427136,
+      "support": 263.0
+    },
+    "accuracy": 0.5625790139064475,
+    "macro avg": {
+      "precision": 0.6873414954841169,
+      "recall": 0.5625216038714137,
+      "f1-score": 0.5862063868061019,
+      "support": 1582.0
+    },
+    "weighted avg": {
+      "precision": 0.6869732716116488,
+      "recall": 0.5625790139064475,
+      "f1-score": 0.586092190852265,
+      "support": 1582.0
+    }
+  },
+  "inference_latency_ms_median": 0.3227015000106803,
+  "inference_latency_ms_p95": 0.34174699999311997,
+  "inference_latency_ms_mean": 0.326146964841012,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}

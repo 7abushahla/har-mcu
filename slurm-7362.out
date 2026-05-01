@@ -1,0 +1,687 @@
+========== M3 sequential: configs/m3/E00_wisdm_m2_anchor.yaml (full_e00) ==========
+status: valid
+experiment_id: E00_wisdm_m2_anchor
+model_variant: deepconv_lstm_conv2d
+data_source: wisdm
+train_domain: wisdm
+eval_domain: wisdm
+transfer_mode: source_only
+split_protocols: random_stratified
+window_size_samples: 100
+window_duration_seconds: 5.0
+sample_rate_hz: 20.0
+target_sample_rate_hz: 20.0
+unit_mode: raw_no_conversion
+normalization_mode: train_zscore
+diagnostic_only: False
+enabled: True
+tooling_only: False
+2026-05-01 18:52:03.871441: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-01 18:52:03.871487: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-01 18:52:03.871525: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-01 18:52:03.933882: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-05-01 18:53:03.659479: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:26.682934: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:26.689014: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:26.700891: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:26.705293: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:26.708376: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:27.401181: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:27.403165: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:27.405015: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:53:27.406889: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1886] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20707 MB memory:  -> device: 0, name: NVIDIA A10G, pci bus id: 0000:00:1e.0, compute capability: 8.6
+Epoch 1/50
+2026-05-01 18:53:36.079164: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+2026-05-01 18:53:36.349493: I tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:442] Loaded cuDNN version 8700
+2026-05-01 18:53:38.511258: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7293b450f0c0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2026-05-01 18:53:38.511288: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): NVIDIA A10G, Compute Capability 8.6
+2026-05-01 18:53:38.515549: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2026-05-01 18:53:38.600517: I ./tensorflow/compiler/jit/device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+174/174 - 6s - loss: 0.7371 - accuracy: 0.7392 - val_loss: 0.9093 - val_accuracy: 0.6977 - lr: 0.0010 - 6s/epoch - 36ms/step
+Epoch 2/50
+174/174 - 1s - loss: 0.4859 - accuracy: 0.8209 - val_loss: 0.4061 - val_accuracy: 0.8429 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 3/50
+174/174 - 1s - loss: 0.4146 - accuracy: 0.8446 - val_loss: 0.3829 - val_accuracy: 0.8551 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 4/50
+174/174 - 1s - loss: 0.3412 - accuracy: 0.8729 - val_loss: 0.3714 - val_accuracy: 0.8598 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 5/50
+174/174 - 1s - loss: 0.2786 - accuracy: 0.8981 - val_loss: 0.2558 - val_accuracy: 0.9103 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 6/50
+174/174 - 1s - loss: 0.2324 - accuracy: 0.9166 - val_loss: 0.2619 - val_accuracy: 0.9063 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 7/50
+174/174 - 1s - loss: 0.1969 - accuracy: 0.9304 - val_loss: 0.1610 - val_accuracy: 0.9481 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 8/50
+174/174 - 1s - loss: 0.1816 - accuracy: 0.9340 - val_loss: 0.2528 - val_accuracy: 0.9193 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 9/50
+174/174 - 1s - loss: 0.1517 - accuracy: 0.9468 - val_loss: 0.3767 - val_accuracy: 0.8634 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 10/50
+174/174 - 1s - loss: 0.1379 - accuracy: 0.9520 - val_loss: 0.1856 - val_accuracy: 0.9366 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 11/50
+174/174 - 1s - loss: 0.1223 - accuracy: 0.9563 - val_loss: 0.4705 - val_accuracy: 0.8605 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 12/50
+
+Epoch 12: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+174/174 - 1s - loss: 0.1055 - accuracy: 0.9636 - val_loss: 0.2308 - val_accuracy: 0.9261 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 13/50
+174/174 - 1s - loss: 0.0706 - accuracy: 0.9748 - val_loss: 0.1115 - val_accuracy: 0.9705 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 14/50
+174/174 - 1s - loss: 0.0677 - accuracy: 0.9765 - val_loss: 0.1263 - val_accuracy: 0.9632 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 15/50
+174/174 - 1s - loss: 0.0605 - accuracy: 0.9790 - val_loss: 0.1007 - val_accuracy: 0.9676 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 16/50
+174/174 - 1s - loss: 0.0571 - accuracy: 0.9802 - val_loss: 0.1306 - val_accuracy: 0.9604 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 17/50
+174/174 - 1s - loss: 0.0535 - accuracy: 0.9823 - val_loss: 0.1461 - val_accuracy: 0.9607 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 18/50
+174/174 - 1s - loss: 0.0515 - accuracy: 0.9829 - val_loss: 0.1211 - val_accuracy: 0.9668 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 19/50
+174/174 - 1s - loss: 0.0501 - accuracy: 0.9835 - val_loss: 0.1046 - val_accuracy: 0.9712 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 20/50
+174/174 - 1s - loss: 0.0454 - accuracy: 0.9850 - val_loss: 0.0691 - val_accuracy: 0.9820 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 21/50
+174/174 - 1s - loss: 0.0394 - accuracy: 0.9868 - val_loss: 0.2155 - val_accuracy: 0.9297 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 22/50
+174/174 - 1s - loss: 0.0442 - accuracy: 0.9855 - val_loss: 0.1214 - val_accuracy: 0.9668 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 23/50
+174/174 - 1s - loss: 0.0390 - accuracy: 0.9865 - val_loss: 0.0826 - val_accuracy: 0.9791 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 24/50
+174/174 - 1s - loss: 0.0367 - accuracy: 0.9869 - val_loss: 0.0903 - val_accuracy: 0.9762 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 25/50
+
+Epoch 25: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
+174/174 - 1s - loss: 0.0380 - accuracy: 0.9860 - val_loss: 0.1010 - val_accuracy: 0.9744 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 26/50
+174/174 - 1s - loss: 0.0256 - accuracy: 0.9920 - val_loss: 0.0718 - val_accuracy: 0.9802 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 27/50
+174/174 - 1s - loss: 0.0220 - accuracy: 0.9917 - val_loss: 0.0882 - val_accuracy: 0.9726 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 28/50
+174/174 - 1s - loss: 0.0212 - accuracy: 0.9928 - val_loss: 0.0892 - val_accuracy: 0.9798 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 29/50
+174/174 - 1s - loss: 0.0214 - accuracy: 0.9931 - val_loss: 0.0643 - val_accuracy: 0.9863 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 30/50
+174/174 - 1s - loss: 0.0196 - accuracy: 0.9926 - val_loss: 0.0629 - val_accuracy: 0.9863 - lr: 2.5000e-04 - 1s/epoch - 7ms/step
+Epoch 31/50
+174/174 - 1s - loss: 0.0240 - accuracy: 0.9910 - val_loss: 0.0919 - val_accuracy: 0.9802 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 32/50
+174/174 - 1s - loss: 0.0190 - accuracy: 0.9934 - val_loss: 0.0931 - val_accuracy: 0.9780 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 33/50
+174/174 - 1s - loss: 0.0234 - accuracy: 0.9925 - val_loss: 0.0633 - val_accuracy: 0.9845 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 34/50
+174/174 - 1s - loss: 0.0174 - accuracy: 0.9928 - val_loss: 0.0830 - val_accuracy: 0.9827 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 35/50
+
+Epoch 35: ReduceLROnPlateau reducing learning rate to 0.0001250000059371814.
+174/174 - 1s - loss: 0.0165 - accuracy: 0.9938 - val_loss: 0.0795 - val_accuracy: 0.9827 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 36/50
+174/174 - 1s - loss: 0.0154 - accuracy: 0.9947 - val_loss: 0.0611 - val_accuracy: 0.9870 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 37/50
+174/174 - 1s - loss: 0.0141 - accuracy: 0.9954 - val_loss: 0.0723 - val_accuracy: 0.9852 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 38/50
+174/174 - 1s - loss: 0.0137 - accuracy: 0.9952 - val_loss: 0.0781 - val_accuracy: 0.9831 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 39/50
+174/174 - 1s - loss: 0.0134 - accuracy: 0.9953 - val_loss: 0.0713 - val_accuracy: 0.9845 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 40/50
+174/174 - 1s - loss: 0.0132 - accuracy: 0.9950 - val_loss: 0.0718 - val_accuracy: 0.9841 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 41/50
+
+Epoch 41: ReduceLROnPlateau reducing learning rate to 6.25000029685907e-05.
+174/174 - 1s - loss: 0.0120 - accuracy: 0.9956 - val_loss: 0.0753 - val_accuracy: 0.9841 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 42/50
+174/174 - 1s - loss: 0.0130 - accuracy: 0.9964 - val_loss: 0.0800 - val_accuracy: 0.9823 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 43/50
+174/174 - 1s - loss: 0.0110 - accuracy: 0.9959 - val_loss: 0.0713 - val_accuracy: 0.9849 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 44/50
+174/174 - 1s - loss: 0.0116 - accuracy: 0.9957 - val_loss: 0.0698 - val_accuracy: 0.9863 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 45/50
+174/174 - 1s - loss: 0.0116 - accuracy: 0.9959 - val_loss: 0.0750 - val_accuracy: 0.9823 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 46/50
+
+Epoch 46: ReduceLROnPlateau reducing learning rate to 3.125000148429535e-05.
+Restoring model weights from the end of the best epoch: 36.
+174/174 - 1s - loss: 0.0112 - accuracy: 0.9963 - val_loss: 0.0669 - val_accuracy: 0.9867 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 46: early stopping
+2026-05-01 18:54:34.667285: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:54:34.667317: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:54:34.667630: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpzsltq5_3
+2026-05-01 18:54:34.676485: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:54:34.676503: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpzsltq5_3
+2026-05-01 18:54:34.695267: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:382] MLIR V1 optimization pass is not enabled
+2026-05-01 18:54:34.698959: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:54:34.748373: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpzsltq5_3
+2026-05-01 18:54:34.782821: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 115191 microseconds.
+2026-05-01 18:54:34.945424: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 18:54:45.600413: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:54:45.600438: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:54:45.600644: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmp51ytsaz_
+2026-05-01 18:54:45.607200: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:54:45.607220: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmp51ytsaz_
+2026-05-01 18:54:45.622644: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:54:45.671060: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmp51ytsaz_
+2026-05-01 18:54:45.707488: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 106844 microseconds.
+2026-05-01 18:54:45.860305: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 18:54:46.317930: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+Epoch 1/10
+2026-05-01 18:55:23.332984: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/quant_dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+174/174 - 4s - loss: 0.0304 - accuracy: 0.9845 - val_loss: 0.0676 - val_accuracy: 0.9834 - 4s/epoch - 24ms/step
+Epoch 2/10
+174/174 - 2s - loss: 0.0145 - accuracy: 0.9959 - val_loss: 0.0686 - val_accuracy: 0.9845 - 2s/epoch - 9ms/step
+Epoch 3/10
+174/174 - 2s - loss: 0.0134 - accuracy: 0.9962 - val_loss: 0.0731 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 4/10
+174/174 - 2s - loss: 0.0119 - accuracy: 0.9961 - val_loss: 0.0743 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 5/10
+174/174 - 2s - loss: 0.0134 - accuracy: 0.9959 - val_loss: 0.0727 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 6/10
+174/174 - 2s - loss: 0.0107 - accuracy: 0.9967 - val_loss: 0.0748 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 7/10
+174/174 - 2s - loss: 0.0109 - accuracy: 0.9962 - val_loss: 0.0724 - val_accuracy: 0.9841 - 2s/epoch - 9ms/step
+Epoch 8/10
+174/174 - 2s - loss: 0.0084 - accuracy: 0.9972 - val_loss: 0.0749 - val_accuracy: 0.9831 - 2s/epoch - 9ms/step
+Epoch 9/10
+174/174 - 2s - loss: 0.0084 - accuracy: 0.9971 - val_loss: 0.0784 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 10/10
+174/174 - 2s - loss: 0.0096 - accuracy: 0.9964 - val_loss: 0.0820 - val_accuracy: 0.9827 - 2s/epoch - 9ms/step
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 18:55:44.353343: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:55:44.353372: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:55:44.353579: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpd4y174mw
+2026-05-01 18:55:44.364445: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:55:44.364464: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpd4y174mw
+2026-05-01 18:55:44.391469: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:55:44.480417: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpd4y174mw
+2026-05-01 18:55:44.525400: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 171821 microseconds.
+2026-05-01 18:55:44.727414: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 18:55:45.148302: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+/shared/b00090279/TinyML-Course/har-mcu/src/eval/paper_comparison.py:193: UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+  ax.legend(fontsize=8)
+rows: 1
+master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e00/results_master.csv
+master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e00/results_master.md
+m3_master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e00/m3_experiment_master.csv
+m3_master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e00/m3_experiment_master.md
+========== M3 sequential: configs/m3/E03_arduino_downsample_20hz_T100.yaml (full_e03) ==========
+status: valid
+experiment_id: E03_arduino_downsample_20hz_T100
+model_variant: deepconv_lstm_conv2d
+data_source: wisdm_arduino
+train_domain: wisdm
+eval_domain: arduino
+transfer_mode: zero_shot
+split_protocols: random_stratified
+window_size_samples: 100
+window_duration_seconds: 5.0
+sample_rate_hz: 20.0
+target_sample_rate_hz: 20.0
+unit_mode: raw_no_conversion
+normalization_mode: train_zscore
+diagnostic_only: False
+enabled: True
+tooling_only: False
+2026-05-01 18:56:27.331951: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-01 18:56:27.331992: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-01 18:56:27.332043: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-01 18:56:27.340482: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-05-01 18:56:39.736137: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:39.824376: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:39.827640: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:42.962227: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:42.967290: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:42.970248: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:43.101192: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:43.103239: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:43.105124: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:56:43.107022: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1886] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20665 MB memory:  -> device: 0, name: NVIDIA A10G, pci bus id: 0000:00:1e.0, compute capability: 8.6
+Epoch 1/50
+2026-05-01 18:56:45.142817: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+2026-05-01 18:56:45.331170: I tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:442] Loaded cuDNN version 8700
+2026-05-01 18:56:46.447984: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x75f1805a1070 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2026-05-01 18:56:46.448032: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): NVIDIA A10G, Compute Capability 8.6
+2026-05-01 18:56:46.452478: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2026-05-01 18:56:46.499655: I ./tensorflow/compiler/jit/device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+174/174 - 5s - loss: 0.7371 - accuracy: 0.7390 - val_loss: 0.9117 - val_accuracy: 0.6973 - lr: 0.0010 - 5s/epoch - 26ms/step
+Epoch 2/50
+174/174 - 1s - loss: 0.4860 - accuracy: 0.8213 - val_loss: 0.4065 - val_accuracy: 0.8425 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 3/50
+174/174 - 1s - loss: 0.4146 - accuracy: 0.8450 - val_loss: 0.3828 - val_accuracy: 0.8551 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 4/50
+174/174 - 1s - loss: 0.3414 - accuracy: 0.8729 - val_loss: 0.3719 - val_accuracy: 0.8591 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 5/50
+174/174 - 1s - loss: 0.2783 - accuracy: 0.8987 - val_loss: 0.2556 - val_accuracy: 0.9103 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 6/50
+174/174 - 1s - loss: 0.2321 - accuracy: 0.9165 - val_loss: 0.2621 - val_accuracy: 0.9059 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 7/50
+174/174 - 1s - loss: 0.1969 - accuracy: 0.9306 - val_loss: 0.1617 - val_accuracy: 0.9477 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 8/50
+174/174 - 1s - loss: 0.1814 - accuracy: 0.9341 - val_loss: 0.2482 - val_accuracy: 0.9196 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 9/50
+174/174 - 1s - loss: 0.1516 - accuracy: 0.9470 - val_loss: 0.3772 - val_accuracy: 0.8631 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 10/50
+174/174 - 1s - loss: 0.1379 - accuracy: 0.9519 - val_loss: 0.1838 - val_accuracy: 0.9380 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 11/50
+174/174 - 1s - loss: 0.1221 - accuracy: 0.9567 - val_loss: 0.4805 - val_accuracy: 0.8577 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 12/50
+
+Epoch 12: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+174/174 - 1s - loss: 0.1056 - accuracy: 0.9636 - val_loss: 0.2334 - val_accuracy: 0.9250 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 13/50
+174/174 - 1s - loss: 0.0705 - accuracy: 0.9752 - val_loss: 0.1121 - val_accuracy: 0.9708 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 14/50
+174/174 - 1s - loss: 0.0678 - accuracy: 0.9761 - val_loss: 0.1276 - val_accuracy: 0.9618 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 15/50
+174/174 - 1s - loss: 0.0604 - accuracy: 0.9788 - val_loss: 0.1008 - val_accuracy: 0.9679 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 16/50
+174/174 - 1s - loss: 0.0571 - accuracy: 0.9805 - val_loss: 0.1322 - val_accuracy: 0.9600 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 17/50
+174/174 - 1s - loss: 0.0535 - accuracy: 0.9822 - val_loss: 0.1463 - val_accuracy: 0.9611 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 18/50
+174/174 - 1s - loss: 0.0516 - accuracy: 0.9823 - val_loss: 0.1229 - val_accuracy: 0.9665 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 19/50
+174/174 - 1s - loss: 0.0500 - accuracy: 0.9835 - val_loss: 0.1061 - val_accuracy: 0.9705 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 20/50
+174/174 - 1s - loss: 0.0452 - accuracy: 0.9855 - val_loss: 0.0691 - val_accuracy: 0.9816 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 21/50
+174/174 - 1s - loss: 0.0396 - accuracy: 0.9872 - val_loss: 0.2207 - val_accuracy: 0.9305 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 22/50
+174/174 - 1s - loss: 0.0438 - accuracy: 0.9854 - val_loss: 0.1322 - val_accuracy: 0.9658 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 23/50
+174/174 - 1s - loss: 0.0392 - accuracy: 0.9864 - val_loss: 0.0823 - val_accuracy: 0.9791 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 24/50
+174/174 - 1s - loss: 0.0367 - accuracy: 0.9871 - val_loss: 0.0905 - val_accuracy: 0.9766 - lr: 5.0000e-04 - 1s/epoch - 7ms/step
+Epoch 25/50
+
+Epoch 25: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
+174/174 - 1s - loss: 0.0382 - accuracy: 0.9860 - val_loss: 0.0998 - val_accuracy: 0.9762 - lr: 5.0000e-04 - 1s/epoch - 7ms/step
+Epoch 26/50
+174/174 - 1s - loss: 0.0256 - accuracy: 0.9921 - val_loss: 0.0726 - val_accuracy: 0.9805 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 27/50
+174/174 - 1s - loss: 0.0220 - accuracy: 0.9915 - val_loss: 0.0891 - val_accuracy: 0.9733 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 28/50
+174/174 - 1s - loss: 0.0213 - accuracy: 0.9928 - val_loss: 0.0885 - val_accuracy: 0.9802 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 29/50
+174/174 - 1s - loss: 0.0214 - accuracy: 0.9929 - val_loss: 0.0645 - val_accuracy: 0.9863 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 30/50
+174/174 - 1s - loss: 0.0196 - accuracy: 0.9928 - val_loss: 0.0629 - val_accuracy: 0.9859 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 31/50
+174/174 - 1s - loss: 0.0243 - accuracy: 0.9905 - val_loss: 0.0908 - val_accuracy: 0.9795 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 32/50
+174/174 - 1s - loss: 0.0189 - accuracy: 0.9933 - val_loss: 0.0911 - val_accuracy: 0.9777 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 33/50
+174/174 - 1s - loss: 0.0234 - accuracy: 0.9928 - val_loss: 0.0637 - val_accuracy: 0.9852 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 34/50
+174/174 - 1s - loss: 0.0176 - accuracy: 0.9928 - val_loss: 0.0862 - val_accuracy: 0.9823 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 35/50
+
+Epoch 35: ReduceLROnPlateau reducing learning rate to 0.0001250000059371814.
+174/174 - 1s - loss: 0.0165 - accuracy: 0.9939 - val_loss: 0.0785 - val_accuracy: 0.9838 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 36/50
+174/174 - 1s - loss: 0.0155 - accuracy: 0.9944 - val_loss: 0.0614 - val_accuracy: 0.9859 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 37/50
+174/174 - 1s - loss: 0.0141 - accuracy: 0.9955 - val_loss: 0.0725 - val_accuracy: 0.9849 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 38/50
+174/174 - 1s - loss: 0.0136 - accuracy: 0.9950 - val_loss: 0.0782 - val_accuracy: 0.9823 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 39/50
+174/174 - 1s - loss: 0.0134 - accuracy: 0.9951 - val_loss: 0.0711 - val_accuracy: 0.9845 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 40/50
+174/174 - 1s - loss: 0.0131 - accuracy: 0.9950 - val_loss: 0.0717 - val_accuracy: 0.9838 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 41/50
+
+Epoch 41: ReduceLROnPlateau reducing learning rate to 6.25000029685907e-05.
+174/174 - 1s - loss: 0.0120 - accuracy: 0.9956 - val_loss: 0.0752 - val_accuracy: 0.9845 - lr: 1.2500e-04 - 1s/epoch - 6ms/step
+Epoch 42/50
+174/174 - 1s - loss: 0.0129 - accuracy: 0.9965 - val_loss: 0.0802 - val_accuracy: 0.9823 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 43/50
+174/174 - 1s - loss: 0.0110 - accuracy: 0.9960 - val_loss: 0.0709 - val_accuracy: 0.9849 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 44/50
+174/174 - 1s - loss: 0.0115 - accuracy: 0.9957 - val_loss: 0.0700 - val_accuracy: 0.9863 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 45/50
+174/174 - 1s - loss: 0.0115 - accuracy: 0.9960 - val_loss: 0.0752 - val_accuracy: 0.9827 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 46/50
+
+Epoch 46: ReduceLROnPlateau reducing learning rate to 3.125000148429535e-05.
+Restoring model weights from the end of the best epoch: 36.
+174/174 - 1s - loss: 0.0112 - accuracy: 0.9960 - val_loss: 0.0671 - val_accuracy: 0.9867 - lr: 6.2500e-05 - 1s/epoch - 6ms/step
+Epoch 46: early stopping
+2026-05-01 18:57:42.360130: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:57:42.360178: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:57:42.360494: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpaahbbs0m
+2026-05-01 18:57:42.368928: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:57:42.368953: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpaahbbs0m
+2026-05-01 18:57:42.387588: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:382] MLIR V1 optimization pass is not enabled
+2026-05-01 18:57:42.391330: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:57:42.441480: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpaahbbs0m
+2026-05-01 18:57:42.476437: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 115942 microseconds.
+2026-05-01 18:57:42.640463: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 18:57:49.411333: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:57:49.411360: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:57:49.411588: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpr1nj5gkf
+2026-05-01 18:57:49.418277: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:57:49.418297: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpr1nj5gkf
+2026-05-01 18:57:49.434164: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:57:49.483055: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpr1nj5gkf
+2026-05-01 18:57:49.520226: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 108638 microseconds.
+2026-05-01 18:57:49.682205: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 18:57:50.113983: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+Epoch 1/10
+2026-05-01 18:58:03.687627: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/quant_dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+174/174 - 4s - loss: 0.0304 - accuracy: 0.9842 - val_loss: 0.0707 - val_accuracy: 0.9823 - 4s/epoch - 24ms/step
+Epoch 2/10
+174/174 - 2s - loss: 0.0145 - accuracy: 0.9960 - val_loss: 0.0694 - val_accuracy: 0.9841 - 2s/epoch - 9ms/step
+Epoch 3/10
+174/174 - 2s - loss: 0.0136 - accuracy: 0.9959 - val_loss: 0.0734 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 4/10
+174/174 - 2s - loss: 0.0119 - accuracy: 0.9960 - val_loss: 0.0745 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 5/10
+174/174 - 2s - loss: 0.0131 - accuracy: 0.9960 - val_loss: 0.0731 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 6/10
+174/174 - 2s - loss: 0.0105 - accuracy: 0.9968 - val_loss: 0.0757 - val_accuracy: 0.9834 - 2s/epoch - 9ms/step
+Epoch 7/10
+174/174 - 2s - loss: 0.0110 - accuracy: 0.9962 - val_loss: 0.0729 - val_accuracy: 0.9849 - 2s/epoch - 9ms/step
+Epoch 8/10
+174/174 - 2s - loss: 0.0084 - accuracy: 0.9975 - val_loss: 0.0752 - val_accuracy: 0.9831 - 2s/epoch - 9ms/step
+Epoch 9/10
+174/174 - 2s - loss: 0.0084 - accuracy: 0.9974 - val_loss: 0.0796 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 10/10
+174/174 - 2s - loss: 0.0093 - accuracy: 0.9964 - val_loss: 0.0823 - val_accuracy: 0.9831 - 2s/epoch - 9ms/step
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 18:58:24.857497: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:58:24.857524: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:58:24.857732: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmppr9bn8tx
+2026-05-01 18:58:24.868955: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:58:24.868973: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmppr9bn8tx
+2026-05-01 18:58:24.897437: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:58:24.987242: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmppr9bn8tx
+2026-05-01 18:58:25.031775: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 174043 microseconds.
+2026-05-01 18:58:25.239682: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 18:58:25.666908: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+rows: 1
+master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e03/results_master.csv
+master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e03/results_master.md
+m3_master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e03/m3_experiment_master.csv
+m3_master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e03/m3_experiment_master.md
+========== M3 sequential: configs/m3/E04_wisdm_to_g_arduino_g.yaml (full_e04) ==========
+status: valid
+experiment_id: E04_wisdm_to_g_arduino_g
+model_variant: deepconv_lstm_conv2d
+data_source: wisdm_arduino
+train_domain: wisdm
+eval_domain: arduino
+transfer_mode: zero_shot
+split_protocols: random_stratified
+window_size_samples: 100
+window_duration_seconds: 5.0
+sample_rate_hz: 20.0
+target_sample_rate_hz: 20.0
+unit_mode: wisdm_to_g
+normalization_mode: train_zscore
+diagnostic_only: False
+enabled: True
+tooling_only: False
+2026-05-01 18:58:37.346488: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-01 18:58:37.346535: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-01 18:58:37.346573: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-01 18:58:37.355051: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-05-01 18:58:49.759877: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:49.842702: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:49.846302: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.026065: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.031339: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.034321: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.169171: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.171228: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.173123: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 18:58:53.175052: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1886] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20665 MB memory:  -> device: 0, name: NVIDIA A10G, pci bus id: 0000:00:1e.0, compute capability: 8.6
+Epoch 1/50
+2026-05-01 18:58:55.128692: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+2026-05-01 18:58:55.311391: I tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:442] Loaded cuDNN version 8700
+2026-05-01 18:58:56.375370: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x728c5000a9c0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2026-05-01 18:58:56.375401: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): NVIDIA A10G, Compute Capability 8.6
+2026-05-01 18:58:56.379497: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2026-05-01 18:58:56.428542: I ./tensorflow/compiler/jit/device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+174/174 - 4s - loss: 0.7371 - accuracy: 0.7389 - val_loss: 0.8943 - val_accuracy: 0.7005 - lr: 0.0010 - 4s/epoch - 25ms/step
+Epoch 2/50
+174/174 - 1s - loss: 0.4858 - accuracy: 0.8214 - val_loss: 0.4064 - val_accuracy: 0.8425 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 3/50
+174/174 - 1s - loss: 0.4146 - accuracy: 0.8448 - val_loss: 0.3827 - val_accuracy: 0.8548 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 4/50
+174/174 - 1s - loss: 0.3412 - accuracy: 0.8730 - val_loss: 0.3714 - val_accuracy: 0.8598 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 5/50
+174/174 - 1s - loss: 0.2790 - accuracy: 0.8977 - val_loss: 0.2551 - val_accuracy: 0.9106 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 6/50
+174/174 - 1s - loss: 0.2325 - accuracy: 0.9159 - val_loss: 0.2645 - val_accuracy: 0.9038 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 7/50
+174/174 - 1s - loss: 0.1971 - accuracy: 0.9297 - val_loss: 0.1624 - val_accuracy: 0.9470 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 8/50
+174/174 - 1s - loss: 0.1817 - accuracy: 0.9336 - val_loss: 0.2542 - val_accuracy: 0.9200 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 9/50
+174/174 - 1s - loss: 0.1520 - accuracy: 0.9468 - val_loss: 0.3729 - val_accuracy: 0.8620 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 10/50
+174/174 - 1s - loss: 0.1386 - accuracy: 0.9521 - val_loss: 0.1460 - val_accuracy: 0.9532 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 11/50
+174/174 - 1s - loss: 0.1220 - accuracy: 0.9570 - val_loss: 0.4747 - val_accuracy: 0.8595 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 12/50
+174/174 - 1s - loss: 0.1061 - accuracy: 0.9635 - val_loss: 0.2361 - val_accuracy: 0.9236 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 13/50
+174/174 - 1s - loss: 0.0965 - accuracy: 0.9661 - val_loss: 0.1157 - val_accuracy: 0.9715 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 14/50
+174/174 - 1s - loss: 0.0892 - accuracy: 0.9694 - val_loss: 0.1375 - val_accuracy: 0.9604 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 15/50
+174/174 - 1s - loss: 0.0826 - accuracy: 0.9732 - val_loss: 0.1206 - val_accuracy: 0.9683 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 16/50
+174/174 - 1s - loss: 0.0747 - accuracy: 0.9740 - val_loss: 0.1573 - val_accuracy: 0.9488 - lr: 0.0010 - 1s/epoch - 7ms/step
+Epoch 17/50
+174/174 - 1s - loss: 0.0690 - accuracy: 0.9767 - val_loss: 0.0996 - val_accuracy: 0.9741 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 18/50
+174/174 - 1s - loss: 0.0610 - accuracy: 0.9795 - val_loss: 0.1546 - val_accuracy: 0.9618 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 19/50
+174/174 - 1s - loss: 0.0616 - accuracy: 0.9796 - val_loss: 0.1283 - val_accuracy: 0.9647 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 20/50
+174/174 - 1s - loss: 0.0525 - accuracy: 0.9827 - val_loss: 0.0732 - val_accuracy: 0.9823 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 21/50
+174/174 - 1s - loss: 0.0468 - accuracy: 0.9833 - val_loss: 0.2621 - val_accuracy: 0.9276 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 22/50
+174/174 - 1s - loss: 0.0493 - accuracy: 0.9841 - val_loss: 0.1218 - val_accuracy: 0.9733 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 23/50
+174/174 - 1s - loss: 0.0414 - accuracy: 0.9859 - val_loss: 0.0889 - val_accuracy: 0.9780 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 24/50
+174/174 - 1s - loss: 0.0401 - accuracy: 0.9873 - val_loss: 0.1004 - val_accuracy: 0.9766 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 25/50
+
+Epoch 25: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+174/174 - 1s - loss: 0.0410 - accuracy: 0.9853 - val_loss: 0.1197 - val_accuracy: 0.9701 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 26/50
+174/174 - 1s - loss: 0.0216 - accuracy: 0.9927 - val_loss: 0.0622 - val_accuracy: 0.9838 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 27/50
+174/174 - 1s - loss: 0.0189 - accuracy: 0.9933 - val_loss: 0.0831 - val_accuracy: 0.9780 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 28/50
+174/174 - 1s - loss: 0.0174 - accuracy: 0.9939 - val_loss: 0.0866 - val_accuracy: 0.9823 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 29/50
+174/174 - 1s - loss: 0.0179 - accuracy: 0.9936 - val_loss: 0.0673 - val_accuracy: 0.9859 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 30/50
+174/174 - 1s - loss: 0.0165 - accuracy: 0.9944 - val_loss: 0.0688 - val_accuracy: 0.9870 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 31/50
+
+Epoch 31: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
+174/174 - 1s - loss: 0.0204 - accuracy: 0.9932 - val_loss: 0.0975 - val_accuracy: 0.9820 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 32/50
+174/174 - 1s - loss: 0.0109 - accuracy: 0.9962 - val_loss: 0.0796 - val_accuracy: 0.9813 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 33/50
+174/174 - 1s - loss: 0.0137 - accuracy: 0.9957 - val_loss: 0.0622 - val_accuracy: 0.9870 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 34/50
+174/174 - 1s - loss: 0.0075 - accuracy: 0.9973 - val_loss: 0.0708 - val_accuracy: 0.9874 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 35/50
+174/174 - 1s - loss: 0.0070 - accuracy: 0.9978 - val_loss: 0.0728 - val_accuracy: 0.9870 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 36/50
+
+Epoch 36: ReduceLROnPlateau reducing learning rate to 0.0001250000059371814.
+Restoring model weights from the end of the best epoch: 26.
+174/174 - 1s - loss: 0.0099 - accuracy: 0.9969 - val_loss: 0.0635 - val_accuracy: 0.9885 - lr: 2.5000e-04 - 1s/epoch - 6ms/step
+Epoch 36: early stopping
+2026-05-01 18:59:40.730062: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:59:40.730096: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:59:40.730419: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpeufhyet9
+2026-05-01 18:59:40.739189: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:59:40.739206: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpeufhyet9
+2026-05-01 18:59:40.757745: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:382] MLIR V1 optimization pass is not enabled
+2026-05-01 18:59:40.761627: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:59:40.811210: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpeufhyet9
+2026-05-01 18:59:40.845024: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 114605 microseconds.
+2026-05-01 18:59:41.007202: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 18:59:47.789122: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 18:59:47.789165: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 18:59:47.789450: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmpqi2royan
+2026-05-01 18:59:47.795932: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 18:59:47.795949: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmpqi2royan
+2026-05-01 18:59:47.811476: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 18:59:47.859079: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmpqi2royan
+2026-05-01 18:59:47.895642: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 106192 microseconds.
+2026-05-01 18:59:48.052424: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 18:59:48.483489: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+Epoch 1/10
+2026-05-01 19:00:02.124497: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/quant_dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+174/174 - 4s - loss: 0.0231 - accuracy: 0.9912 - val_loss: 0.0648 - val_accuracy: 0.9834 - 4s/epoch - 24ms/step
+Epoch 2/10
+174/174 - 2s - loss: 0.0120 - accuracy: 0.9964 - val_loss: 0.0658 - val_accuracy: 0.9849 - 2s/epoch - 9ms/step
+Epoch 3/10
+174/174 - 2s - loss: 0.0122 - accuracy: 0.9961 - val_loss: 0.0663 - val_accuracy: 0.9838 - 2s/epoch - 9ms/step
+Epoch 4/10
+174/174 - 2s - loss: 0.0102 - accuracy: 0.9968 - val_loss: 0.0689 - val_accuracy: 0.9827 - 2s/epoch - 9ms/step
+Epoch 5/10
+174/174 - 2s - loss: 0.0102 - accuracy: 0.9968 - val_loss: 0.0667 - val_accuracy: 0.9849 - 2s/epoch - 9ms/step
+Epoch 6/10
+174/174 - 2s - loss: 0.0089 - accuracy: 0.9967 - val_loss: 0.0666 - val_accuracy: 0.9841 - 2s/epoch - 9ms/step
+Epoch 7/10
+174/174 - 2s - loss: 0.0081 - accuracy: 0.9970 - val_loss: 0.0649 - val_accuracy: 0.9841 - 2s/epoch - 9ms/step
+Epoch 8/10
+174/174 - 2s - loss: 0.0077 - accuracy: 0.9977 - val_loss: 0.0705 - val_accuracy: 0.9845 - 2s/epoch - 9ms/step
+Epoch 9/10
+174/174 - 2s - loss: 0.0073 - accuracy: 0.9977 - val_loss: 0.0677 - val_accuracy: 0.9845 - 2s/epoch - 9ms/step
+Epoch 10/10
+174/174 - 2s - loss: 0.0079 - accuracy: 0.9975 - val_loss: 0.0694 - val_accuracy: 0.9845 - 2s/epoch - 9ms/step
+/shared/b00090279/tinymlproj/lib/python3.10/site-packages/tensorflow/lite/python/convert.py:947: UserWarning: Statistics for quantized inputs were expected, but not specified; continuing anyway.
+  warnings.warn(
+2026-05-01 19:00:23.138573: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:378] Ignored output_format.
+2026-05-01 19:00:23.138601: W tensorflow/compiler/mlir/lite/python/tf_tfl_flatbuffer_helpers.cc:381] Ignored drop_control_dependency.
+2026-05-01 19:00:23.138802: I tensorflow/cc/saved_model/reader.cc:83] Reading SavedModel from: /tmp/b00090279/tmp69m9oyen
+2026-05-01 19:00:23.149735: I tensorflow/cc/saved_model/reader.cc:51] Reading meta graph with tags { serve }
+2026-05-01 19:00:23.149754: I tensorflow/cc/saved_model/reader.cc:146] Reading SavedModel debug info (if present) from: /tmp/b00090279/tmp69m9oyen
+2026-05-01 19:00:23.176879: I tensorflow/cc/saved_model/loader.cc:233] Restoring SavedModel bundle.
+2026-05-01 19:00:23.264597: I tensorflow/cc/saved_model/loader.cc:217] Running initialization op on SavedModel bundle at path: /tmp/b00090279/tmp69m9oyen
+2026-05-01 19:00:23.309205: I tensorflow/cc/saved_model/loader.cc:316] SavedModel load for tags { serve }; Status: success: OK. Took 170403 microseconds.
+2026-05-01 19:00:23.513875: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+fully_quantize: 0, inference_type: 6, input_inference_type: INT8, output_inference_type: INT8
+2026-05-01 19:00:23.937974: I tensorflow/compiler/mlir/lite/flatbuffer_export.cc:2245] Estimated count of arithmetic ops: 1.361 M  ops, equivalently 0.680 M  MACs
+rows: 1
+master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e04/results_master.csv
+master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e04/results_master.md
+m3_master_csv: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e04/m3_experiment_master.csv
+m3_master_md: /shared/b00090279/TinyML-Course/har-mcu/reports/m3/full_e04/m3_experiment_master.md
+========== M3 sequential: configs/m3/E05_legacy_arduino_to_mps2.yaml (full_e05) ==========
+status: valid
+experiment_id: E05_legacy_arduino_to_mps2
+model_variant: deepconv_lstm_conv2d
+data_source: wisdm_arduino
+train_domain: wisdm
+eval_domain: arduino
+transfer_mode: zero_shot
+split_protocols: random_stratified
+window_size_samples: 100
+window_duration_seconds: 5.0
+sample_rate_hz: 20.0
+target_sample_rate_hz: 20.0
+unit_mode: arduino_to_mps2_legacy
+normalization_mode: train_zscore
+diagnostic_only: False
+enabled: True
+tooling_only: False
+2026-05-01 19:00:35.630897: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-05-01 19:00:35.630950: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-05-01 19:00:35.630989: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-05-01 19:00:35.639504: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-05-01 19:00:47.876417: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:47.959025: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:47.962305: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.087647: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.092899: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.096103: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.230850: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.232871: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.234751: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:894] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-05-01 19:00:51.236680: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1886] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20665 MB memory:  -> device: 0, name: NVIDIA A10G, pci bus id: 0000:00:1e.0, compute capability: 8.6
+Epoch 1/50
+2026-05-01 19:00:53.214564: E tensorflow/core/grappler/optimizers/meta_optimizer.cc:961] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape indeepconv_lstm_conv2d/dropout1/dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+2026-05-01 19:00:53.396273: I tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:442] Loaded cuDNN version 8700
+2026-05-01 19:00:54.461087: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7ecfd1adec10 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2026-05-01 19:00:54.461115: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): NVIDIA A10G, Compute Capability 8.6
+2026-05-01 19:00:54.465434: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2026-05-01 19:00:54.515248: I ./tensorflow/compiler/jit/device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+174/174 - 4s - loss: 0.7371 - accuracy: 0.7391 - val_loss: 0.9140 - val_accuracy: 0.6973 - lr: 0.0010 - 4s/epoch - 26ms/step
+Epoch 2/50
+174/174 - 1s - loss: 0.4859 - accuracy: 0.8209 - val_loss: 0.4064 - val_accuracy: 0.8425 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 3/50
+174/174 - 1s - loss: 0.4146 - accuracy: 0.8447 - val_loss: 0.3827 - val_accuracy: 0.8551 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 4/50
+174/174 - 1s - loss: 0.3413 - accuracy: 0.8727 - val_loss: 0.3722 - val_accuracy: 0.8595 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 5/50
+174/174 - 1s - loss: 0.2787 - accuracy: 0.8983 - val_loss: 0.2550 - val_accuracy: 0.9103 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 6/50
+174/174 - 1s - loss: 0.2323 - accuracy: 0.9154 - val_loss: 0.2628 - val_accuracy: 0.9049 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 7/50
+174/174 - 1s - loss: 0.1972 - accuracy: 0.9307 - val_loss: 0.1615 - val_accuracy: 0.9477 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 8/50
+174/174 - 1s - loss: 0.1816 - accuracy: 0.9337 - val_loss: 0.2508 - val_accuracy: 0.9193 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 9/50
+174/174 - 1s - loss: 0.1519 - accuracy: 0.9467 - val_loss: 0.3845 - val_accuracy: 0.8577 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 10/50
+174/174 - 1s - loss: 0.1381 - accuracy: 0.9526 - val_loss: 0.1756 - val_accuracy: 0.9387 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 11/50
+174/174 - 1s - loss: 0.1223 - accuracy: 0.9568 - val_loss: 0.4669 - val_accuracy: 0.8602 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 12/50
+
+Epoch 12: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+174/174 - 1s - loss: 0.1053 - accuracy: 0.9641 - val_loss: 0.2415 - val_accuracy: 0.9222 - lr: 0.0010 - 1s/epoch - 6ms/step
+Epoch 13/50
+174/174 - 1s - loss: 0.0708 - accuracy: 0.9751 - val_loss: 0.1117 - val_accuracy: 0.9712 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 14/50
+174/174 - 1s - loss: 0.0678 - accuracy: 0.9758 - val_loss: 0.1292 - val_accuracy: 0.9622 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 15/50
+174/174 - 1s - loss: 0.0605 - accuracy: 0.9793 - val_loss: 0.1015 - val_accuracy: 0.9683 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 16/50
+174/174 - 1s - loss: 0.0574 - accuracy: 0.9802 - val_loss: 0.1308 - val_accuracy: 0.9611 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 17/50
+174/174 - 1s - loss: 0.0534 - accuracy: 0.9823 - val_loss: 0.1491 - val_accuracy: 0.9607 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 18/50
+174/174 - 1s - loss: 0.0517 - accuracy: 0.9826 - val_loss: 0.1223 - val_accuracy: 0.9668 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 19/50
+174/174 - 1s - loss: 0.0502 - accuracy: 0.9835 - val_loss: 0.1063 - val_accuracy: 0.9701 - lr: 5.0000e-04 - 1s/epoch - 7ms/step
+Epoch 20/50
+174/174 - 1s - loss: 0.0453 - accuracy: 0.9851 - val_loss: 0.0695 - val_accuracy: 0.9823 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 21/50
+174/174 - 1s - loss: 0.0395 - accuracy: 0.9868 - val_loss: 0.2158 - val_accuracy: 0.9301 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 22/50
+174/174 - 1s - loss: 0.0439 - accuracy: 0.9856 - val_loss: 0.1226 - val_accuracy: 0.9665 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 23/50
+174/174 - 1s - loss: 0.0390 - accuracy: 0.9863 - val_loss: 0.0818 - val_accuracy: 0.9798 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 24/50
+174/174 - 1s - loss: 0.0367 - accuracy: 0.9866 - val_loss: 0.0915 - val_accuracy: 0.9755 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 25/50
+
+Epoch 25: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
+174/174 - 1s - loss: 0.0381 - accuracy: 0.9857 - val_loss: 0.1008 - val_accuracy: 0.9759 - lr: 5.0000e-04 - 1s/epoch - 6ms/step
+Epoch 26/50

@@ -1,0 +1,172 @@
+{
+  "tag": "fp32_tflite_xtinyhar_student_conv2d_E00_xtinyhar_student_conv2d_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00090279/TinyML-Course/har-mcu/models_tflite/m3/E00_wisdm_m2_anchor/arch_seq/xtinyhar_student_conv2d/e00/xtinyhar_student_conv2d_T100_Prandom_stratified_E00_xtinyhar_student_conv2d_r0_fp32.tflite",
+  "model_size_kb": 1103.77734375,
+  "input_dtype": "<class 'numpy.float32'>",
+  "output_dtype": "<class 'numpy.float32'>",
+  "interpreter_ops": [
+    "ADD",
+    "BATCH_MATMUL",
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "GELU",
+    "MEAN",
+    "MUL",
+    "RESHAPE",
+    "RSQRT",
+    "SOFTMAX",
+    "SQUARED_DIFFERENCE",
+    "SUB",
+    "TRANSPOSE"
+  ],
+  "interpreter_op_count": 13,
+  "accuracy": 0.9569798068481123,
+  "macro_f1": 0.9442987986633135,
+  "confusion_matrix": [
+    [
+      2675,
+      0,
+      21,
+      27,
+      0,
+      0
+    ],
+    [
+      8,
+      2069,
+      17,
+      15,
+      0,
+      0
+    ],
+    [
+      36,
+      26,
+      647,
+      21,
+      0,
+      0
+    ],
+    [
+      63,
+      7,
+      49,
+      467,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      379,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      303
+    ]
+  ],
+  "confusion_plot": "/shared/b00090279/TinyML-Course/har-mcu/reports/m3/arch_seq/xtinyhar_student_conv2d/e00/m3/confusion_fp32_tflite_xtinyhar_student_conv2d_E00_xtinyhar_student_conv2d_r0_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.9615384615384616,
+      "recall": 0.982372383400661,
+      "f1": 0.971843778383288,
+      "support": 2723
+    },
+    "Jogging": {
+      "precision": 0.9843006660323501,
+      "recall": 0.9810336652441916,
+      "f1": 0.9826644502493469,
+      "support": 2109
+    },
+    "Upstairs": {
+      "precision": 0.8790760869565217,
+      "recall": 0.8863013698630137,
+      "f1": 0.8826739427012278,
+      "support": 730
+    },
+    "Downstairs": {
+      "precision": 0.8811320754716981,
+      "recall": 0.7955706984667802,
+      "f1": 0.8361683079677709,
+      "support": 587
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.994750656167979,
+      "f1": 0.9973684210526316,
+      "support": 381
+    },
+    "Standing": {
+      "precision": 0.9934426229508196,
+      "recall": 0.9967105263157895,
+      "f1": 0.9950738916256158,
+      "support": 304
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9615384615384616,
+      "recall": 0.982372383400661,
+      "f1-score": 0.971843778383288,
+      "support": 2723.0
+    },
+    "Jogging": {
+      "precision": 0.9843006660323501,
+      "recall": 0.9810336652441916,
+      "f1-score": 0.9826644502493469,
+      "support": 2109.0
+    },
+    "Upstairs": {
+      "precision": 0.8790760869565217,
+      "recall": 0.8863013698630137,
+      "f1-score": 0.8826739427012278,
+      "support": 730.0
+    },
+    "Downstairs": {
+      "precision": 0.8811320754716981,
+      "recall": 0.7955706984667802,
+      "f1-score": 0.8361683079677709,
+      "support": 587.0
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 0.994750656167979,
+      "f1-score": 0.9973684210526316,
+      "support": 381.0
+    },
+    "Standing": {
+      "precision": 0.9934426229508196,
+      "recall": 0.9967105263157895,
+      "f1-score": 0.9950738916256158,
+      "support": 304.0
+    },
+    "accuracy": 0.9569798068481123,
+    "macro avg": {
+      "precision": 0.9499149854916419,
+      "recall": 0.9394565499097358,
+      "f1-score": 0.9442987986633135,
+      "support": 6834.0
+    },
+    "weighted avg": {
+      "precision": 0.9564114668698644,
+      "recall": 0.9569798068481123,
+      "f1-score": 0.9564607170819116,
+      "support": 6834.0
+    }
+  },
+  "inference_latency_ms_median": 0.18935399998554203,
+  "inference_latency_ms_p95": 0.20938000001535784,
+  "inference_latency_ms_mean": 0.19093223828248185,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}
