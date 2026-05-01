@@ -331,6 +331,31 @@ All models remain well below any usable threshold — consistent with E10. The s
 
 ---
 
+## 11. Recommended deployment profile (concrete)
+
+Across all M3 runs, the default MCU choice remains **`daghero_cnn_2layer_conv2d`** with **WISDM pre-train → Arduino fine-tune**, **`train_zscore`**, and **inference normalization enabled** (same recipe as **E09** / **E11**). Pick **window size** from the table below; numbers are **Arduino test** metrics from `m3_experiment_master_all.csv` (`arch_seq` bundle for `daghero`).
+
+| Priority | Config (YAML) | `model_variant` | Window (samples / s @ 20 Hz) | FP32 acc | FP32 macro F1 | PTQ acc | QAT acc | Size (KB) | Latency mean (ms) | Latency p95 (ms) | Deploy gate |
+|----------|---------------|-----------------|-------------------------------|----------|---------------|---------|---------|-----------|-------------------|------------------|---------------|
+| **Best overall (accuracy × size × speed)** | `configs/m3/E09_wisdm_pretrain_arduino_finetune.yaml` | `daghero_cnn_2layer_conv2d` | **100** / 5 s | **0.996** | **0.996** | 0.996 | 0.996 | **26.1** | 0.077 | 0.091 | ptq=ok; qat=ok |
+| **Best speed + smallest footprint at strong acc** | `configs/m3/E11_wisdm_pretrain_arduino_finetune_T50.yaml` | `daghero_cnn_2layer_conv2d` | **50** / 2.5 s | 0.987 | 0.987 | 0.986 | 0.986 | **26.1** | **0.045** | **0.051** | ptq=ok; qat=ok |
+| **No WISDM pre-train (from-scratch Arduino)** | `configs/m3/E12_arduino_from_scratch_T50.yaml` | `daghero_cnn_2layer_conv2d` | **50** / 2.5 s | 0.989 | 0.989 | 0.989 | 0.988 | **26.1** | 0.046 | 0.059 | ptq=ok; qat=ok |
+
+**How this maps to “best” categories (Arduino FP32, adapted runs E09–E12):**
+
+| Category | Winner | Why |
+|----------|--------|-----|
+| **Highest Arduino accuracy in the whole matrix** | **`daghero_cnn_2layer_conv2d`**, **E09**, **T=100** | **0.996** — beats every other `arch_seq` / `full_e` row in E09–E12 on Arduino test. |
+| **Fastest inference at ≥0.98 accuracy** | **`daghero_cnn_2layer_conv2d`**, **E11**, **T=50** | **~0.045 ms** mean latency at **0.987** acc; next tier (`repmobile`, `tcn_*`) is larger and/or much slower for similar accuracy. |
+| **Smallest model at top accuracy** | **`daghero_cnn_2layer_conv2d`** | **~26.1 KB** in every row above; all larger architectures are **42 KB–578 KB** for no better (and usually worse) Arduino accuracy under the same protocols. |
+| **Best from-scratch only** | **`daghero_cnn_2layer_conv2d`**, **E12**, **T=50** | **0.989** acc, **0.046 ms** latency, same **26.1 KB**. (*`tcn_attention` reaches **0.993** on E10 T=100 but at **~578 KB** and **~8.1 ms** — not comparable for MCU deploy.*) |
+
+**WISDM retention** of the same checkpoints (eval-only, §9): **E11** daghero **~0.531** on WISDM test vs **~0.570** for **E09** — both show forgetting after Arduino fine-tune; use **T=100** if a higher WISDM-side score matters for a dual-domain product.
+
+**Quantization:** PTQ is the safe default; QAT is acceptable for this architecture (all rows above). Do **not** switch to `xtinyhar_student_conv2d` without `_relu` if int8 is required.
+
+---
+
 *Generated from M3 aggregate tables. Re-run aggregation after new experiments:*
 
 ```bash
