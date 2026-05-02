@@ -1,0 +1,208 @@
+{
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ],
+  "counts": {
+    "Downstairs": {
+      "test": 587,
+      "train": 954,
+      "val": 238
+    },
+    "Jogging": {
+      "test": 2109,
+      "train": 3425,
+      "val": 856
+    },
+    "Sitting": {
+      "test": 381,
+      "train": 619,
+      "val": 155
+    },
+    "Standing": {
+      "test": 304,
+      "train": 493,
+      "val": 123
+    },
+    "Upstairs": {
+      "test": 730,
+      "train": 1186,
+      "val": 297
+    },
+    "Walking": {
+      "test": 2723,
+      "train": 4423,
+      "val": 1106
+    }
+  },
+  "data": {
+    "domain": "wisdm",
+    "preprocess": {
+      "dropped_total": 0,
+      "rows_after_drop_zero_timestamp": 1073623,
+      "rows_after_dropna": 1073623,
+      "rows_before": 1073623,
+      "rows_final": 1073623
+    },
+    "raw_sanity": {
+      "domain": "wisdm",
+      "missing_values": 0,
+      "original_sample_rate_hz": 20.0,
+      "rows": 1073623,
+      "source_csv": "/shared/b00090279/TinyML-Course/har-mcu/WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv",
+      "target_sample_rate_hz": 20.0,
+      "user_count": 36,
+      "user_id_map": {},
+      "user_id_map_source": "native_numeric",
+      "users": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "zero_timestamps": 0
+    },
+    "sampling": {
+      "downsample": false,
+      "method": "none",
+      "rows_after": 1073623,
+      "rows_before": 1073623,
+      "sample_rate_hz": 20.0,
+      "stride": 1,
+      "target_sample_rate_hz": 20.0
+    },
+    "unit_transform": {
+      "axis_columns": [
+        "x-axis",
+        "y-axis",
+        "z-axis"
+      ],
+      "domain": "wisdm",
+      "pre_multiply": 1.0,
+      "scale": 0.10197162129779283,
+      "total_scale": 0.10197162129779283,
+      "unit_mode": "wisdm_to_g"
+    }
+  },
+  "normalization": {
+    "diagnostic_only": false,
+    "diagnostic_skip_inference_norm": false,
+    "inference_norm_applied": true,
+    "mode": "train_zscore",
+    "norm_stats": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E04_wisdm_to_g_arduino_g/arch_seq/repmobile_folded_conv2d/e04/source_wisdm/norm_stats_T100_Prandom_stratified.json",
+    "normalization_stats_source": "local_train_split"
+  },
+  "preprocess": {
+    "dropped_total": 0,
+    "rows_after_drop_zero_timestamp": 1073623,
+    "rows_after_dropna": 1073623,
+    "rows_before": 1073623,
+    "rows_final": 1073623
+  },
+  "raw_sanity": {
+    "domain": "wisdm",
+    "missing_values": 0,
+    "original_sample_rate_hz": 20.0,
+    "rows": 1073623,
+    "source_csv": "/shared/b00090279/TinyML-Course/har-mcu/WISDM_ar_v1.1/WISDM_ar_v1.1_raw.csv",
+    "target_sample_rate_hz": 20.0,
+    "user_count": 36,
+    "user_id_map": {},
+    "user_id_map_source": "native_numeric",
+    "users": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36
+    ],
+    "zero_timestamps": 0
+  },
+  "split": {
+    "path": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E04_wisdm_to_g_arduino_g/arch_seq/repmobile_folded_conv2d/e04/source_wisdm/splits_T100_Prandom_stratified.npz",
+    "split_hash": "e8b3eefc294da8de",
+    "test_size": 6834,
+    "train_size": 11100,
+    "val_size": 2775
+  },
+  "windowing": {
+    "candidate_windows": 21421,
+    "dropped_cross_boundary": 712,
+    "dropped_unknown_label": 0,
+    "overlap": 0.5,
+    "sample_rate_hz": 20.0,
+    "step": 50,
+    "target_sample_rate_hz": 20.0,
+    "window_duration_seconds": 5.0,
+    "window_size": 100,
+    "window_size_samples": 100,
+    "windows_final": 20709
+  }
+}

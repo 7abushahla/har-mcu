@@ -1,0 +1,140 @@
+{
+  "classes": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ],
+  "counts": {
+    "Downstairs": {
+      "test": 528,
+      "train": 857,
+      "val": 215
+    },
+    "Jogging": {
+      "test": 528,
+      "train": 857,
+      "val": 214
+    },
+    "Sitting": {
+      "test": 528,
+      "train": 857,
+      "val": 214
+    },
+    "Standing": {
+      "test": 528,
+      "train": 857,
+      "val": 214
+    },
+    "Upstairs": {
+      "test": 529,
+      "train": 860,
+      "val": 215
+    },
+    "Walking": {
+      "test": 529,
+      "train": 860,
+      "val": 215
+    }
+  },
+  "data": {
+    "domain": "arduino",
+    "preprocess": {
+      "dropped_total": 0,
+      "rows_after_drop_zero_timestamp": 240620,
+      "rows_after_dropna": 240620,
+      "rows_before": 240620,
+      "rows_final": 240620
+    },
+    "raw_sanity": {
+      "domain": "arduino",
+      "missing_values": 0,
+      "original_sample_rate_hz": 20.0,
+      "rows": 240620,
+      "source_csv": "/shared/b00090279/TinyML-Course/har-mcu/tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv",
+      "target_sample_rate_hz": 20.0,
+      "user_count": 2,
+      "user_id_map": {},
+      "user_id_map_source": "native_numeric",
+      "users": [
+        37,
+        38
+      ],
+      "zero_timestamps": 0
+    },
+    "sampling": {
+      "downsample": false,
+      "method": "none",
+      "rows_after": 240620,
+      "rows_before": 240620,
+      "sample_rate_hz": 20.0,
+      "stride": 1,
+      "target_sample_rate_hz": 20.0
+    },
+    "unit_transform": {
+      "axis_columns": [
+        "x-axis",
+        "y-axis",
+        "z-axis"
+      ],
+      "domain": "arduino",
+      "pre_multiply": 1.0,
+      "scale": 1.0,
+      "total_scale": 1.0,
+      "unit_mode": "raw_no_conversion"
+    }
+  },
+  "normalization": {
+    "diagnostic_only": false,
+    "diagnostic_skip_inference_norm": false,
+    "inference_norm_applied": true,
+    "mode": "train_zscore",
+    "norm_stats": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E08_T50_window/arch_seq/xtinyhar_student_conv2d_relu/e08/eval_arduino/norm_stats_T50_Prandom_stratified.json",
+    "normalization_stats_source": "wisdm_train:/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E08_T50_window/arch_seq/xtinyhar_student_conv2d_relu/e08/source_wisdm/norm_stats_T50_Prandom_stratified.json"
+  },
+  "preprocess": {
+    "dropped_total": 0,
+    "rows_after_drop_zero_timestamp": 240620,
+    "rows_after_dropna": 240620,
+    "rows_before": 240620,
+    "rows_final": 240620
+  },
+  "raw_sanity": {
+    "domain": "arduino",
+    "missing_values": 0,
+    "original_sample_rate_hz": 20.0,
+    "rows": 240620,
+    "source_csv": "/shared/b00090279/TinyML-Course/har-mcu/tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv",
+    "target_sample_rate_hz": 20.0,
+    "user_count": 2,
+    "user_id_map": {},
+    "user_id_map_source": "native_numeric",
+    "users": [
+      37,
+      38
+    ],
+    "zero_timestamps": 0
+  },
+  "split": {
+    "path": "/shared/b00090279/TinyML-Course/har-mcu/data/processed/m3/E08_T50_window/arch_seq/xtinyhar_student_conv2d_relu/e08/eval_arduino/splits_T50_Prandom_stratified.npz",
+    "split_hash": "8a05b37a145156ef",
+    "test_size": 3170,
+    "train_size": 5148,
+    "val_size": 1287
+  },
+  "windowing": {
+    "candidate_windows": 9622,
+    "dropped_cross_boundary": 17,
+    "dropped_unknown_label": 0,
+    "overlap": 0.5,
+    "sample_rate_hz": 20.0,
+    "step": 25,
+    "target_sample_rate_hz": 20.0,
+    "window_duration_seconds": 2.5,
+    "window_size": 50,
+    "window_size_samples": 50,
+    "windows_final": 9605
+  }
+}
