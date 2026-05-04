@@ -37,3 +37,6 @@ DeepConv+LSTM.ipynb
 
 # NFS temporary files
 .nfs*
+
+# macOS Finder metadata
+.DS_Store
