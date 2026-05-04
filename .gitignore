@@ -26,6 +26,7 @@ reports/*.csv
 
 # Local-only M3/HPC artifacts
 slurm_logs/
+slurm-*.out
 notebooks/executed/
 reports/m3/smoke*/
 reports/m3/arch_sweeps/
