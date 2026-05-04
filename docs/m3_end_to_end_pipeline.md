@@ -195,6 +195,18 @@ Behavior:
 - QAT uses the same training-input helper when `apply_in_qat: true`, while its converter representative data stays untouched.
 - The augmentation has zero inference-time cost because only the training input object changes.
 
+QAT-specific behavior:
+
+- [src/quant/qat_train.py](/shared/b00088568/github/har-mcu/src/quant/qat_train.py) calls `build_training_input(..., for_qat=True)` before `qat_model.fit(...)`.
+- [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py) reads `augment.accel_rotation.apply_in_qat`. If it is `true`, QAT receives the same augmented training batches as the FP32/fine-tune stage for the active rotation mode. If it is `false`, QAT receives the plain normalized `X_train` arrays.
+- In v1, v2, and v3, `apply_in_qat=true`, so QAT was augmented for the augmentation-on rows:
+  - v1 QAT: `uniform_so3`, `probability=0.5`
+  - v2 QAT: `bounded_so3`, `max_angle_degrees=20`, `probability=0.25`
+  - v3 QAT: `target_gravity`, targets `-x/-y/+z`, `probability=0.25`
+- The no-augmentation baseline rows, including no-augmentation QAT, have augmentation disabled and therefore use unaugmented normalized train arrays.
+- QAT validation data is not augmented. QAT's representative/calibration data for the final full-integer TFLite conversion is not augmented.
+- Recommendation: keep `apply_in_qat=true` for future augmentation ablations so QAT fine-tuning and FP32/fine-tune training see the same training distribution. Do not make augmented QAT the deployment default unless live on-device trials show it beats the no-augmentation Daghero QAT baseline.
+
 All current M3 v1 rotation configs enable this block with probability `0.5` and `mode=uniform_so3`. [configs/default.yaml](/shared/b00088568/github/har-mcu/configs/default.yaml) keeps it disabled by default. The v2 Slurm wrapper does not edit the YAML files; it overrides the augmentation keys on the command line so v2 outputs stay traceable to their artifact suffix.
 
 Result-driven update:
@@ -584,6 +596,19 @@ models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_v
 reports/m3/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/
 ```
 
+V1/v2/v3 TFLite artifact map:
+
+| Run | Condition | Artifact suffix | TFLite directory pattern |
+| --- | --- | --- | --- |
+| v1 | Augmentation on | `accel_rotation` | `models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/` |
+| v1 | Augmentation off | `no_accel_rotation` | `models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation on | `accel_rotation_v2_bounded20_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation off | `no_accel_rotation_v2` | `models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation on | `accel_rotation_v3_target_clusters_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation off | `no_accel_rotation_v2` | v3 reuses the clean v2 no-augmentation baseline. |
+
+Each full suffix currently has 66 TFLite files: 11 experiments times 2 model variants times FP32/PTQ/QAT. The model variants in this rotation comparison are `daghero_cnn_2layer_conv2d` and `deepconv_lstm_conv2d`; the deployment-oriented files end in `_ptq_int8.tflite` or `_qat.tflite`.
+
 The dual-domain comparison artifacts are under:
 
 ```text
@@ -732,6 +757,7 @@ Normalization and augmentation at deployment:
 - For E09/E11 fine-tune models, use `finetune_arduino/norm_stats_*.json` because the final train split is the Arduino fine-tune split.
 - On-device, export that JSON into `deploy/common/norm_stats.h`. The Arduino sketch applies the same z-score normalization to each raw IMU sample before quantizing into the TFLM input tensor.
 - No augmentation runs on-device. Rotation augmentation was train-only in v1/v2/v3 and has zero inference-time cost.
+- For augmented QAT artifacts, the QAT fine-tuning stage did use augmentation because v1/v2/v3 set `apply_in_qat=true`; this still affects training only and does not change the deployed Arduino preprocessing path.
 
 Augmented comparison candidates, to test only after the no-augmentation Daghero baseline:
 

@@ -11,6 +11,7 @@ Improve HAR robustness to Arduino Nano 33 BLE Sense orientation changes without 
 - Validation, test, PTQ representative data, TFLite conversion shape, and Arduino inference code are unchanged.
 - Dual-domain evaluation now compares FP32, PTQ, and QAT TFLite exports on both WISDM and Arduino test splits.
 - Axis EDA now summarizes WISDM-vs-Arduino gravity direction and dynamic energy shifts.
+- QAT uses the same training-input builder as FP32 and fine-tuning. In v1, v2, and v3, `apply_in_qat: true`, so QAT fine-tuning batches are augmented with the same active rotation policy. PTQ calibration/representative data is not augmented.
 
 ## Experiment Ladder
 
@@ -71,6 +72,35 @@ data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/no_accel_rotation_v2/d
 
 These recommended artifacts are all `no_accel_rotation_v2`, meaning no train-time rotation augmentation was used for them. The v1/v2/v3 rotation-augmented artifacts remain valid experiment outputs, but they are not the deployment default because the offline dual-domain results did not beat the no-augmentation Daghero deployment baseline.
 
+## Where The V1/V2/V3 TFLites Live
+
+All v1/v2/v3 M3 TFLite exports follow this pattern:
+
+```text
+models_tflite/m3/<experiment_id>/<artifact_suffix>/<model_variant>/<experiment_code>/<model_file>.tflite
+```
+
+Each full suffix below currently has 66 TFLite files: 11 experiments times 2 model variants times FP32/PTQ/QAT.
+
+| Run | Condition | Artifact suffix | TFLite directory pattern |
+| --- | --- | --- | --- |
+| v1 | Augmentation on | `accel_rotation` | `models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/` |
+| v1 | Augmentation off | `no_accel_rotation` | `models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation on | `accel_rotation_v2_bounded20_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation off | `no_accel_rotation_v2` | `models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation on | `accel_rotation_v3_target_clusters_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation off | `no_accel_rotation_v2` | v3 reuses the clean v2 no-augmentation baseline. |
+
+The model variants used for this rotation comparison are:
+
+- `daghero_cnn_2layer_conv2d`
+- `deepconv_lstm_conv2d`
+
+The deployable INT8 files end in:
+
+- `_ptq_int8.tflite`
+- `_qat.tflite`
+
 ## If We Want To Test An Augmented Model
 
 The augmented branch should be treated as a controlled on-device comparison after the no-augmentation Daghero QAT baseline. Do not replace the baseline with an augmented model unless live trials show a clear improvement on the failure cases.
@@ -117,9 +147,16 @@ Normalization and augmentation explanation:
 - Dataset normalization fits `mean` and `std` only on the relevant training split, then applies those stats to train/validation/test arrays.
 - For E09 and E11 fine-tune deployments, use the `finetune_arduino/norm_stats_*.json` file because the final model is adapted on the Arduino fine-tune train split.
 - Rotation augmentation, when enabled in v1/v2/v3, is train-only. It denormalizes each selected training window to raw accelerometer units, rotates the raw `[T,3]` window with one valid 3D rotation, and re-normalizes with the same train-split stats.
+- QAT is included in that train-only rule. For augmented v1/v2/v3 runs, QAT training also sees augmented batches because `augment.accel_rotation.apply_in_qat` is `true`. If that key is set to `false`, QAT receives the unaugmented normalized `X_train` arrays even when FP32/fine-tune training used augmentation.
 - Validation and test data are never augmented. PTQ representative data is never augmented.
 - On-device normalization uses the exported `norm_stats.h` constants. The Arduino sketch scales raw IMU samples, applies the same z-score normalization when `APPLY_NORMALIZATION=1`, quantizes into the model input tensor, and invokes TFLM.
 - No augmentation runs on the Arduino. There is zero inference-time rotation cost.
+
+Recommendation on QAT augmentation:
+
+- Keep `apply_in_qat: true` for any future controlled augmentation ablation so FP32/fine-tune training and QAT fine-tuning see the same training distribution.
+- Do not deploy an augmented QAT model as the default solely because QAT included augmentation. The current primary deployment candidate is still no-augmentation Daghero E09 QAT.
+- Use augmented QAT only as a live comparison, starting with Daghero E09 v2 QAT, if the no-augmentation QAT model still shows orientation-like failures on-device.
 
 ## Next Steps
 

@@ -16,7 +16,7 @@ Code and config additions:
 - `src/data/build_dataset.py`, `src/data/load_wisdm.py`: M3-aware normalization, external/source normalization support, datacards, and split metadata.
 - `src/utils/tflite_export.py`: shared TFLite conversion hardening for DeepConvLSTM, including fixed single-batch input shape handling where possible.
 - `src/run_paper_experiment.py`, `src/quant/ptq_full_int8.py`, `src/quant/qat_train.py`: FP32 TFLite export, PTQ INT8, QAT INT8, TFLite host evaluation, and M3 report metadata.
-- `src/train/augment.py`: training-only accelerometer window rotation. It supports `uniform_so3` and the v2 `bounded_so3` mode. In both modes it samples one rotation per `[T, 3]` training window, denormalizes with the saved train-split mean/std, rotates in raw accelerometer units, and re-applies the same normalization. Validation, test, PTQ representative data, and inference/on-device preprocessing are untouched. The rotation-augmentation idea follows orientation-robust HAR literature, especially Yurtman and Barshan 2017 (`10.3390/s17081838`), Yurtman, Barshan, and Fidan 2018 (`10.3390/s18082725`), and Caramaschi, Papini, and Caiani 2023 (`10.3390/app13074175`).
+- `src/train/augment.py`: training-only accelerometer window rotation. It supports v1 `uniform_so3`, v2 `bounded_so3`, and v3 `target_gravity`. Each policy samples one rotation per selected `[T, 3]` training window, denormalizes with the saved train-split mean/std, rotates in raw accelerometer units, and re-applies the same normalization. Validation, test, PTQ representative data, and inference/on-device preprocessing are untouched. QAT uses this same training-input path when `augment.accel_rotation.apply_in_qat=true`. The rotation-augmentation idea follows orientation-robust HAR literature, especially Yurtman and Barshan 2017 (`10.3390/s17081838`), Yurtman, Barshan, and Fidan 2018 (`10.3390/s18082725`), and Caramaschi, Papini, and Caiani 2023 (`10.3390/app13074175`).
 - `src/m3/dual_domain_eval.py`: eval-only comparison runner for the augmentation off/on table. It evaluates FP32, PTQ, and QAT TFLite exports against both WISDM and Arduino test splits while normalizing each eval dataset with the trained model's saved train-split stats.
 - `src/m3/axis_eda.py`: axis-level WISDM-vs-Arduino EDA. It summarizes sample distributions, window-level gravity proxies, dynamic energy, and dominant-axis patterns so the next augmentation is based on observed domain shifts rather than guessed rotations.
 - `src/eval/reporting.py` and `src/m3/reporting.py`: fixed-schema M3 report rows with FP32/PTQ/QAT metrics and deploy-gate status.
@@ -166,7 +166,7 @@ Rotation v2 ablation:
 - Augmentation on artifacts will use `accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/`.
 - The v2 on-policy is `mode=bounded_so3`, `probability=0.25`, `max_angle_degrees=20`, and `apply_in_qat=true`.
 - `bounded_so3` samples a random 3D axis and a random angle in `[-max_angle_degrees, +max_angle_degrees]`, then applies the resulting axis-angle rotation as one shared matrix per training window.
-- This is still train-only and still uses the same denormalize, rotate-in-raw-units, re-normalize path as v1. It does not change model shape, TFLite conversion, PTQ representative data, validation/test arrays, inference preprocessing, or Arduino firmware.
+- This is still train-only and still uses the same denormalize, rotate-in-raw-units, re-normalize path as v1. It does not change model shape, TFLite conversion, PTQ representative data, validation/test arrays, inference preprocessing, or Arduino firmware. Because `apply_in_qat=true`, v2 QAT fine-tuning batches are augmented with the same bounded-rotation policy.
 - Slurm submitters:
   - `scripts/slurm/submit_m3_rotation_v2_train.sh`
   - `scripts/slurm/submit_m3_rotation_v2_dual_eval.sh`
@@ -218,7 +218,7 @@ Rotation v3 target-orientation run:
   - `target_vectors=[[-1,0,0],[0,-1,0],[0,0,1]]`
   - `target_probabilities=[0.50,0.25,0.25]`
   - `apply_in_qat=true`
-- Mechanism: for each selected training window, denormalize to raw accelerometer units, estimate the window mean vector as a gravity/pose proxy, choose one target cluster, compute one valid rotation matrix that maps the mean vector direction toward that cluster, rotate the entire raw `[T,3]` window, and re-normalize with the same train-split mean/std.
+- Mechanism: for each selected training window, denormalize to raw accelerometer units, estimate the window mean vector as a gravity/pose proxy, choose one target cluster, compute one valid rotation matrix that maps the mean vector direction toward that cluster, rotate the entire raw `[T,3]` window, and re-normalize with the same train-split mean/std. Because `apply_in_qat=true`, v3 QAT fine-tuning batches use this same target-gravity augmentation.
 - This preserves per-timestep vector norms, uses exactly three accelerometer channels, and changes neither inference preprocessing nor model I/O shape.
 - V3 trains only augmentation-on artifacts. Its off condition reuses the clean no-augmentation v2 baseline under `no_accel_rotation_v2/<model_variant>/<experiment_code>/`.
 - V3 artifact roots:
@@ -267,9 +267,16 @@ Experiment ladder and what we learned:
 
 | Run | Purpose | Policy | What we achieved | Decision |
 | --- | --- | --- | --- | --- |
-| v1 | Stress-test whether physically valid arbitrary orientation changes help. | `uniform_so3`, `p=0.5` | Proved the shared train-only augmentation path works for FP32, fine-tune, and QAT with no inference cost. Found unconstrained rotations are too blunt: Daghero Arduino improves slightly, DeepConvLSTM especially QAT gets hurt. | Keep as reference, not deployment default. |
-| v2 | Test a gentler random perturbation after v1 was too strong. | `bounded_so3`, `20deg`, `p=0.25` | Reduced damage compared with v1 and gave Daghero small mean Arduino gains, but did not improve deployment-subset failure metrics. Stored Arduino standing/walking are already near-perfect for Daghero E09/E10, so the live issue is not reproduced by this split. | Do not spend the next sweep on more bounded random rotations. |
-| v3 | Use observed WISDM-vs-Arduino axis/domain shift instead of blind random rotations. | `target_gravity`, targets `-x/-y/+z`, `p=0.25` | Completed. It directly rotates WISDM-like gravity directions toward Arduino clusters and works technically, but the offline metrics do not beat the no-augmentation Daghero baseline for deployment. | Do not deploy by default; keep as reference and stop rotation sweeps until live failure data is captured. |
+| v1 | Stress-test whether physically valid arbitrary orientation changes help. | `uniform_so3`, `p=0.5`, `apply_in_qat=true` | Proved the shared train-only augmentation path works for FP32, fine-tune, and QAT with no inference cost. Found unconstrained rotations are too blunt: Daghero Arduino improves slightly, DeepConvLSTM especially QAT gets hurt. | Keep as reference, not deployment default. |
+| v2 | Test a gentler random perturbation after v1 was too strong. | `bounded_so3`, `20deg`, `p=0.25`, `apply_in_qat=true` | Reduced damage compared with v1 and gave Daghero small mean Arduino gains, but did not improve deployment-subset failure metrics. Stored Arduino standing/walking are already near-perfect for Daghero E09/E10, so the live issue is not reproduced by this split. | Do not spend the next sweep on more bounded random rotations. |
+| v3 | Use observed WISDM-vs-Arduino axis/domain shift instead of blind random rotations. | `target_gravity`, targets `-x/-y/+z`, `p=0.25`, `apply_in_qat=true` | Completed. It directly rotates WISDM-like gravity directions toward Arduino clusters and works technically, but the offline metrics do not beat the no-augmentation Daghero baseline for deployment. | Do not deploy by default; keep as reference and stop rotation sweeps until live failure data is captured. |
+
+QAT augmentation rule and recommendation:
+
+- In code, [src/quant/qat_train.py](/shared/b00088568/github/har-mcu/src/quant/qat_train.py) calls `build_training_input(..., for_qat=True)`. [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py) then honors `augment.accel_rotation.apply_in_qat`.
+- In v1, v2, and v3, `apply_in_qat=true`, so augmented QAT exports were trained with the same rotation policy as the corresponding FP32/fine-tune training stage.
+- If `apply_in_qat=false`, QAT training uses unaugmented normalized `X_train`, even when earlier FP32/fine-tune training used augmentation. Validation/test arrays and PTQ representative data remain unaugmented either way.
+- For future controlled augmentation experiments, keep `apply_in_qat=true` so QAT does not see a different training distribution from FP32/fine-tune. For deployment, do not choose an augmented QAT model by default unless live on-device tests beat the no-augmentation Daghero QAT baseline.
 
 Deployment guideline right now:
 
@@ -417,6 +424,27 @@ models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experimen
 models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
 models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
 ```
+
+Rotation v3 export patterns:
+
+```text
+models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+```
+
+V1/v2/v3 TFLite artifact map:
+
+| Run | Condition | Artifact suffix | TFLite directory pattern |
+| --- | --- | --- | --- |
+| v1 | Augmentation on | `accel_rotation` | `models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/` |
+| v1 | Augmentation off | `no_accel_rotation` | `models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation on | `accel_rotation_v2_bounded20_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/` |
+| v2 | Augmentation off | `no_accel_rotation_v2` | `models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation on | `accel_rotation_v3_target_clusters_p025` | `models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/` |
+| v3 | Augmentation off | `no_accel_rotation_v2` | v3 reuses the clean v2 no-augmentation baseline. |
+
+Each full suffix currently has 66 TFLite files: E00/E03/E04/E05/E06/E07/E08/E09/E10/E11/E12 times `deepconv_lstm_conv2d` and `daghero_cnn_2layer_conv2d` times FP32/PTQ/QAT. Deployment-oriented files end in `_ptq_int8.tflite` or `_qat.tflite`.
 
 Accelerometer-rotation TFLite sizes from the completed rerun:
 
