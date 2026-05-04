@@ -255,9 +255,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/m3/confusion_fp32_tflite_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 0.32681573047366186,
-    "inference_latency_ms_median": 0.32104500007790193,
-    "inference_latency_ms_p95": 0.33892250002054425,
+    "inference_latency_ms_mean": 0.3146219570300257,
+    "inference_latency_ms_median": 0.3074255000115045,
+    "inference_latency_ms_p95": 0.3446402500202339,
     "input_dtype": "<class 'numpy.float32'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -319,7 +319,7 @@
   "fp32_tflite_eval_status": "ok",
   "fp32_tflite_model": "/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_fp32.tflite",
   "fp32_tflite_status": "ok",
-  "fp32_training_time_sec": 80.1500876340001,
+  "fp32_training_time_sec": 84.72057308399997,
   "paper_slug": "m3",
   "protocol": "random_stratified",
   "ptq_eval_metrics": {
@@ -426,9 +426,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/m3/confusion_ptq_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 2.0453516523417647,
-    "inference_latency_ms_median": 2.039150999848971,
-    "inference_latency_ms_p95": 2.0678044999158374,
+    "inference_latency_ms_mean": 2.048918593749116,
+    "inference_latency_ms_median": 2.0421340000211785,
+    "inference_latency_ms_p95": 2.0886800000141648,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -736,9 +736,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/m3/confusion_qat_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 2.0487308007730576,
-    "inference_latency_ms_median": 2.042662000008022,
-    "inference_latency_ms_p95": 2.0855345000541092,
+    "inference_latency_ms_mean": 2.0561059101571466,
+    "inference_latency_ms_median": 2.045363500002395,
+    "inference_latency_ms_p95": 2.0961074999945595,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -942,7 +942,7 @@
       "SOFTMAX",
       "UNIDIRECTIONAL_SEQUENCE_LSTM"
     ],
-    "training_time_sec": 33.99113780499988,
+    "training_time_sec": 35.34705821,
     "unsupported_in_reference": [],
     "unsupported_ops": [],
     "unsupported_ops_micro_mutable": [],

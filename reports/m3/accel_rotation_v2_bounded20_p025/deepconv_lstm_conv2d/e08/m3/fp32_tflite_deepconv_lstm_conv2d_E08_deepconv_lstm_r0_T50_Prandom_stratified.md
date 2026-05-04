@@ -9,8 +9,8 @@
 - Output dtype: `<class 'numpy.float32'>`
 - Interpreter op count: 5
 - Interpreter ops: `['CONV_2D', 'FULLY_CONNECTED', 'RESHAPE', 'SOFTMAX', 'UNIDIRECTIONAL_SEQUENCE_LSTM']`
-- Inference latency median: 0.321 ms/sample
-- Inference latency p95: 0.339 ms/sample
+- Inference latency median: 0.307 ms/sample
+- Inference latency p95: 0.345 ms/sample
 - Timed samples: 256
 - Warmup samples: 32
 - Confusion matrix plot: `/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/m3/confusion_fp32_tflite_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png`

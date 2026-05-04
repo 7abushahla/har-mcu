@@ -133,7 +133,7 @@
   "compat_error": null,
   "has_unidirectional_sequence_lstm": true,
   "has_while_op": false,
-  "training_time_sec": 33.99113780499988,
+  "training_time_sec": 35.34705821,
   "history_json": "/shared/b00088568/github/har-mcu/checkpoints/m3/E08_T50_window/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/history_deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_qat.json",
   "epochs_ran": 10,
   "qat_device_preference": "gpu",

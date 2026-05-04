@@ -133,7 +133,7 @@
   "compat_error": null,
   "has_unidirectional_sequence_lstm": true,
   "has_while_op": false,
-  "training_time_sec": 10.255917209000017,
+  "training_time_sec": 10.453303593999976,
   "history_json": "/shared/b00088568/github/har-mcu/checkpoints/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e12/history_deepconv_lstm_conv2d_T50_Prandom_stratified_E12_deepconv_lstm_r0_qat.json",
   "epochs_ran": 10,
   "qat_device_preference": "gpu",

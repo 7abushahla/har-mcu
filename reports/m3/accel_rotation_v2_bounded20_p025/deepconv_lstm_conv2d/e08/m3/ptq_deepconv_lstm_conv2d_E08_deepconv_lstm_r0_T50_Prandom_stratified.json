@@ -156,9 +156,9 @@
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 2.039150999848971,
-  "inference_latency_ms_p95": 2.0678044999158374,
-  "inference_latency_ms_mean": 2.0453516523417647,
+  "inference_latency_ms_median": 2.0421340000211785,
+  "inference_latency_ms_p95": 2.0886800000141648,
+  "inference_latency_ms_mean": 2.048918593749116,
   "warmup_samples": 32,
   "timed_samples": 256
 }

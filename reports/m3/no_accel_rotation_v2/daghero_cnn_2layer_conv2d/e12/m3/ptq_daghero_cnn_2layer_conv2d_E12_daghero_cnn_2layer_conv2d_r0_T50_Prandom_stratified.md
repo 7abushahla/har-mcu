@@ -2,8 +2,8 @@
 
 - Model: `/shared/b00088568/github/har-mcu/models_tflite/m3/E12_arduino_from_scratch_T50/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e12/daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E12_daghero_cnn_2layer_conv2d_r0_ptq_int8.tflite`
 - Model size: 26.13 KB
-- Accuracy: 0.9877
-- Macro-F1: 0.9877
+- Accuracy: 0.9886
+- Macro-F1: 0.9886
 
 - Input dtype: `<class 'numpy.int8'>`
 - Output dtype: `<class 'numpy.int8'>`
@@ -17,9 +17,9 @@
 
 ## Per-class metrics
 
-- Walking: P=0.9869, R=0.9981, F1=0.9925, support=529
+- Walking: P=0.9888, R=0.9981, F1=0.9934, support=529
 - Jogging: P=0.9981, R=0.9905, F1=0.9943, support=528
-- Upstairs: P=0.9732, R=0.9622, F1=0.9677, support=529
-- Downstairs: P=0.9680, R=0.9754, F1=0.9717, support=528
+- Upstairs: P=0.9770, R=0.9641, F1=0.9705, support=529
+- Downstairs: P=0.9682, R=0.9792, F1=0.9736, support=528
 - Sitting: P=1.0000, R=1.0000, F1=1.0000, support=528
 - Standing: P=1.0000, R=1.0000, F1=1.0000, support=528

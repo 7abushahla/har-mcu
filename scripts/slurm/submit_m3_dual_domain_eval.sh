@@ -28,6 +28,7 @@ TASKS_PER_ARRAY_TASK="${M3_DUAL_EVAL_TASKS_PER_ARRAY_TASK:-${M3_DUAL_EVAL_TASKS_
 MATRIX_ONLY="${M3_DUAL_EVAL_MATRIX_ONLY:-0}"
 DEPENDENCY="${M3_SLURM_DEPENDENCY:-}"
 OUTPUT_DIR="${M3_DUAL_EVAL_OUTPUT_DIR:-reports/m3/dual_domain_eval}"
+CONFIGS_CSV="${M3_DUAL_EVAL_CONFIGS:-}"
 if [ -n "${M3_DUAL_EVAL_ON_ARTIFACT_SUFFIX:-}" ]; then
   ON_ARTIFACT_SUFFIX="$M3_DUAL_EVAL_ON_ARTIFACT_SUFFIX"
 else
@@ -63,7 +64,7 @@ mkdir -p "$REPO_ROOT/slurm_logs" "$REPO_ROOT/$OUTPUT_DIR"
 JOB_FILE="$REPO_ROOT/$OUTPUT_DIR/job_matrix.tsv"
 : > "$JOB_FILE"
 
-declare -a CONFIGS=(
+declare -a DEFAULT_CONFIGS=(
   "configs/m3/E00_wisdm_m2_anchor.yaml|E00"
   "configs/m3/E03_arduino_downsample_20hz_T100.yaml|E03"
   "configs/m3/E04_wisdm_to_g_arduino_g.yaml|E04"
@@ -76,6 +77,18 @@ declare -a CONFIGS=(
   "configs/m3/E11_wisdm_pretrain_arduino_finetune_T50.yaml|E11"
   "configs/m3/E12_arduino_from_scratch_T50.yaml|E12"
 )
+
+declare -a CONFIGS=()
+if [ -n "${CONFIGS_CSV}" ]; then
+  IFS=',' read -r -a raw_configs <<< "$CONFIGS_CSV"
+  for cfg in "${raw_configs[@]}"; do
+    job_basename="$(basename "$cfg" .yaml)"
+    experiment_code="${job_basename%%_*}"
+    CONFIGS+=("${cfg}|${experiment_code}")
+  done
+else
+  CONFIGS=("${DEFAULT_CONFIGS[@]}")
+fi
 
 declare -a MODELS=(
   "deepconv_lstm_conv2d"

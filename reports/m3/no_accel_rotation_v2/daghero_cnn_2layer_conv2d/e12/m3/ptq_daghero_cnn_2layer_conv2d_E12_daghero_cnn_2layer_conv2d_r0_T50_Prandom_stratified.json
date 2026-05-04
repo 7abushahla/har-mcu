@@ -15,8 +15,8 @@
     "SOFTMAX"
   ],
   "interpreter_op_count": 6,
-  "accuracy": 0.9876971608832807,
-  "macro_f1": 0.9876927504211421,
+  "accuracy": 0.9886435331230284,
+  "macro_f1": 0.9886417291296102,
   "confusion_matrix": [
     [
       528,
@@ -35,9 +35,9 @@
       0
     ],
     [
-      5,
+      4,
       1,
-      509,
+      510,
       14,
       0,
       0
@@ -45,8 +45,8 @@
     [
       0,
       0,
-      13,
-      515,
+      11,
+      517,
       0,
       0
     ],
@@ -70,9 +70,9 @@
   "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e12/m3/confusion_ptq_daghero_cnn_2layer_conv2d_E12_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.9869158878504672,
+      "precision": 0.9887640449438202,
       "recall": 0.998109640831758,
-      "f1": 0.9924812030075187,
+      "f1": 0.993414863593603,
       "support": 529
     },
     "Jogging": {
@@ -82,15 +82,15 @@
       "support": 528
     },
     "Upstairs": {
-      "precision": 0.9732313575525813,
-      "recall": 0.9621928166351607,
-      "f1": 0.967680608365019,
+      "precision": 0.9770114942528736,
+      "recall": 0.9640831758034026,
+      "f1": 0.9705042816365367,
       "support": 529
     },
     "Downstairs": {
-      "precision": 0.9680451127819549,
-      "recall": 0.9753787878787878,
-      "f1": 0.9716981132075472,
+      "precision": 0.9681647940074907,
+      "recall": 0.9791666666666666,
+      "f1": 0.9736346516007532,
       "support": 528
     },
     "Sitting": {
@@ -108,9 +108,9 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.9869158878504672,
+      "precision": 0.9887640449438202,
       "recall": 0.998109640831758,
-      "f1-score": 0.9924812030075187,
+      "f1-score": 0.993414863593603,
       "support": 529.0
     },
     "Jogging": {
@@ -120,15 +120,15 @@
       "support": 528.0
     },
     "Upstairs": {
-      "precision": 0.9732313575525813,
-      "recall": 0.9621928166351607,
-      "f1-score": 0.967680608365019,
+      "precision": 0.9770114942528736,
+      "recall": 0.9640831758034026,
+      "f1-score": 0.9705042816365367,
       "support": 529.0
     },
     "Downstairs": {
-      "precision": 0.9680451127819549,
-      "recall": 0.9753787878787878,
-      "f1-score": 0.9716981132075472,
+      "precision": 0.9681647940074907,
+      "recall": 0.9791666666666666,
+      "f1-score": 0.9736346516007532,
       "support": 528.0
     },
     "Sitting": {
@@ -143,23 +143,23 @@
       "f1-score": 1.0,
       "support": 528.0
     },
-    "accuracy": 0.9876971608832807,
+    "accuracy": 0.9886435331230284,
     "macro avg": {
-      "precision": 0.9877139935397397,
-      "recall": 0.9877019247293349,
-      "f1-score": 0.9876927504211421,
+      "precision": 0.9886719893762699,
+      "recall": 0.9886482977220217,
+      "f1-score": 0.9886417291296102,
       "support": 3170.0
     },
     "weighted avg": {
-      "precision": 0.9877091731164981,
-      "recall": 0.9876971608832807,
-      "f1-score": 0.9876879479954419,
+      "precision": 0.9886683400262524,
+      "recall": 0.9886435331230284,
+      "f1-score": 0.9886375132579921,
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 0.04427099997883488,
-  "inference_latency_ms_p95": 0.04951349995963028,
-  "inference_latency_ms_mean": 0.0452496601575092,
+  "inference_latency_ms_median": 0.044182999999975436,
+  "inference_latency_ms_p95": 0.0496577499831119,
+  "inference_latency_ms_mean": 0.045227660153024374,
   "warmup_samples": 32,
   "timed_samples": 256
 }

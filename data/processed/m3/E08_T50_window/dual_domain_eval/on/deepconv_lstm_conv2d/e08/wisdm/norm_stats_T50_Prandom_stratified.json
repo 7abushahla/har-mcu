@@ -102,7 +102,7 @@
     0.39475947618484497
   ],
   "normalization_mode": "train_zscore",
-  "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E08_T50_window/accel_rotation_v3_target_clusters_p025/deepconv_lstm_conv2d/e08/source_wisdm/norm_stats_T50_Prandom_stratified.json",
+  "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E08_T50_window/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e08/source_wisdm/norm_stats_T50_Prandom_stratified.json",
   "protocol": "random_stratified",
   "std": [
     6.931856155395508,

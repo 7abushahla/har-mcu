@@ -205,7 +205,7 @@ QAT-specific behavior:
   - v3 QAT: `target_gravity`, targets `-x/-y/+z`, `probability=0.25`
 - The no-augmentation baseline rows, including no-augmentation QAT, have augmentation disabled and therefore use unaugmented normalized train arrays.
 - QAT validation data is not augmented. QAT's representative/calibration data for the final full-integer TFLite conversion is not augmented.
-- Recommendation: keep `apply_in_qat=true` for future augmentation ablations so QAT fine-tuning and FP32/fine-tune training see the same training distribution. Do not make augmented QAT the deployment default unless live on-device trials show it beats the no-augmentation Daghero QAT baseline.
+- Recommendation: keep `apply_in_qat=true` for future augmentation ablations so QAT fine-tuning and FP32/fine-tune training see the same training distribution. The current live recommendation is already Daghero E09 v2 QAT, but keep the no-augmentation Daghero E09 QAT export as the control and rollback comparison.
 
 All current M3 v1 rotation configs enable this block with probability `0.5` and `mode=uniform_so3`. [configs/default.yaml](/shared/b00088568/github/har-mcu/configs/default.yaml) keeps it disabled by default. The v2 Slurm wrapper does not edit the YAML files; it overrides the augmentation keys on the command line so v2 outputs stay traceable to their artifact suffix.
 
@@ -213,10 +213,10 @@ Result-driven update:
 
 - The completed clean ablation (`reports/m3/dual_domain_eval/dual_domain_eval_master.csv`) shows that `probability=0.5` with unconstrained `uniform_so3` is not a deployment default. It slightly improves Daghero Arduino macro-F1 in FP32/PTQ/QAT, but hurts WISDM and substantially hurts DeepConvLSTM QAT.
 - This matches the paper-derived caution: valid rotations are not automatically useful rotations for every label, especially when the gravity component helps separate static and walking/stairs classes.
-- The completed v2 ablation (`reports/m3/dual_domain_eval_v2_bounded20_p025/dual_domain_eval_master.csv`) shows that `bounded_so3`, `max_angle_degrees=20`, and `probability=0.25` is safer than v1 but still not a deployment default. It gives Daghero small mean Arduino macro-F1 gains across all E00/E03-E12 experiments, but does not materially improve the Arduino-adapted deployment subset E09-E12. DeepConvLSTM loses Arduino macro-F1 in FP32/PTQ/QAT.
+- The completed v2 ablation (`reports/m3/dual_domain_eval_v2_bounded20_p025/dual_domain_eval_master.csv`) shows that `bounded_so3`, `max_angle_degrees=20`, and `probability=0.25` is safer than v1. Offline gains are still small, but the latest live deployment pass now favors Daghero E09 v2 QAT because it behaves better on-device even though the stored metrics stay close to the clean baseline. DeepConvLSTM still loses Arduino macro-F1 in FP32/PTQ/QAT and remains the comparison branch.
 - Because the stored Arduino test split already gives the best Daghero E09/E10 PTQ/QAT candidates standing and walking recall of `1.0`, this dataset does not reproduce the live Standing-to-Walking failure. With no new live data, the next useful augmentation experiment is target-orientation rotation driven by the existing E04 axis EDA clusters (`-x`, `-y`, and `+z`), not another broad bounded-rotation grid.
 - The completed v3 ablation (`reports/m3/dual_domain_eval_v3_target_clusters_p025/dual_domain_eval_master.csv`) shows that `target_gravity`, `probability=0.25`, and targets `-x/-y/+z` is technically valid but still not a deployment default. It improves mean Daghero QAT Arduino macro-F1, but hurts WISDM, does not beat the no-augmentation Daghero E09/E10 deployment candidates, and hurts DeepConvLSTM mean Arduino macro-F1.
-- Recommendation from v1/v2/v3: stop offline rotation sweeps for now. Deploy the no-augmentation Daghero E09 QAT candidate first, use PTQ as backup, and use live on-device testing to determine whether the remaining failure is a data-capture/live-preprocessing issue rather than a train-time orientation-augmentation issue.
+- Recommendation from the latest live pass: do not rerun the full offline grids. Deploy Daghero E09 v2 QAT first, keep the no-augmentation Daghero E09 QAT export as control, and spend the next training budget on a narrow T50 v2 follow-up plus logged live robustness trials.
 
 Call sites:
 
@@ -609,6 +609,22 @@ V1/v2/v3 TFLite artifact map:
 
 Each full suffix currently has 66 TFLite files: 11 experiments times 2 model variants times FP32/PTQ/QAT. The model variants in this rotation comparison are `daghero_cnn_2layer_conv2d` and `deepconv_lstm_conv2d`; the deployment-oriented files end in `_ptq_int8.tflite` or `_qat.tflite`.
 
+Coverage audit on 2026-05-04:
+
+- Excluding user-holdout variants, every non-user-holdout experiment in this repo has complete v1/v2/v3 and clean coverage.
+- E10 has full v1/v2/v3 and clean bundles under `models_tflite/m3/E10_arduino_from_scratch/...`.
+- E12 has the same complete coverage under `models_tflite/m3/E12_arduino_from_scratch_T50/...` and is the T50 from-scratch analogue of E10.
+- Aggregate-only step is now complete for `reports/m3/dual_domain_eval_v2_bounded20_p025_t50/`; `dual_domain_eval_master.csv` and `dual_domain_eval_master.md` summarize 72 rows from 12 source CSVs.
+- That T50 master table confirms evaluation coverage for E08, E11, and E12 across augmentation on/off, Daghero and DeepConvLSTM, both WISDM and Arduino test sets, and FP32/PTQ/QAT exports.
+
+The new T50 v2 augmented TFLites are under:
+
+- `models_tflite/m3/E08_T50_window/accel_rotation_v2_bounded20_p025/<model_variant>/e08/`
+- `models_tflite/m3/E11_wisdm_pretrain_arduino_finetune_T50/accel_rotation_v2_bounded20_p025/<model_variant>/e11/`
+- `models_tflite/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/<model_variant>/e12/`
+
+Here `<model_variant>` is `daghero_cnn_2layer_conv2d` or `deepconv_lstm_conv2d`. Each directory contains FP32, PTQ INT8, and QAT INT8 TFLites. The paired clean T50 controls live under the same experiment roots with `no_accel_rotation_v2`.
+
 The dual-domain comparison artifacts are under:
 
 ```text
@@ -709,64 +725,72 @@ Aggregate v3 dual-domain results:
 
 Current deployment guideline after v3 results:
 
-- Prefer Daghero over DeepConvLSTM for first on-device testing because Daghero's INT8 artifacts are about `26-27 KB` with excellent stored Arduino metrics.
-- Do not deploy v1, v2, or v3 rotation-augmented models as the default from offline metrics alone.
-- Use only one TFLite and its matching normalization header in `deploy/common` at a time.
+- Prefer Daghero over DeepConvLSTM for first on-device testing because Daghero's INT8 artifacts are about `26-27 KB` and the v2 Daghero QAT branch is currently the best live model.
+- The live recommendation has moved to the v2 augmented branch even though the offline tables remain close to the clean baseline.
+- Use only one TFLite and its matching normalization header in `deploy/common` at a time, and keep the clean no-augmentation Daghero export as the rollback control.
 
 Recommended on-device candidates:
 
 | Priority | Architecture | Tier | Experiment | Window | Augmentation | Stored Arduino summary |
 | --- | --- | --- | --- | ---: | --- | --- |
-| 1 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | Off | Accuracy/macro-F1 about `0.9956`, standing recall `1.0`, walking recall `1.0`, size about `26.7 KB`. |
-| 2 | Daghero | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | Off | Backup if QAT is unstable on-device; accuracy about `0.9937`, standing/walking recall `1.0`, size about `26.1 KB`. |
-| 3 | DeepConvLSTM | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | Off | Architecture comparison; macro-F1 about `0.9886`, size about `136.9 KB`. |
-| 4 | DeepConvLSTM | QAT INT8 | E11 WISDM pretrain + Arduino fine-tune | T50 | Off | QAT-only DeepConvLSTM comparison; macro-F1 about `0.9664`, size about `108.0 KB`. |
+| 1 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Current best overall live candidate: walking, jogging, sitting, and standing are stable in informal live testing; upstairs usually works; downstairs often flips to upstairs with low confidence; size about `26.7 KB`. |
+| 2 | Daghero | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Backup if QAT is unstable on-device; same augmentation policy and small footprint. |
+| 3 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 off | Offline control and rollback candidate if the augmented advantage does not reproduce tomorrow. |
+| 4 | DeepConvLSTM | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Architecture comparison only; standing improved versus the earlier no-augmentation live pass, but walking still tends to drift to upstairs. |
+
+Recommended pretraining-ablation follow-up:
+
+- After the main E09 live pass, deploy E10 Daghero v2 QAT on-device. This is the cleanest way to test whether WISDM pretraining plus Arduino fine-tuning is actually necessary.
+- Use E12 Daghero v2 QAT as the matching T50 from-scratch comparison. That is the effective "E10 with augmentations at T=50" run in this experiment ladder.
+- E10 Daghero v2 QAT path: `models_tflite/m3/E10_arduino_from_scratch/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e10/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E10_daghero_cnn_2layer_conv2d_r0_qat.tflite`
+- E12 Daghero v2 QAT path: `models_tflite/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E12_daghero_cnn_2layer_conv2d_r0_qat.tflite`
 
 Daghero QAT first candidate:
+
+```text
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite
+data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
+```
+
+Daghero PTQ backup:
+
+```text
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_ptq_int8.tflite
+data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
+```
+
+Daghero no-augmentation control:
 
 ```text
 models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite
 data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
 ```
 
-Daghero PTQ backup:
-
-```text
-models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_ptq_int8.tflite
-data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
-```
-
 DeepConvLSTM PTQ architecture comparison:
 
 ```text
-models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/deepconv_lstm_conv2d/e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite
-data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/deepconv_lstm_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
-```
-
-DeepConvLSTM QAT comparison, only if the test specifically needs QAT for this architecture:
-
-```text
-models_tflite/m3/E11_wisdm_pretrain_arduino_finetune_T50/no_accel_rotation_v2/deepconv_lstm_conv2d/e11/deepconv_lstm_conv2d_T50_Prandom_stratified_E11_deepconv_lstm_r0_qat.tflite
-data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/no_accel_rotation_v2/deepconv_lstm_conv2d/e11/finetune_arduino/norm_stats_T50_Prandom_stratified.json
+models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite
+data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json
 ```
 
 Normalization and augmentation at deployment:
 
-- These recommended candidates are all from `no_accel_rotation_v2`, so no rotation augmentation was used to train them.
+- The primary live candidate above comes from `accel_rotation_v2_bounded20_p025`; the clean `no_accel_rotation_v2` Daghero E09 QAT artifact is the control and rollback model.
 - For all runs, normalization stats are fitted on the training split only. Validation and test arrays are normalized with those same stats and are not augmented.
 - For E09/E11 fine-tune models, use `finetune_arduino/norm_stats_*.json` because the final train split is the Arduino fine-tune split.
 - On-device, export that JSON into `deploy/common/norm_stats.h`. The Arduino sketch applies the same z-score normalization to each raw IMU sample before quantizing into the TFLM input tensor.
 - No augmentation runs on-device. Rotation augmentation was train-only in v1/v2/v3 and has zero inference-time cost.
 - For augmented QAT artifacts, the QAT fine-tuning stage did use augmentation because v1/v2/v3 set `apply_in_qat=true`; this still affects training only and does not change the deployed Arduino preprocessing path.
+- The main observed v2 Daghero failures were low-confidence ambiguities, especially downstairs into upstairs. Tomorrow's live session should log confidence and placement so those failure modes can be counted directly.
 
 Augmented comparison candidates, to test only after the no-augmentation Daghero baseline:
 
 | Priority | Architecture | Run | Tier | Experiment | Augmentation policy | Stored Arduino summary |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Daghero | v2 | QAT INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Accuracy/macro-F1 about `0.9956`, standing/walking recall `1.0`, size about `26.7 KB`. |
-| 2 | Daghero | v3 | QAT INT8 | E09 | `target_gravity`, `p=0.25`, targets `-x/-y/+z` | Accuracy/macro-F1 about `0.9949`, standing/walking recall `1.0`, size about `26.7 KB`. |
-| 3 | Daghero | v1 | QAT INT8 | E09 | `uniform_so3`, `p=0.5` | Stress-test reference only; accuracy/macro-F1 about `0.9867`. |
-| 4 | DeepConvLSTM | v2 | PTQ INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Best augmented DeepConvLSTM comparison; macro-F1 about `0.9855`, size about `136.9 KB`. |
+| 1 | Daghero | v2 | QAT INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Current best live model: stable walking/jogging/sitting/standing, good upstairs, weak downstairs, small footprint. |
+| 2 | Daghero | v2 | PTQ INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Fallback if the QAT export is unstable on-device. |
+| 3 | Daghero | v3 | QAT INT8 | E09 | `target_gravity`, `p=0.25`, targets `-x/-y/+z` | EDA-informed alternative if v2 still struggles after tomorrow's live pass. |
+| 4 | DeepConvLSTM | v2 | PTQ INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Architecture comparison only; standing is better than before, but walking still tends to move toward upstairs. |
 
 V2 Daghero QAT augmented candidate:
 
@@ -800,10 +824,19 @@ Export commands for the first candidate:
 
 ```bash
 /shared/b00088568/myenvs/tinymlproj/bin/python -m src.deploy.export_c_array \
-  --tflite models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite \
+  --tflite models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite \
   --out-dir deploy/common
 
 /shared/b00088568/myenvs/tinymlproj/bin/python -m src.deploy.export_norm_header \
-  --norm-json data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json \
+  --norm-json data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json \
   --out deploy/common/norm_stats.h
 ```
+
+T50 follow-up status:
+
+- Submit the v2 bounded-rotation T50 runs for E08, E11, and E12 on both Daghero and DeepConvLSTM.
+- Evaluate FP32/PTQ/QAT on both WISDM and Arduino.
+- Use the T50 results to test whether a shorter window reduces downstairs-to-upstairs confusion and transition-window spillover into walking.
+- Submitted on 2026-05-04 as training Slurm job `7758` with dependent dual-domain eval job `7759`.
+- Completion check: all `7758_*` and `7759_*` tasks finished `COMPLETED` with exit code `0:0`. Log review found no tracebacks, missing-artifact errors, cancellations, or timeouts.
+- Aggregate-only step completed: `reports/m3/dual_domain_eval_v2_bounded20_p025_t50/dual_domain_eval_master.csv` and `.md` are now generated.

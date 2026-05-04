@@ -15,8 +15,8 @@
     "SOFTMAX"
   ],
   "interpreter_op_count": 6,
-  "accuracy": 0.9848580441640379,
-  "macro_f1": 0.9848525463685421,
+  "accuracy": 0.9861198738170347,
+  "macro_f1": 0.9861054345132535,
   "confusion_matrix": [
     [
       528,
@@ -27,26 +27,26 @@
       0
     ],
     [
-      2,
-      523,
-      2,
       1,
+      523,
+      1,
+      3,
       0,
       0
     ],
     [
-      2,
-      2,
-      508,
+      4,
+      1,
+      507,
       17,
       0,
       0
     ],
     [
       0,
-      2,
-      19,
-      507,
+      4,
+      12,
+      512,
       0,
       0
     ],
@@ -70,27 +70,27 @@
   "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e11/m3/confusion_ptq_daghero_cnn_2layer_conv2d_E11_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.9924812030075187,
+      "precision": 0.9906191369606003,
       "recall": 0.998109640831758,
-      "f1": 0.9952874646559849,
+      "f1": 0.9943502824858758,
       "support": 529
     },
     "Jogging": {
-      "precision": 0.9924098671726755,
+      "precision": 0.990530303030303,
       "recall": 0.990530303030303,
-      "f1": 0.9914691943127962,
+      "f1": 0.990530303030303,
       "support": 528
     },
     "Upstairs": {
-      "precision": 0.9584905660377359,
-      "recall": 0.9603024574669187,
-      "f1": 0.959395656279509,
+      "precision": 0.9731285988483686,
+      "recall": 0.9584120982986768,
+      "f1": 0.9657142857142857,
       "support": 529
     },
     "Downstairs": {
-      "precision": 0.9657142857142857,
-      "recall": 0.9602272727272727,
-      "f1": 0.9629629629629629,
+      "precision": 0.9624060150375939,
+      "recall": 0.9696969696969697,
+      "f1": 0.9660377358490566,
       "support": 528
     },
     "Sitting": {
@@ -108,27 +108,27 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.9924812030075187,
+      "precision": 0.9906191369606003,
       "recall": 0.998109640831758,
-      "f1-score": 0.9952874646559849,
+      "f1-score": 0.9943502824858758,
       "support": 529.0
     },
     "Jogging": {
-      "precision": 0.9924098671726755,
+      "precision": 0.990530303030303,
       "recall": 0.990530303030303,
-      "f1-score": 0.9914691943127962,
+      "f1-score": 0.990530303030303,
       "support": 528.0
     },
     "Upstairs": {
-      "precision": 0.9584905660377359,
-      "recall": 0.9603024574669187,
-      "f1-score": 0.959395656279509,
+      "precision": 0.9731285988483686,
+      "recall": 0.9584120982986768,
+      "f1-score": 0.9657142857142857,
       "support": 529.0
     },
     "Downstairs": {
-      "precision": 0.9657142857142857,
-      "recall": 0.9602272727272727,
-      "f1-score": 0.9629629629629629,
+      "precision": 0.9624060150375939,
+      "recall": 0.9696969696969697,
+      "f1-score": 0.9660377358490566,
       "support": 528.0
     },
     "Sitting": {
@@ -143,23 +143,23 @@
       "f1-score": 1.0,
       "support": 528.0
     },
-    "accuracy": 0.9848580441640379,
+    "accuracy": 0.9861198738170347,
     "macro avg": {
-      "precision": 0.9848493203220361,
-      "recall": 0.9848616123427086,
-      "f1-score": 0.9848525463685421,
+      "precision": 0.9861140089794777,
+      "recall": 0.9861248353096178,
+      "f1-score": 0.9861054345132535,
       "support": 3170.0
     },
     "weighted avg": {
-      "precision": 0.9848434127915632,
-      "recall": 0.9848580441640379,
-      "f1-score": 0.9848478075761757,
+      "precision": 0.986111333811607,
+      "recall": 0.9861198738170347,
+      "f1-score": 0.9861016028726143,
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 0.04538600001069426,
-  "inference_latency_ms_p95": 0.05730850000418286,
-  "inference_latency_ms_mean": 0.04646148437448261,
+  "inference_latency_ms_median": 0.04533100002390711,
+  "inference_latency_ms_p95": 0.05536350001023038,
+  "inference_latency_ms_mean": 0.046967042967027695,
   "warmup_samples": 32,
   "timed_samples": 256
 }

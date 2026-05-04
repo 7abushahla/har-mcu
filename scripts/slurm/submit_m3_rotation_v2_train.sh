@@ -34,6 +34,7 @@ V2_PROBABILITY="${M3_ROT_V2_PROBABILITY:-0.25}"
 V2_MAX_ANGLE_DEGREES="${M3_ROT_V2_MAX_ANGLE_DEGREES:-20}"
 V2_SUFFIX_ROOT="${M3_ROT_V2_SUFFIX_ROOT:-accel_rotation_v2_bounded20_p025}"
 V2_OFF_SUFFIX_ROOT="${M3_ROT_V2_OFF_SUFFIX_ROOT:-no_accel_rotation_v2}"
+V2_CONFIGS_CSV="${M3_ROT_V2_CONFIGS:-}"
 
 SBATCH_GRES_ARGS=()
 if [ -n "$GRES" ]; then
@@ -93,7 +94,7 @@ if [ ! -x "\$ENV_PY" ]; then
   ENV_PY="\$(command -v python)"
 fi
 
-declare -a CONFIGS=(
+declare -a DEFAULT_CONFIGS=(
   "configs/m3/E00_wisdm_m2_anchor.yaml"
   "configs/m3/E03_arduino_downsample_20hz_T100.yaml"
   "configs/m3/E04_wisdm_to_g_arduino_g.yaml"
@@ -106,6 +107,13 @@ declare -a CONFIGS=(
   "configs/m3/E11_wisdm_pretrain_arduino_finetune_T50.yaml"
   "configs/m3/E12_arduino_from_scratch_T50.yaml"
 )
+
+declare -a CONFIGS=()
+if [ -n "${V2_CONFIGS_CSV}" ]; then
+  IFS=',' read -r -a CONFIGS <<< "${V2_CONFIGS_CSV}"
+else
+  CONFIGS=("${DEFAULT_CONFIGS[@]}")
+fi
 
 case "\$SLURM_ARRAY_TASK_ID" in
   0)

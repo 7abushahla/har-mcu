@@ -15,8 +15,8 @@
     "SOFTMAX"
   ],
   "interpreter_op_count": 6,
-  "accuracy": 0.9854889589905362,
-  "macro_f1": 0.9854839331547284,
+  "accuracy": 0.9851735015772871,
+  "macro_f1": 0.985157257717343,
   "confusion_matrix": [
     [
       528,
@@ -29,24 +29,24 @@
     [
       1,
       523,
-      2,
-      2,
+      1,
+      3,
       0,
       0
     ],
     [
-      2,
-      2,
-      505,
-      20,
-      0,
+      3,
+      1,
+      499,
+      25,
+      1,
       0
     ],
     [
       0,
       2,
-      14,
-      512,
+      9,
+      517,
       0,
       0
     ],
@@ -70,33 +70,33 @@
   "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e11/m3/confusion_qat_daghero_cnn_2layer_conv2d_E11_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.9943502824858758,
+      "precision": 0.9924812030075187,
       "recall": 0.998109640831758,
-      "f1": 0.9962264150943396,
+      "f1": 0.9952874646559849,
       "support": 529
     },
     "Jogging": {
-      "precision": 0.9924098671726755,
+      "precision": 0.9942965779467681,
       "recall": 0.990530303030303,
-      "f1": 0.9914691943127962,
+      "f1": 0.9924098671726755,
       "support": 528
     },
     "Upstairs": {
-      "precision": 0.9674329501915708,
-      "recall": 0.9546313799621928,
-      "f1": 0.9609895337773549,
+      "precision": 0.9784313725490196,
+      "recall": 0.943289224952741,
+      "f1": 0.960538979788258,
       "support": 529
     },
     "Downstairs": {
-      "precision": 0.9588014981273408,
-      "recall": 0.9696969696969697,
-      "f1": 0.9642184557438794,
+      "precision": 0.9486238532110092,
+      "recall": 0.9791666666666666,
+      "f1": 0.9636533084808947,
       "support": 528
     },
     "Sitting": {
-      "precision": 1.0,
+      "precision": 0.998109640831758,
       "recall": 1.0,
-      "f1": 1.0,
+      "f1": 0.9990539262062441,
       "support": 528
     },
     "Standing": {
@@ -108,33 +108,33 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.9943502824858758,
+      "precision": 0.9924812030075187,
       "recall": 0.998109640831758,
-      "f1-score": 0.9962264150943396,
+      "f1-score": 0.9952874646559849,
       "support": 529.0
     },
     "Jogging": {
-      "precision": 0.9924098671726755,
+      "precision": 0.9942965779467681,
       "recall": 0.990530303030303,
-      "f1-score": 0.9914691943127962,
+      "f1-score": 0.9924098671726755,
       "support": 528.0
     },
     "Upstairs": {
-      "precision": 0.9674329501915708,
-      "recall": 0.9546313799621928,
-      "f1-score": 0.9609895337773549,
+      "precision": 0.9784313725490196,
+      "recall": 0.943289224952741,
+      "f1-score": 0.960538979788258,
       "support": 529.0
     },
     "Downstairs": {
-      "precision": 0.9588014981273408,
-      "recall": 0.9696969696969697,
-      "f1-score": 0.9642184557438794,
+      "precision": 0.9486238532110092,
+      "recall": 0.9791666666666666,
+      "f1-score": 0.9636533084808947,
       "support": 528.0
     },
     "Sitting": {
-      "precision": 1.0,
+      "precision": 0.998109640831758,
       "recall": 1.0,
-      "f1-score": 1.0,
+      "f1-score": 0.9990539262062441,
       "support": 528.0
     },
     "Standing": {
@@ -143,23 +143,23 @@
       "f1-score": 1.0,
       "support": 528.0
     },
-    "accuracy": 0.9854889589905362,
+    "accuracy": 0.9851735015772871,
     "macro avg": {
-      "precision": 0.9854990996629104,
-      "recall": 0.9854947155868706,
-      "f1-score": 0.9854839331547284,
+      "precision": 0.9853237745910123,
+      "recall": 0.9851826392469114,
+      "f1-score": 0.985157257717343,
       "support": 3170.0
     },
     "weighted avg": {
-      "precision": 0.9854961927333684,
-      "recall": 0.9854889589905362,
-      "f1-score": 0.9854795950104263,
+      "precision": 0.9853238581955467,
+      "recall": 0.9851735015772871,
+      "f1-score": 0.9851526873479453,
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 0.0453610000477056,
-  "inference_latency_ms_p95": 0.054178500079160585,
-  "inference_latency_ms_mean": 0.0464851640717967,
+  "inference_latency_ms_median": 0.04418099996428282,
+  "inference_latency_ms_p95": 0.05550350000760318,
+  "inference_latency_ms_mean": 0.04633504296869262,
   "warmup_samples": 32,
   "timed_samples": 256
 }

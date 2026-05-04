@@ -16,7 +16,7 @@
   ],
   "interpreter_op_count": 6,
   "accuracy": 0.9870662460567823,
-  "macro_f1": 0.9870542451810483,
+  "macro_f1": 0.9870557287928192,
   "confusion_matrix": [
     [
       527,
@@ -35,11 +35,11 @@
       0
     ],
     [
-      3,
+      4,
       4,
       507,
       14,
-      1,
+      0,
       0
     ],
     [
@@ -70,9 +70,9 @@
   "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/m3/confusion_qat_daghero_cnn_2layer_conv2d_E12_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.992467043314501,
+      "precision": 0.9906015037593985,
       "recall": 0.996219281663516,
-      "f1": 0.9943396226415094,
+      "f1": 0.9934024505183789,
       "support": 529
     },
     "Jogging": {
@@ -94,9 +94,9 @@
       "support": 528
     },
     "Sitting": {
-      "precision": 0.998109640831758,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.9990539262062441,
+      "f1": 1.0,
       "support": 528
     },
     "Standing": {
@@ -108,9 +108,9 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.992467043314501,
+      "precision": 0.9906015037593985,
       "recall": 0.996219281663516,
-      "f1-score": 0.9943396226415094,
+      "f1-score": 0.9934024505183789,
       "support": 529.0
     },
     "Jogging": {
@@ -132,9 +132,9 @@
       "support": 528.0
     },
     "Sitting": {
-      "precision": 0.998109640831758,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1-score": 0.9990539262062441,
+      "f1-score": 1.0,
       "support": 528.0
     },
     "Standing": {
@@ -145,21 +145,21 @@
     },
     "accuracy": 0.9870662460567823,
     "macro avg": {
-      "precision": 0.9870593308001779,
+      "precision": 0.9870634674023678,
       "recall": 0.9870724017108706,
-      "f1-score": 0.9870542451810483,
+      "f1-score": 0.9870557287928192,
       "support": 3170.0
     },
     "weighted avg": {
-      "precision": 0.9870560540650138,
+      "precision": 0.9870595995590778,
       "recall": 0.9870662460567823,
-      "f1-score": 0.9870495217000389,
+      "f1-score": 0.9870507087378836,
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 0.04570100009004818,
-  "inference_latency_ms_p95": 0.06203099991353156,
-  "inference_latency_ms_mean": 0.04694992187914693,
+  "inference_latency_ms_median": 0.04525099996044446,
+  "inference_latency_ms_p95": 0.05614849996504745,
+  "inference_latency_ms_mean": 0.04665498437583793,
   "warmup_samples": 32,
   "timed_samples": 256
 }

@@ -15,8 +15,8 @@
     "SOFTMAX"
   ],
   "interpreter_op_count": 6,
-  "accuracy": 0.9861198738170347,
-  "macro_f1": 0.9861115594418098,
+  "accuracy": 0.9864353312302839,
+  "macro_f1": 0.9864129888330441,
   "confusion_matrix": [
     [
       527,
@@ -27,26 +27,26 @@
       1
     ],
     [
-      1,
+      2,
       523,
       0,
-      4,
+      3,
       0,
       0
     ],
     [
       4,
       2,
-      503,
+      502,
       20,
-      0,
+      1,
       0
     ],
     [
       0,
       0,
-      11,
-      517,
+      9,
+      519,
       0,
       0
     ],
@@ -70,9 +70,9 @@
   "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/m3/confusion_fp32_tflite_daghero_cnn_2layer_conv2d_E12_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
   "per_class": {
     "Walking": {
-      "precision": 0.9906015037593985,
+      "precision": 0.9887429643527205,
       "recall": 0.996219281663516,
-      "f1": 0.9934024505183789,
+      "f1": 0.992467043314501,
       "support": 529
     },
     "Jogging": {
@@ -82,21 +82,21 @@
       "support": 528
     },
     "Upstairs": {
-      "precision": 0.9766990291262136,
-      "recall": 0.9508506616257089,
-      "f1": 0.9636015325670498,
+      "precision": 0.98046875,
+      "recall": 0.9489603024574669,
+      "f1": 0.9644572526416907,
       "support": 529
     },
     "Downstairs": {
-      "precision": 0.955637707948244,
-      "recall": 0.9791666666666666,
-      "f1": 0.9672591206735267,
+      "precision": 0.9575645756457565,
+      "recall": 0.9829545454545454,
+      "f1": 0.9700934579439252,
       "support": 528
     },
     "Sitting": {
-      "precision": 1.0,
+      "precision": 0.998109640831758,
       "recall": 1.0,
-      "f1": 1.0,
+      "f1": 0.9990539262062441,
       "support": 528
     },
     "Standing": {
@@ -108,9 +108,9 @@
   },
   "classification_report": {
     "Walking": {
-      "precision": 0.9906015037593985,
+      "precision": 0.9887429643527205,
       "recall": 0.996219281663516,
-      "f1-score": 0.9934024505183789,
+      "f1-score": 0.992467043314501,
       "support": 529.0
     },
     "Jogging": {
@@ -120,21 +120,21 @@
       "support": 528.0
     },
     "Upstairs": {
-      "precision": 0.9766990291262136,
-      "recall": 0.9508506616257089,
-      "f1-score": 0.9636015325670498,
+      "precision": 0.98046875,
+      "recall": 0.9489603024574669,
+      "f1-score": 0.9644572526416907,
       "support": 529.0
     },
     "Downstairs": {
-      "precision": 0.955637707948244,
-      "recall": 0.9791666666666666,
-      "f1-score": 0.9672591206735267,
+      "precision": 0.9575645756457565,
+      "recall": 0.9829545454545454,
+      "f1-score": 0.9700934579439252,
       "support": 528.0
     },
     "Sitting": {
-      "precision": 1.0,
+      "precision": 0.998109640831758,
       "recall": 1.0,
-      "f1-score": 1.0,
+      "f1-score": 0.9990539262062441,
       "support": 528.0
     },
     "Standing": {
@@ -143,23 +143,23 @@
       "f1-score": 0.9990539262062441,
       "support": 528.0
     },
-    "accuracy": 0.9861198738170347,
+    "accuracy": 0.9864353312302839,
     "macro avg": {
-      "precision": 0.986206392976015,
-      "recall": 0.9861278188310324,
-      "f1-score": 0.9861115594418098,
+      "precision": 0.9865310079754114,
+      "recall": 0.986444072100972,
+      "f1-score": 0.9864129888330441,
       "support": 3170.0
     },
     "weighted avg": {
-      "precision": 0.9862047802778869,
-      "recall": 0.9861198738170347,
-      "f1-score": 0.9861067584525992,
+      "precision": 0.986529793369229,
+      "recall": 0.9864353312302839,
+      "f1-score": 0.9864079725296658,
       "support": 3170.0
     }
   },
-  "inference_latency_ms_median": 0.02314099992872798,
-  "inference_latency_ms_p95": 0.024455750065044413,
-  "inference_latency_ms_mean": 0.024061777337713863,
+  "inference_latency_ms_median": 0.023561000034533208,
+  "inference_latency_ms_p95": 0.04123849998904916,
+  "inference_latency_ms_mean": 0.0263401054656498,
   "warmup_samples": 32,
   "timed_samples": 256
 }

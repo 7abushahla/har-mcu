@@ -92,7 +92,7 @@
     "inference_norm_applied": true,
     "mode": "train_zscore",
     "norm_stats": "data/processed/m3/E12_arduino_from_scratch_T50/dual_domain_eval/on/daghero_cnn_2layer_conv2d/e12/arduino/norm_stats_T50_Prandom_stratified.json",
-    "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E12_arduino_from_scratch_T50/accel_rotation_v3_target_clusters_p025/daghero_cnn_2layer_conv2d/e12/norm_stats_T50_Prandom_stratified.json"
+    "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/norm_stats_T50_Prandom_stratified.json"
   },
   "preprocess": {
     "dropped_total": 0,

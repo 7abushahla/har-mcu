@@ -134,7 +134,7 @@
   "compat_error": null,
   "has_unidirectional_sequence_lstm": false,
   "has_while_op": false,
-  "training_time_sec": 8.953392205,
+  "training_time_sec": 8.397821307999948,
   "history_json": "/shared/b00088568/github/har-mcu/checkpoints/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/history_daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E12_daghero_cnn_2layer_conv2d_r0_qat.json",
   "epochs_ran": 10,
   "qat_device_preference": "gpu",

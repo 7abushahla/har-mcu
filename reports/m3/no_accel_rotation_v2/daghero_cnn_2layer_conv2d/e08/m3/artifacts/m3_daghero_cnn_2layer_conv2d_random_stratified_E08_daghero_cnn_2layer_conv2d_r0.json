@@ -255,9 +255,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e08/m3/confusion_fp32_tflite_daghero_cnn_2layer_conv2d_E08_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 0.023395375003509855,
-    "inference_latency_ms_median": 0.02278550005030411,
-    "inference_latency_ms_p95": 0.02541600002814448,
+    "inference_latency_ms_mean": 0.023476710938163947,
+    "inference_latency_ms_median": 0.022860999990825803,
+    "inference_latency_ms_p95": 0.02408375002005414,
     "input_dtype": "<class 'numpy.float32'>",
     "interpreter_op_count": 6,
     "interpreter_ops": [
@@ -320,7 +320,7 @@
   "fp32_tflite_eval_status": "ok",
   "fp32_tflite_model": "/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e08/daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E08_daghero_cnn_2layer_conv2d_r0_fp32.tflite",
   "fp32_tflite_status": "ok",
-  "fp32_training_time_sec": 72.40665350099994,
+  "fp32_training_time_sec": 66.42238336399998,
   "paper_slug": "m3",
   "protocol": "random_stratified",
   "ptq_eval_metrics": {
@@ -427,9 +427,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e08/m3/confusion_ptq_daghero_cnn_2layer_conv2d_E08_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 0.04528224218258714,
-    "inference_latency_ms_median": 0.04414099998939491,
-    "inference_latency_ms_p95": 0.0522959999784689,
+    "inference_latency_ms_mean": 0.04653958594014185,
+    "inference_latency_ms_median": 0.044742000000042026,
+    "inference_latency_ms_p95": 0.06018375002270204,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 6,
     "interpreter_ops": [
@@ -739,9 +739,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e08/m3/confusion_qat_daghero_cnn_2layer_conv2d_E08_daghero_cnn_2layer_conv2d_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 0.045519039063357525,
-    "inference_latency_ms_median": 0.044285999990734126,
-    "inference_latency_ms_p95": 0.05060600003048421,
+    "inference_latency_ms_mean": 0.04502804297024099,
+    "inference_latency_ms_median": 0.0443124999947031,
+    "inference_latency_ms_p95": 0.04665524998870296,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 6,
     "interpreter_ops": [
@@ -947,7 +947,7 @@
       "RESHAPE",
       "SOFTMAX"
     ],
-    "training_time_sec": 28.46768014899999,
+    "training_time_sec": 25.369108670000003,
     "unsupported_in_reference": [],
     "unsupported_ops": [],
     "unsupported_ops_micro_mutable": [],

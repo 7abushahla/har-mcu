@@ -92,7 +92,7 @@
     "inference_norm_applied": true,
     "mode": "train_zscore",
     "norm_stats": "data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/dual_domain_eval/on/deepconv_lstm_conv2d/e11/arduino/norm_stats_T50_Prandom_stratified.json",
-    "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/accel_rotation_v3_target_clusters_p025/deepconv_lstm_conv2d/e11/finetune_arduino/norm_stats_T50_Prandom_stratified.json"
+    "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e11/finetune_arduino/norm_stats_T50_Prandom_stratified.json"
   },
   "preprocess": {
     "dropped_total": 0,

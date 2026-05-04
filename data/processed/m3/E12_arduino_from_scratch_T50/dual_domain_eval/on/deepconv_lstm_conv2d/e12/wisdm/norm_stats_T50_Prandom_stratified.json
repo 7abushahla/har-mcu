@@ -102,7 +102,7 @@
     0.0758126825094223
   ],
   "normalization_mode": "train_zscore",
-  "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E12_arduino_from_scratch_T50/accel_rotation_v3_target_clusters_p025/deepconv_lstm_conv2d/e12/norm_stats_T50_Prandom_stratified.json",
+  "normalization_stats_source": "model_train:/shared/b00088568/github/har-mcu/data/processed/m3/E12_arduino_from_scratch_T50/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e12/norm_stats_T50_Prandom_stratified.json",
   "protocol": "random_stratified",
   "std": [
     0.16728247702121735,

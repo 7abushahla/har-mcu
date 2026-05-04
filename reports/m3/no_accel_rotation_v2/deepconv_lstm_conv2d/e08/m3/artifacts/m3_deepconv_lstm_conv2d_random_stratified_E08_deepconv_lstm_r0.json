@@ -255,9 +255,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e08/m3/confusion_fp32_tflite_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 0.3135796054678508,
-    "inference_latency_ms_median": 0.30963649999193876,
-    "inference_latency_ms_p95": 0.3294062501595363,
+    "inference_latency_ms_mean": 0.3130083945313,
+    "inference_latency_ms_median": 0.3074449999758144,
+    "inference_latency_ms_p95": 0.32685274996424596,
     "input_dtype": "<class 'numpy.float32'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -319,7 +319,7 @@
   "fp32_tflite_eval_status": "ok",
   "fp32_tflite_model": "/shared/b00088568/github/har-mcu/models_tflite/m3/E08_T50_window/no_accel_rotation_v2/deepconv_lstm_conv2d/e08/deepconv_lstm_conv2d_T50_Prandom_stratified_E08_deepconv_lstm_r0_fp32.tflite",
   "fp32_tflite_status": "ok",
-  "fp32_training_time_sec": 62.81020617099989,
+  "fp32_training_time_sec": 65.01486898900004,
   "paper_slug": "m3",
   "protocol": "random_stratified",
   "ptq_eval_metrics": {
@@ -426,9 +426,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e08/m3/confusion_ptq_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 2.0496156796907528,
-    "inference_latency_ms_median": 2.042570000071464,
-    "inference_latency_ms_p95": 2.0783042500625015,
+    "inference_latency_ms_mean": 2.0427129101572294,
+    "inference_latency_ms_median": 2.039809499990497,
+    "inference_latency_ms_p95": 2.0667699999847855,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -736,9 +736,9 @@
       ]
     ],
     "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e08/m3/confusion_qat_deepconv_lstm_conv2d_E08_deepconv_lstm_r0_T50_Prandom_stratified.png",
-    "inference_latency_ms_mean": 2.0432277070261406,
-    "inference_latency_ms_median": 2.040455499923155,
-    "inference_latency_ms_p95": 2.0628760000818147,
+    "inference_latency_ms_mean": 2.0614108398457898,
+    "inference_latency_ms_median": 2.0525795000025937,
+    "inference_latency_ms_p95": 2.0999407499999734,
     "input_dtype": "<class 'numpy.int8'>",
     "interpreter_op_count": 5,
     "interpreter_ops": [
@@ -942,7 +942,7 @@
       "SOFTMAX",
       "UNIDIRECTIONAL_SEQUENCE_LSTM"
     ],
-    "training_time_sec": 30.305779403000088,
+    "training_time_sec": 30.628452607999975,
     "unsupported_in_reference": [],
     "unsupported_ops": [],
     "unsupported_ops_micro_mutable": [],
