@@ -1,0 +1,7 @@
+pipeline,protocol,model,accuracy,macro_f1,model_size_kb,training_time_sec,inference_latency_ms_median,inference_latency_ms_p95,status,ptq_status,qat_status,paper_target_accuracy,acc_delta_vs_target
+WISDM replication,random_stratified,baseline float,0.9804045512010113,0.9803729947785721,80.40625,13.537899803999949,,,ok,ok,ok,,
+WISDM replication,random_stratified,PTQ int8,0.9829329962073325,0.9829086017922147,26.1328125,,0.0750514999481311,0.09428424993984663,ok,ok,,,
+WISDM replication,random_stratified,QAT int8,0.9848293299620733,0.9847987519783836,26.734375,5.567724114000043,0.07494150008824363,0.08007099995666067,ok,,ok,,
+paper target,—,baseline float,,,,,,,reference,,,,
+paper target,—,PTQ int8,,,,,,,reference,,,,
+paper target,—,QAT int8,,,,,,,reference,,,,

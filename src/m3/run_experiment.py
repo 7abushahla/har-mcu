@@ -113,8 +113,42 @@ def _apply_full_dataset_overrides(cfg: dict[str, Any], args: argparse.Namespace)
 
 
 def _apply_augmentation_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
+    rotation_cfg = cfg.setdefault("augment", {}).setdefault("accel_rotation", {})
+    if bool(getattr(args, "enable_accel_rotation", False)):
+        rotation_cfg["enabled"] = True
     if bool(getattr(args, "disable_accel_rotation", False)):
-        cfg.setdefault("augment", {}).setdefault("accel_rotation", {})["enabled"] = False
+        rotation_cfg["enabled"] = False
+    if getattr(args, "accel_rotation_mode", None):
+        rotation_cfg["mode"] = str(args.accel_rotation_mode)
+    if getattr(args, "accel_rotation_probability", None) is not None:
+        rotation_cfg["probability"] = float(args.accel_rotation_probability)
+    if getattr(args, "accel_rotation_max_angle_degrees", None) is not None:
+        rotation_cfg["max_angle_degrees"] = float(args.accel_rotation_max_angle_degrees)
+    if getattr(args, "accel_rotation_target_vectors", None):
+        rotation_cfg["target_vectors"] = _parse_vector_list(args.accel_rotation_target_vectors)
+    if getattr(args, "accel_rotation_target_probabilities", None):
+        rotation_cfg["target_probabilities"] = [
+            float(part.strip())
+            for part in str(args.accel_rotation_target_probabilities).split(",")
+            if part.strip()
+        ]
+
+
+def _parse_vector_list(value: str) -> list[list[float]]:
+    vectors: list[list[float]] = []
+    for group in str(value).split(";"):
+        group = group.strip()
+        if not group:
+            continue
+        parts = [float(part.strip()) for part in group.split(",") if part.strip()]
+        if len(parts) != 3:
+            raise ValueError(
+                "--accel-rotation-target-vectors must use semicolon-separated x,y,z triples"
+            )
+        vectors.append(parts)
+    if not vectors:
+        raise ValueError("--accel-rotation-target-vectors cannot be empty")
+    return vectors
 
 
 def _print_summary(summary: dict[str, Any]) -> None:
@@ -163,6 +197,45 @@ def main() -> None:
         "--disable-accel-rotation",
         action="store_true",
         help="Disable augment.accel_rotation.enabled for this run without editing the config file.",
+    )
+    parser.add_argument(
+        "--enable-accel-rotation",
+        action="store_true",
+        help="Enable augment.accel_rotation.enabled for this run without editing the config file.",
+    )
+    parser.add_argument(
+        "--accel-rotation-mode",
+        default=None,
+        choices=["uniform_so3", "bounded_so3", "target_gravity"],
+        help="Override augment.accel_rotation.mode.",
+    )
+    parser.add_argument(
+        "--accel-rotation-probability",
+        type=float,
+        default=None,
+        help="Override augment.accel_rotation.probability.",
+    )
+    parser.add_argument(
+        "--accel-rotation-max-angle-degrees",
+        type=float,
+        default=None,
+        help="Override augment.accel_rotation.max_angle_degrees for bounded_so3.",
+    )
+    parser.add_argument(
+        "--accel-rotation-target-vectors",
+        default=None,
+        help=(
+            "Override augment.accel_rotation.target_vectors for target_gravity. "
+            "Use semicolon-separated x,y,z triples, for example '-1,0,0;0,-1,0;0,0,1'."
+        ),
+    )
+    parser.add_argument(
+        "--accel-rotation-target-probabilities",
+        default=None,
+        help=(
+            "Override augment.accel_rotation.target_probabilities for target_gravity. "
+            "Use comma-separated probabilities matching target vectors."
+        ),
     )
     parser.add_argument("--representative-samples", type=int, default=16)
     parser.add_argument("--timing-warmup-samples", type=int, default=2)

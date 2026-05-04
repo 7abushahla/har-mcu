@@ -38,7 +38,11 @@ def test_default_config_contract():
     for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
         assert key in cfg["experiment"]["paper_targets"]
     assert cfg.get("augment", {}).get("accel_rotation", {}).get("enabled") is False
-    assert cfg["augment"]["accel_rotation"].get("mode") == "uniform_so3"
+    assert cfg["augment"]["accel_rotation"].get("mode") in {
+        "uniform_so3",
+        "bounded_so3",
+        "target_gravity",
+    }
     assert 0.0 <= float(cfg["augment"]["accel_rotation"].get("probability")) <= 1.0
     assert cfg["augment"]["accel_rotation"].get("apply_in_qat") in {True, False}
     assert cfg.get("runtime", {}).get("run_mode") in {"sanity_check", "full_run"}

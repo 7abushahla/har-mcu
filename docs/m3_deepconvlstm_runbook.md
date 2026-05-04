@@ -16,8 +16,9 @@ Code and config additions:
 - `src/data/build_dataset.py`, `src/data/load_wisdm.py`: M3-aware normalization, external/source normalization support, datacards, and split metadata.
 - `src/utils/tflite_export.py`: shared TFLite conversion hardening for DeepConvLSTM, including fixed single-batch input shape handling where possible.
 - `src/run_paper_experiment.py`, `src/quant/ptq_full_int8.py`, `src/quant/qat_train.py`: FP32 TFLite export, PTQ INT8, QAT INT8, TFLite host evaluation, and M3 report metadata.
-- `src/train/augment.py`: training-only accelerometer window rotation. It samples one uniform SO(3) rotation per `[T, 3]` training window, denormalizes with the saved train-split mean/std, rotates in raw accelerometer units, and re-applies the same normalization. Validation, test, PTQ representative data, and inference/on-device preprocessing are untouched. The rotation-augmentation idea follows orientation-robust HAR literature, especially Yurtman and Barshan 2017 (`10.3390/s17081838`) and Caramaschi, Papini, and Caiani 2023 (`10.3390/app13074175`).
+- `src/train/augment.py`: training-only accelerometer window rotation. It supports `uniform_so3` and the v2 `bounded_so3` mode. In both modes it samples one rotation per `[T, 3]` training window, denormalizes with the saved train-split mean/std, rotates in raw accelerometer units, and re-applies the same normalization. Validation, test, PTQ representative data, and inference/on-device preprocessing are untouched. The rotation-augmentation idea follows orientation-robust HAR literature, especially Yurtman and Barshan 2017 (`10.3390/s17081838`), Yurtman, Barshan, and Fidan 2018 (`10.3390/s18082725`), and Caramaschi, Papini, and Caiani 2023 (`10.3390/app13074175`).
 - `src/m3/dual_domain_eval.py`: eval-only comparison runner for the augmentation off/on table. It evaluates FP32, PTQ, and QAT TFLite exports against both WISDM and Arduino test splits while normalizing each eval dataset with the trained model's saved train-split stats.
+- `src/m3/axis_eda.py`: axis-level WISDM-vs-Arduino EDA. It summarizes sample distributions, window-level gravity proxies, dynamic energy, and dominant-axis patterns so the next augmentation is based on observed domain shifts rather than guessed rotations.
 - `src/eval/reporting.py` and `src/m3/reporting.py`: fixed-schema M3 report rows with FP32/PTQ/QAT metrics and deploy-gate status.
 - `deploy/arduino_infer/arduino_infer.ino`: live IMU inference sketch using the exported model and normalization headers.
 - `src/deploy/export_c_array.py`, `src/deploy/export_norm_header.py`: deployment header generation for `model_data.*` and `norm_stats.h`.
@@ -25,6 +26,10 @@ Code and config additions:
 - `scripts/slurm/submit_m3_accel_rotation_runs.sh`: submits the DeepConvLSTM and Daghero augmented training matrix.
 - `scripts/slurm/submit_m3_rotation_ablation_train.sh`: submits the clean full-dataset DeepConvLSTM/Daghero augmentation off/on training matrix.
 - `scripts/slurm/submit_m3_dual_domain_eval.sh`: submits augmentation off/on dual-domain TFLite evaluation. It supports grouped matrix rows per Slurm array task so the full comparison can fit under the QOS submit cap.
+- `scripts/slurm/submit_m3_rotation_v2_train.sh`: submits the v2 full-dataset ablation using a gentler bounded rotation policy while keeping a clean no-augmentation v2 baseline.
+- `scripts/slurm/submit_m3_rotation_v2_dual_eval.sh`: submits the v2 dual-domain eval matrix with isolated v2 artifact roots and aggregate output directory.
+- `scripts/slurm/submit_m3_rotation_v3_train.sh`: submits the v3 target-orientation run using Arduino EDA gravity clusters as training-time rotation targets.
+- `scripts/slurm/submit_m3_rotation_v3_dual_eval.sh`: submits the v3 dual-domain eval matrix, comparing v3 target-orientation artifacts against the clean no-augmentation v2 baseline.
 - `scripts/slurm/auto_submit_m3_dual_domain_eval.sh`: optional headroom-aware autosubmitter for environments where a detached queue watcher is preferred.
 - `notebooks/m3_deepconvlstm.ipynb`, `notebooks/m3_architecture_sweeps.ipynb`, plus per-experiment notebooks `notebooks/m3_E*.ipynb`.
 - `reports/m3/`: consolidated M3 reports, domain-gap summary, final deployment summary, and live-trial templates.
@@ -51,7 +56,7 @@ Current staged deployment headers:
 - `deploy/common/model_data.cc`
 - `deploy/common/norm_stats.h`
 
-These were regenerated from the E09 PTQ INT8 model and E09 Arduino fine-tune train-split normalization stats using Slurm job `7197`.
+These were regenerated from an earlier DeepConvLSTM E09 PTQ INT8 pass and E09 Arduino fine-tune train-split normalization stats using Slurm job `7197`. Before the next live trial, regenerate them from the selected Daghero or DeepConvLSTM candidate below so `model_data.*` and `norm_stats.h` match.
 
 ## What We Ran
 
@@ -116,22 +121,251 @@ Accelerometer-rotation ablation reruns:
 - Historical Slurm job `7497` completed with exit `0:0`, and historical dual-domain eval jobs `7606` and `7624` completed with exit `0:0`.
 - On 2026-05-03, those generated ablation/eval artifacts were intentionally deleted for a clean-slate rerun with no checkpoint reuse or continued training.
 - The clean rerun uses [scripts/slurm/submit_m3_rotation_ablation_train.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_rotation_ablation_train.sh), which submits four array tasks: augmentation off/on times DeepConvLSTM/Daghero.
-- Clean training Slurm array job `7641` was submitted on 2026-05-03. The four array children started configuring on separate GPU nodes.
+- Clean training Slurm array job `7641` completed on 2026-05-04 with all four array tasks `COMPLETED 0:0`. No child hit the 96-hour wallclock limit; elapsed times were 15-28 minutes.
 - Each array task loops over E00, E03, E04, E05, E06, E07, E08, E09, E10, E11, and E12 with `--full-dataset`.
 - Augmentation-on outputs are isolated under `accel_rotation/<model_variant>/<experiment_code>/`.
 - Augmentation-off outputs are isolated under `no_accel_rotation/<model_variant>/<experiment_code>/`.
-- The expected training shape is 44 model/config/augmentation bundles and 132 TFLite exports: FP32, PTQ INT8, and QAT INT8 for every bundle.
+- The completed training shape is 44 model/config/augmentation bundles and 132 TFLite exports: FP32, PTQ INT8, and QAT INT8 for every bundle. Every training row reports `deploy_gate_status=ptq=ok;qat=ok` and notes contain `fp32_tflite=ok`, `ptq=ok`, and `qat=ok`.
 
 Dual-domain augmentation off/on evaluation:
 
 - [scripts/slurm/submit_m3_dual_domain_eval.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_dual_domain_eval.sh) builds the 44-row eval matrix from the clean `accel_rotation` and `no_accel_rotation` artifact roots.
 - The eval job should be submitted with `M3_SLURM_DEPENDENCY=afterok:<TRAIN_ARRAY_JOBID>` so it starts only after clean training succeeds.
-- Clean eval Slurm array job `7647` was submitted on 2026-05-03 with dependency `afterok:7641`. Earlier dependent eval job `7646` was canceled before execution because the off-artifact suffix default was malformed; [scripts/slurm/submit_m3_dual_domain_eval.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_dual_domain_eval.sh) now builds the default suffix without shell-brace expansion.
+- Clean eval Slurm array job `7647` completed on 2026-05-04 with all eleven array tasks `COMPLETED 0:0`. No child hit the 8-hour wallclock limit; elapsed times were under 5 minutes. Earlier dependent eval job `7646` was canceled before execution because the off-artifact suffix default was malformed; [scripts/slurm/submit_m3_dual_domain_eval.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_dual_domain_eval.sh) now builds the default suffix without shell-brace expansion.
 - Each eval matrix row evaluates FP32, PTQ INT8, and QAT INT8 TFLite exports on both WISDM and Arduino test splits.
-- Expected final result shape: 44 per-run CSVs and 264 master rows: 44 `{experiment, model, augmentation off/on}` combinations times 2 eval domains times 3 tiers.
+- Completed final result shape: 44 per-run CSVs and 264 master rows: 44 `{experiment, model, augmentation off/on}` combinations times 2 eval domains times 3 tiers. Every per-run CSV has exactly six rows, no aggregate rows point at missing model/norm-stats/processed paths, and no smoke paths appear in the master.
 - Aggregate outputs:
   - `reports/m3/dual_domain_eval/dual_domain_eval_master.csv`
   - `reports/m3/dual_domain_eval/dual_domain_eval_master.md`
+  - `reports/m3/dual_domain_eval/rotation_ablation_summary.csv`
+  - `reports/m3/dual_domain_eval/rotation_ablation_summary.md`
+
+Mean clean ablation result across E00/E03-E12:
+
+| Model | Tier | Eval domain | Off acc | On acc | Delta acc | Off macro-F1 | On macro-F1 | Delta macro-F1 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `daghero_cnn_2layer_conv2d` | FP32 | WISDM | 0.7636 | 0.7348 | -0.0288 | 0.7077 | 0.6445 | -0.0632 |
+| `daghero_cnn_2layer_conv2d` | FP32 | Arduino | 0.5286 | 0.5241 | -0.0045 | 0.4641 | 0.4695 | +0.0053 |
+| `daghero_cnn_2layer_conv2d` | PTQ | WISDM | 0.7511 | 0.7349 | -0.0162 | 0.6815 | 0.6453 | -0.0361 |
+| `daghero_cnn_2layer_conv2d` | PTQ | Arduino | 0.5274 | 0.5411 | +0.0137 | 0.4628 | 0.4851 | +0.0223 |
+| `daghero_cnn_2layer_conv2d` | QAT | WISDM | 0.7505 | 0.7376 | -0.0129 | 0.6796 | 0.6499 | -0.0297 |
+| `daghero_cnn_2layer_conv2d` | QAT | Arduino | 0.5286 | 0.5331 | +0.0045 | 0.4636 | 0.4732 | +0.0096 |
+| `deepconv_lstm_conv2d` | FP32 | WISDM | 0.7398 | 0.7188 | -0.0210 | 0.6715 | 0.6106 | -0.0609 |
+| `deepconv_lstm_conv2d` | FP32 | Arduino | 0.5425 | 0.5170 | -0.0255 | 0.4971 | 0.4577 | -0.0394 |
+| `deepconv_lstm_conv2d` | PTQ | WISDM | 0.7386 | 0.7187 | -0.0199 | 0.6675 | 0.6100 | -0.0575 |
+| `deepconv_lstm_conv2d` | PTQ | Arduino | 0.5361 | 0.5164 | -0.0197 | 0.4941 | 0.4606 | -0.0335 |
+| `deepconv_lstm_conv2d` | QAT | WISDM | 0.7004 | 0.4606 | -0.2398 | 0.6127 | 0.3198 | -0.2929 |
+| `deepconv_lstm_conv2d` | QAT | Arduino | 0.4495 | 0.3057 | -0.1439 | 0.4018 | 0.2439 | -0.1579 |
+
+Interpretation: with probability `0.5` and unconstrained uniform SO(3), the augmentation does not produce a broad win in this clean run. It slightly helps Daghero on Arduino macro-F1 for FP32/PTQ/QAT, with the clearest gain in PTQ, but reduces WISDM scores and hurts DeepConvLSTM, especially QAT. Treat this as evidence that fully uniform rotations may be too strong for the current labels/distribution; the next experiment should try a smaller orientation perturbation or lower probability rather than adopting this setting as the final deployment default.
+
+Rotation v2 ablation:
+
+- The v2 code path is intentionally separate from the completed `accel_rotation` and `no_accel_rotation` roots.
+- Augmentation off artifacts will use `no_accel_rotation_v2/<model_variant>/<experiment_code>/`.
+- Augmentation on artifacts will use `accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/`.
+- The v2 on-policy is `mode=bounded_so3`, `probability=0.25`, `max_angle_degrees=20`, and `apply_in_qat=true`.
+- `bounded_so3` samples a random 3D axis and a random angle in `[-max_angle_degrees, +max_angle_degrees]`, then applies the resulting axis-angle rotation as one shared matrix per training window.
+- This is still train-only and still uses the same denormalize, rotate-in-raw-units, re-normalize path as v1. It does not change model shape, TFLite conversion, PTQ representative data, validation/test arrays, inference preprocessing, or Arduino firmware.
+- Slurm submitters:
+  - `scripts/slurm/submit_m3_rotation_v2_train.sh`
+  - `scripts/slurm/submit_m3_rotation_v2_dual_eval.sh`
+- Submitted on 2026-05-04:
+  - Training Slurm array job `7694`, with four array tasks for augmentation off/on times DeepConvLSTM/Daghero. Initial queue placement used four different GPU nodes.
+  - Dependent dual-domain eval Slurm array job `7698`, with dependency `afterok:7694`, 44 matrix rows grouped as 11 array tasks.
+- Completed on 2026-05-04:
+  - Training job `7694`: all four array tasks `COMPLETED 0:0`, elapsed 18-27 minutes, no wallclock failures.
+  - Eval job `7698`: all eleven array tasks `COMPLETED 0:0`, elapsed under 5 minutes, no wallclock failures.
+  - Queue was empty after completion. Log scan found no `Traceback`, `Exception`, `FAILED`, `CANCELLED`, `TIMEOUT`, `FileNotFound`, or missing-TFLite errors; stderr content is TensorFlow runtime warnings/noise.
+- Completed v2 final result shape: 44 per-run CSVs and 264 master rows, matching the v1 comparison shape.
+- V2 aggregate outputs:
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/dual_domain_eval_master.csv`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/dual_domain_eval_master.md`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/rotation_ablation_summary.csv`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/rotation_ablation_summary.md`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/arduino_failure_focus_delta.csv`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/arduino_failure_focus_delta.md`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/arduino_failure_focus_deployment_subset_delta.csv`
+  - `reports/m3/dual_domain_eval_v2_bounded20_p025/arduino_failure_focus_deployment_subset_delta.md`
+
+Mean v2 ablation result across E00/E03-E12:
+
+| Model | Tier | Eval domain | Off acc | On acc | Delta acc | Off macro-F1 | On macro-F1 | Delta macro-F1 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `daghero_cnn_2layer_conv2d` | FP32 | Arduino | 0.5286 | 0.5387 | +0.0101 | 0.4643 | 0.4775 | +0.0132 |
+| `daghero_cnn_2layer_conv2d` | FP32 | WISDM | 0.7626 | 0.7629 | +0.0003 | 0.7099 | 0.7069 | -0.0030 |
+| `daghero_cnn_2layer_conv2d` | PTQ | Arduino | 0.5269 | 0.5402 | +0.0133 | 0.4623 | 0.4745 | +0.0123 |
+| `daghero_cnn_2layer_conv2d` | PTQ | WISDM | 0.7503 | 0.7472 | -0.0031 | 0.6777 | 0.6760 | -0.0017 |
+| `daghero_cnn_2layer_conv2d` | QAT | Arduino | 0.5283 | 0.5317 | +0.0034 | 0.4630 | 0.4700 | +0.0071 |
+| `daghero_cnn_2layer_conv2d` | QAT | WISDM | 0.7523 | 0.7488 | -0.0035 | 0.6873 | 0.6812 | -0.0061 |
+| `deepconv_lstm_conv2d` | FP32 | Arduino | 0.5350 | 0.5219 | -0.0130 | 0.4890 | 0.4700 | -0.0189 |
+| `deepconv_lstm_conv2d` | FP32 | WISDM | 0.7416 | 0.7282 | -0.0134 | 0.6756 | 0.6396 | -0.0360 |
+| `deepconv_lstm_conv2d` | PTQ | Arduino | 0.5325 | 0.5212 | -0.0113 | 0.4874 | 0.4694 | -0.0180 |
+| `deepconv_lstm_conv2d` | PTQ | WISDM | 0.7380 | 0.7312 | -0.0068 | 0.6687 | 0.6444 | -0.0243 |
+| `deepconv_lstm_conv2d` | QAT | Arduino | 0.4726 | 0.4509 | -0.0217 | 0.4276 | 0.3997 | -0.0279 |
+| `deepconv_lstm_conv2d` | QAT | WISDM | 0.6899 | 0.7105 | +0.0206 | 0.6048 | 0.6163 | +0.0115 |
+
+V2 interpretation: `bounded_so3,20deg,p=0.25` is gentler and safer than v1 `uniform_so3,p=0.5`, especially for Daghero, but it still does not clear the deployment gate. It gives Daghero small mean Arduino macro-F1 gains across all experiments, while DeepConvLSTM loses Arduino macro-F1 for FP32/PTQ/QAT. The failure-focus report shows why mean metrics are not enough: the all-experiment Daghero gains come with worse mean standing recall, even though `Standing -> Walking` itself does not increase. In the Arduino-adapted deployment subset E09-E12, v2 does not meaningfully improve Daghero, and DeepConvLSTM QAT still gets worse. The stored Arduino split already gives Daghero E09/E10 standing and walking recall of `1.0`, so this dataset does not reproduce the live Standing-to-Walking failure.
+
+Deployment read from the stored test set: the best small deployable candidates remain Daghero E09/E10 PTQ/QAT at about `26-27 KB`. V2 E09 Daghero QAT is numerically tied with the no-augmentation E09/E10 Daghero QAT rows (`accuracy` about `0.9956`, `macro_f1` about `0.9956`, standing recall `1.0`, walking recall `1.0`). Because v2 does not improve the failure-focus metrics in the deployment subset, the no-augmentation Daghero E09/E10 baseline remains the cleaner deployment reference until a target-orientation run or on-device trial changes that conclusion.
+
+Rotation v3 target-orientation run:
+
+- Purpose: test an EDA-informed orientation intervention instead of another random-rotation sweep. E04 EDA showed WISDM walking/stairs/standing mostly `+y`, Arduino walking/jogging/stairs mostly `-x`, Arduino standing split `-x/-y`, and Arduino sitting `+z`.
+- V3 policy:
+  - `mode=target_gravity`
+  - `probability=0.25`
+  - `target_vectors=[[-1,0,0],[0,-1,0],[0,0,1]]`
+  - `target_probabilities=[0.50,0.25,0.25]`
+  - `apply_in_qat=true`
+- Mechanism: for each selected training window, denormalize to raw accelerometer units, estimate the window mean vector as a gravity/pose proxy, choose one target cluster, compute one valid rotation matrix that maps the mean vector direction toward that cluster, rotate the entire raw `[T,3]` window, and re-normalize with the same train-split mean/std.
+- This preserves per-timestep vector norms, uses exactly three accelerometer channels, and changes neither inference preprocessing nor model I/O shape.
+- V3 trains only augmentation-on artifacts. Its off condition reuses the clean no-augmentation v2 baseline under `no_accel_rotation_v2/<model_variant>/<experiment_code>/`.
+- V3 artifact roots:
+  - `models_tflite/m3/<experiment_id>/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/`
+  - `reports/m3/accel_rotation_v3_target_clusters_p025/<model_variant>/<experiment_code>/`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/`
+- Submitted on 2026-05-04:
+  - Training Slurm array job `7714`, with two array tasks for DeepConvLSTM and Daghero augmentation-on training.
+  - Dependent dual-domain eval Slurm array job `7716`, with dependency `afterok:7714`, 44 matrix rows grouped as 11 array tasks. The off rows reuse `no_accel_rotation_v2`.
+- Completed on 2026-05-04:
+  - Training job `7714`: both array tasks `COMPLETED 0:0`, elapsed 17-29 minutes, no wallclock failures.
+  - Eval job `7716`: all eleven array tasks `COMPLETED 0:0`, elapsed under 5 minutes, no wallclock failures.
+  - Queue was empty after completion. Log scan found no `Traceback`, `Exception`, `FAILED`, `CANCELLED`, `TIMEOUT`, `FileNotFound`, or missing-TFLite errors; stderr content is TensorFlow runtime warnings/noise.
+  - Completed v3 result shape: 44 per-run CSVs, 264 master rows, and 66 v3 augmentation-on TFLite exports.
+- V3 aggregate outputs:
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/dual_domain_eval_master.csv`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/dual_domain_eval_master.md`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/rotation_ablation_summary.csv`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/rotation_ablation_summary.md`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/arduino_failure_focus_delta.csv`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/arduino_failure_focus_delta.md`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/arduino_failure_focus_deployment_subset_delta.csv`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/arduino_failure_focus_deployment_subset_delta.md`
+  - `reports/m3/dual_domain_eval_v3_target_clusters_p025/rotation_strategy_recommendation.md`
+
+Mean v3 ablation result across E00/E03-E12:
+
+| Model | Tier | Eval domain | Off acc | On acc | Delta acc | Off macro-F1 | On macro-F1 | Delta macro-F1 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `daghero_cnn_2layer_conv2d` | FP32 | Arduino | 0.5286 | 0.5281 | -0.0005 | 0.4643 | 0.4635 | -0.0008 |
+| `daghero_cnn_2layer_conv2d` | FP32 | WISDM | 0.7626 | 0.7457 | -0.0169 | 0.7099 | 0.6630 | -0.0469 |
+| `daghero_cnn_2layer_conv2d` | PTQ | Arduino | 0.5269 | 0.5255 | -0.0014 | 0.4623 | 0.4624 | +0.0001 |
+| `daghero_cnn_2layer_conv2d` | PTQ | WISDM | 0.7503 | 0.7433 | -0.0070 | 0.6777 | 0.6608 | -0.0169 |
+| `daghero_cnn_2layer_conv2d` | QAT | Arduino | 0.5283 | 0.5370 | +0.0087 | 0.4630 | 0.4768 | +0.0139 |
+| `daghero_cnn_2layer_conv2d` | QAT | WISDM | 0.7523 | 0.7421 | -0.0102 | 0.6873 | 0.6567 | -0.0306 |
+| `deepconv_lstm_conv2d` | FP32 | Arduino | 0.5350 | 0.5236 | -0.0113 | 0.4890 | 0.4569 | -0.0321 |
+| `deepconv_lstm_conv2d` | FP32 | WISDM | 0.7416 | 0.7363 | -0.0053 | 0.6756 | 0.6505 | -0.0250 |
+| `deepconv_lstm_conv2d` | PTQ | Arduino | 0.5325 | 0.5217 | -0.0109 | 0.4874 | 0.4555 | -0.0319 |
+| `deepconv_lstm_conv2d` | PTQ | WISDM | 0.7380 | 0.7358 | -0.0021 | 0.6687 | 0.6488 | -0.0199 |
+| `deepconv_lstm_conv2d` | QAT | Arduino | 0.4726 | 0.4291 | -0.0435 | 0.4276 | 0.3773 | -0.0504 |
+| `deepconv_lstm_conv2d` | QAT | WISDM | 0.6899 | 0.6681 | -0.0218 | 0.6048 | 0.5680 | -0.0368 |
+
+V3 interpretation: target-gravity rotation did not become the new deployment default. It gives a mean Arduino gain for Daghero QAT, but it hurts WISDM and does not beat the no-augmentation Daghero baseline in the deployment-relevant E09-E12 subset. It also hurts DeepConvLSTM across FP32/PTQ/QAT mean Arduino metrics, and DeepConvLSTM remains too large relative to Daghero for the first on-device candidate. The useful conclusion is that the EDA-informed target rotation is a better hypothesis than blind rotation, but the stored dataset still does not reproduce the live failure strongly enough to select an augmented model from offline metrics alone.
+
+Experiment ladder and what we learned:
+
+| Run | Purpose | Policy | What we achieved | Decision |
+| --- | --- | --- | --- | --- |
+| v1 | Stress-test whether physically valid arbitrary orientation changes help. | `uniform_so3`, `p=0.5` | Proved the shared train-only augmentation path works for FP32, fine-tune, and QAT with no inference cost. Found unconstrained rotations are too blunt: Daghero Arduino improves slightly, DeepConvLSTM especially QAT gets hurt. | Keep as reference, not deployment default. |
+| v2 | Test a gentler random perturbation after v1 was too strong. | `bounded_so3`, `20deg`, `p=0.25` | Reduced damage compared with v1 and gave Daghero small mean Arduino gains, but did not improve deployment-subset failure metrics. Stored Arduino standing/walking are already near-perfect for Daghero E09/E10, so the live issue is not reproduced by this split. | Do not spend the next sweep on more bounded random rotations. |
+| v3 | Use observed WISDM-vs-Arduino axis/domain shift instead of blind random rotations. | `target_gravity`, targets `-x/-y/+z`, `p=0.25` | Completed. It directly rotates WISDM-like gravity directions toward Arduino clusters and works technically, but the offline metrics do not beat the no-augmentation Daghero baseline for deployment. | Do not deploy by default; keep as reference and stop rotation sweeps until live failure data is captured. |
+
+Deployment guideline right now:
+
+- Do not deploy v1, v2, or v3 rotation-augmented models as the default just because they are newer.
+- The current stored-test deployment reference should be Daghero, not DeepConvLSTM, because Daghero reaches comparable stored Arduino performance at about `26-27 KB` INT8 instead of roughly `107-137 KB` INT8 for DeepConvLSTM.
+- First on-device candidate, Daghero QAT INT8:
+  - Model: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite`
+  - Norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+  - Stored Arduino metrics: accuracy about `0.9956`, macro-F1 about `0.9956`, standing recall `1.0`, walking recall `1.0`, size about `26.7 KB`.
+- Backup candidate if QAT has any on-device issue, Daghero PTQ INT8:
+  - Model: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_ptq_int8.tflite`
+  - Same fine-tune Arduino norm stats as above.
+- DeepConvLSTM comparison candidate, PTQ INT8:
+  - Model: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/deepconv_lstm_conv2d/e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite`
+  - Norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/deepconv_lstm_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+  - Stored Arduino metrics: accuracy about `0.9886`, macro-F1 about `0.9886`, standing recall `1.0`, walking recall about `0.9886`, size about `136.9 KB`.
+- DeepConvLSTM QAT comparison candidate, only if QAT is specifically required for DeepConvLSTM:
+  - Model: `models_tflite/m3/E11_wisdm_pretrain_arduino_finetune_T50/no_accel_rotation_v2/deepconv_lstm_conv2d/e11/deepconv_lstm_conv2d_T50_Prandom_stratified_E11_deepconv_lstm_r0_qat.tflite`
+  - Norm stats: `data/processed/m3/E11_wisdm_pretrain_arduino_finetune_T50/no_accel_rotation_v2/deepconv_lstm_conv2d/e11/finetune_arduino/norm_stats_T50_Prandom_stratified.json`
+  - Stored Arduino metrics: accuracy about `0.9662`, macro-F1 about `0.9664`, standing recall about `0.9905`, walking recall about `0.9679`, size about `108.0 KB`.
+- All recommended deployment candidates above are no-augmentation models. The model sees normalized accelerometer windows on-device using its matching `norm_stats.h`; no rotation augmentation runs on-device.
+- On-device test priority: verify the actual live confusion behavior for `Standing`, `Walking`, `Upstairs`, and `Downstairs`; stored-test performance alone is not sufficient because the stored Arduino split does not reproduce the live Standing-to-Walking failure.
+- If an augmented on-device comparison is required, test these after the no-augmentation Daghero baseline:
+  - Best augmented candidate, Daghero v2 QAT INT8: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite`
+  - Matching norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+  - EDA-informed augmented candidate, Daghero v3 QAT INT8: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v3_target_clusters_p025/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite`
+  - Matching norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v3_target_clusters_p025/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+  - V1 stress-test reference, Daghero QAT INT8: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite`
+  - Matching norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+  - Best augmented DeepConvLSTM comparison, v2 PTQ INT8: `models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e09/deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0_ptq_int8.tflite`
+  - Matching norm stats: `data/processed/m3/E09_wisdm_pretrain_arduino_finetune/accel_rotation_v2_bounded20_p025/deepconv_lstm_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json`
+- Export commands for the first candidate:
+
+```bash
+/shared/b00088568/myenvs/tinymlproj/bin/python -m src.deploy.export_c_array \
+  --tflite models_tflite/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E09_daghero_cnn_2layer_conv2d_r0_qat.tflite \
+  --out-dir deploy/common
+
+/shared/b00088568/myenvs/tinymlproj/bin/python -m src.deploy.export_norm_header \
+  --norm-json data/processed/m3/E09_wisdm_pretrain_arduino_finetune/no_accel_rotation_v2/daghero_cnn_2layer_conv2d/e09/finetune_arduino/norm_stats_T100_Prandom_stratified.json \
+  --out deploy/common/norm_stats.h
+```
+
+Team update summary:
+
+- Goal: improve Arduino Nano 33 BLE Sense HAR robustness to orientation changes without adding gyro/magnetometer channels, changing model shapes, or adding inference-time cost.
+- Done: built a shared train-only accelerometer rotation path used by FP32/source-only/from-scratch, fine-tune, and QAT training; validation/test/PTQ representative data stay untouched.
+- Done: ran clean full-dataset v1, v2, and v3 DeepConvLSTM/Daghero experiments and dual-domain WISDM/Arduino TFLite evaluation for FP32, PTQ, and QAT.
+- Done: added EDA showing a real axis/domain shift: WISDM mostly `+y`, Arduino dynamic activities mostly `-x`, Arduino standing `-x/-y`, Arduino sitting `+z`.
+- Finding: arbitrary `uniform_so3,p=0.5` is too strong; bounded `20deg,p=0.25` is safer but not enough for deployment; target-gravity v3 is technically sound but still not enough to beat the no-augmentation Daghero deployment baseline offline.
+- Current best deployable reference: Daghero E09 no-augmentation QAT, about `26.7 KB`, with excellent stored Arduino metrics.
+- Left to do: export the selected Daghero candidate into `deploy/common`, run live on-device trials focused on the known standing/walking/stairs confusions, and collect live failure windows if the issue persists.
+
+## Orientation Failure Notes And Next Strategy
+
+The on-device problem we actually care about is not abstract benchmark accuracy. The Arduino Nano 33 BLE Sense sometimes predicts true `Standing` as `Walking`, and sometimes true `Walking` as `Downstairs` or `Upstairs`. Those are examples of the failures we noticed, not the complete failure set. The next evaluation pass should therefore track full Arduino-domain confusion matrices, per-class recall, and the named standing/walking/stairs confusion pairs instead of relying only on mean accuracy or macro-F1.
+
+Paper traceability:
+
+- Yurtman and Barshan 2017, "Activity Recognition Invariant to Sensor Orientation with Wearable Motion Sensors" (`https://doi.org/10.3390/s17081838`), motivates the problem framing: wearable HAR pipelines are brittle when a device is placed at a different orientation. From this paper we take the experimental priority of orientation robustness and the idea that a 3-axis motion vector should be treated geometrically under rotations. We do not copy their full orientation-invariant preprocessing path because this repo must keep the current accelerometer-only model and on-device preprocessing contract.
+- Yurtman, Barshan, and Fidan 2018, "Activity Recognition Invariant to Wearable Sensor Unit Orientation Using Differential Rotational Transformations Represented by Quaternions" (`https://doi.org/10.3390/s18082725`), is the cautionary source. It motivates orientation-invariant transformations, but it also sits in a richer wearable-motion-sensor setting where gyroscope/magnetometer information can support orientation reasoning. From this paper we take the caution not to claim true Earth-frame correction from our accelerometer-only setup and not to add gyro or magnetometer channels in this change.
+- Caramaschi, Papini, and Caiani 2023, "Device Orientation Independent Human Activity Recognition Model for Patient Monitoring Based on Triaxial Acceleration" (`https://doi.org/10.3390/app13074175`), is the direct augmentation precedent. They rotate triaxial accelerometer signals with rotation matrices to make a single-accelerometer HAR model more robust to device displacement. From this paper we take the train-time rotation idea, the requirement that the rotation be physically meaningful in raw acceleration space, and the caution that large rotations can damage walking-like classes because gravity-aligned components carry label information. That caution is why v1 `uniform_so3,p=0.5` is now a reference result rather than the deployment default, and why v2 uses bounded rotations.
+
+Current EDA snapshot:
+
+- New EDA command:
+
+```bash
+/shared/b00088568/myenvs/tinymlproj/bin/python -m src.m3.axis_eda \
+  --config configs/m3/E04_wisdm_to_g_arduino_g.yaml \
+  --output-dir reports/m3/axis_eda/e04_g_units
+```
+
+- EDA outputs:
+  - `reports/m3/axis_eda/e04_g_units/axis_eda_report.md`
+  - `reports/m3/axis_eda/e04_g_units/sample_axis_summary.csv`
+  - `reports/m3/axis_eda/e04_g_units/window_axis_summary.csv`
+  - `reports/m3/axis_eda/e04_g_units/dominant_axis_summary.csv`
+- Under E04's unit-compatible view, WISDM is converted to g and Arduino raw readings are rescaled by the firmware factor of `4.0`.
+- WISDM `Walking`, `Upstairs`, `Downstairs`, and `Standing` windows are mostly gravity-dominant on `+y`; WISDM `Sitting` is mostly `+z`.
+- Arduino `Walking` is `-x` dominant for 100% of windows, Arduino `Jogging` is mostly `-x`, Arduino `Sitting` is `+z`, and Arduino `Standing` splits almost exactly between `-x` and `-y`.
+- Arduino `Standing` dynamic RMS is `0.0118`, much lower than WISDM `Standing` at `0.0466` and far below WISDM/Arduino walking-like classes. That means the stored Arduino test-set `Standing` windows are static; the live Standing-to-Walking failure is likely tied to a live orientation/posture/sampling/normalization condition not fully represented by the held-out Arduino CSV.
+- Arduino `Upstairs` and `Downstairs` dynamic RMS are higher than WISDM (`+0.2205` and `+0.1527` respectively), while Arduino `Walking` is slightly lower than WISDM. This supports the observed walking/stairs confusion: these dynamic classes overlap in energy and are also axis-shifted.
+
+Recommended next experiment strategy:
+
+1. Do not adopt `probability=0.5`, `mode=uniform_so3` as the deployment default. Keep the completed run as a reference negative/partial-positive result.
+2. Do not spend another full Slurm sweep on the bounded-rotation grid yet. V2 is not bad for Daghero, but it does not improve the Arduino-adapted E09-E12 failure-pair metrics enough to justify `10deg/20deg/p0.5` as the next branch.
+3. Because we are not collecting more live data right now, treat the stored E04 axis EDA as the available orientation proxy. The important proxy facts are WISDM dynamic/static classes mostly `+y`, Arduino walking/jogging mostly `-x`, Arduino standing split `-x/-y`, and Arduino sitting `+z`.
+4. Target-orientation v3 has now been run. It is technically valid and EDA-informed, but it does not beat the no-augmentation Daghero deployment baseline offline.
+5. Keep the generated failure-focus reports as the decision surface:
+   - `arduino_failure_focus_delta.csv`
+   - `arduino_failure_focus_deployment_subset_delta.csv`
+   - per-class recalls and confusion pairs for `Standing -> Walking`, `Walking -> Upstairs`, `Walking -> Downstairs`, `Upstairs -> Walking`, and `Downstairs -> Walking`
+6. Keep Daghero as the leading deployment architecture unless a later run changes the stored-test and on-device picture. The strongest deployable candidates are still Daghero E09/E10 PTQ/QAT around `26-27 KB`, with stored Arduino standing and walking recall at `1.0`.
+7. Keep inference-time preprocessing and TFLite model shapes fixed unless we explicitly open a separate deployment-change experiment. Training-time augmentation remains the preferred path because it preserves on-device cost.
 
 ## Key Results
 
@@ -172,6 +406,18 @@ models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_c
 models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
 ```
 
+Rotation v2 export patterns:
+
+```text
+models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/accel_rotation_v2_bounded20_p025/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+
+models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/no_accel_rotation_v2/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+```
+
 Accelerometer-rotation TFLite sizes from the completed rerun:
 
 | Model | Window | FP32 TFLite KB | PTQ INT8 KB | QAT INT8 KB |
@@ -209,7 +455,7 @@ Current staged DeepConvLSTM deployment candidate:
 - QAT accuracy / macro-F1: `0.9298356510745891` / `0.9298920081134151`
 - Deployment summary: `reports/m3/final_deployment_summary.md`
 
-This is the model currently exported into `deploy/common/model_data.*`. After the architecture sweep, compare `reports/m3/arch_sweeps/<model_variant>/e09/m3_experiment_master.csv` before replacing the staged deployment headers. E07 is diagnostic-only and must not be selected as the final deployed model.
+This is the model currently exported into `deploy/common/model_data.*` from the earlier DeepConvLSTM deployment pass. It is no longer the recommended next live-test candidate. For the next on-device trial, regenerate `deploy/common/model_data.*` and `deploy/common/norm_stats.h` from the Daghero E09 no-augmentation QAT artifact listed above. E07 is diagnostic-only and must not be selected as the final deployed model.
 
 Architecture sweep outputs:
 
@@ -343,6 +589,25 @@ Aggregate after all chunks finish:
 
 ```bash
 /shared/b00088568/myenvs/tinymlproj/bin/python -m src.m3.dual_domain_eval --aggregate-only --output-dir reports/m3/dual_domain_eval
+```
+
+Run the v2 bounded-rotation ablation:
+
+```bash
+bash scripts/slurm/submit_m3_rotation_v2_train.sh
+```
+
+Run the v2 dual-domain off/on TFLite comparison after the v2 training array succeeds:
+
+```bash
+M3_SLURM_DEPENDENCY=afterok:<TRAIN_ARRAY_JOBID> \
+bash scripts/slurm/submit_m3_rotation_v2_dual_eval.sh
+```
+
+Aggregate v2 results:
+
+```bash
+/shared/b00088568/myenvs/tinymlproj/bin/python -m src.m3.dual_domain_eval --aggregate-only --output-dir reports/m3/dual_domain_eval_v2_bounded20_p025
 ```
 
 Monitor jobs:

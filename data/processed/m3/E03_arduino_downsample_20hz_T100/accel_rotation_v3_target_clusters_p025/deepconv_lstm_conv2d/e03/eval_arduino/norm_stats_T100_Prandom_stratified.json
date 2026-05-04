@@ -1,0 +1,81 @@
+{
+  "axis_columns": [
+    "x-axis",
+    "y-axis",
+    "z-axis"
+  ],
+  "class_order": [
+    "Walking",
+    "Jogging",
+    "Upstairs",
+    "Downstairs",
+    "Sitting",
+    "Standing"
+  ],
+  "data": {
+    "domain": "arduino",
+    "preprocess": {
+      "dropped_total": 0,
+      "rows_after_drop_zero_timestamp": 240620,
+      "rows_after_dropna": 240620,
+      "rows_before": 240620,
+      "rows_final": 240620
+    },
+    "raw_sanity": {
+      "domain": "arduino",
+      "missing_values": 0,
+      "original_sample_rate_hz": 20.0,
+      "rows": 240620,
+      "source_csv": "/shared/b00088568/github/har-mcu/tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv",
+      "target_sample_rate_hz": 20.0,
+      "user_count": 2,
+      "user_id_map": {},
+      "user_id_map_source": "native_numeric",
+      "users": [
+        37,
+        38
+      ],
+      "zero_timestamps": 0
+    },
+    "sampling": {
+      "downsample": false,
+      "method": "none",
+      "rows_after": 240620,
+      "rows_before": 240620,
+      "sample_rate_hz": 20.0,
+      "stride": 1,
+      "target_sample_rate_hz": 20.0
+    },
+    "unit_transform": {
+      "axis_columns": [
+        "x-axis",
+        "y-axis",
+        "z-axis"
+      ],
+      "domain": "arduino",
+      "pre_multiply": 1.0,
+      "scale": 1.0,
+      "total_scale": 1.0,
+      "unit_mode": "raw_no_conversion"
+    }
+  },
+  "diagnostic_only": false,
+  "diagnostic_skip_inference_norm": false,
+  "inference_norm_applied": true,
+  "mean": [
+    0.6486329436302185,
+    7.312712669372559,
+    0.3839524984359741
+  ],
+  "normalization_mode": "train_zscore",
+  "normalization_stats_source": "wisdm_train:/shared/b00088568/github/har-mcu/data/processed/m3/E03_arduino_downsample_20hz_T100/accel_rotation_v3_target_clusters_p025/deepconv_lstm_conv2d/e03/source_wisdm/norm_stats_T100_Prandom_stratified.json",
+  "protocol": "random_stratified",
+  "std": [
+    6.959278583526611,
+    6.782463073730469,
+    4.814520359039307
+  ],
+  "window_duration_seconds": 5.0,
+  "window_size": 100,
+  "window_size_samples": 100
+}

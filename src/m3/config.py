@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from src.utils.config import deep_merge, load_yaml
 from src.utils.constants import DEFAULT_CLASS_ORDER
 
@@ -30,7 +32,7 @@ VALID_UNIT_MODES = {
     "arduino_to_mps2_legacy",
 }
 VALID_NORM_MODES = {"train_zscore", "none"}
-VALID_AUGMENT_MODES = {"uniform_so3"}
+VALID_AUGMENT_MODES = {"uniform_so3", "bounded_so3", "target_gravity"}
 
 M3_MASTER_COLUMNS = [
     "experiment_id",
@@ -208,13 +210,59 @@ def validate_m3_config(cfg: dict[str, Any]) -> list[str]:
     rotation_cfg = _get(cfg, "augment.accel_rotation", {})
     if isinstance(rotation_cfg, dict) and bool(rotation_cfg.get("enabled", False)):
         mode = str(rotation_cfg.get("mode", "uniform_so3")).strip().lower()
-        probability = float(rotation_cfg.get("probability", -1.0))
+        try:
+            probability = float(rotation_cfg.get("probability", -1.0))
+        except (TypeError, ValueError):
+            probability = -1.0
         if mode not in VALID_AUGMENT_MODES:
             errors.append(f"augment.accel_rotation.mode must be one of {sorted(VALID_AUGMENT_MODES)}")
         if not 0.0 <= probability <= 1.0:
             errors.append("augment.accel_rotation.probability must be in [0, 1]")
         if rotation_cfg.get("apply_in_qat", True) not in {True, False}:
             errors.append("augment.accel_rotation.apply_in_qat must be boolean")
+        if mode == "bounded_so3":
+            max_angle = rotation_cfg.get("max_angle_degrees")
+            if max_angle is None:
+                errors.append(
+                    "augment.accel_rotation.max_angle_degrees is required for bounded_so3"
+                )
+            else:
+                try:
+                    max_angle_value = float(max_angle)
+                except (TypeError, ValueError):
+                    max_angle_value = -1.0
+                if not 0.0 < max_angle_value <= 180.0:
+                    errors.append(
+                        "augment.accel_rotation.max_angle_degrees must be in (0, 180]"
+                    )
+        if mode == "target_gravity":
+            target_vectors = rotation_cfg.get("target_vectors")
+            try:
+                targets = np.asarray(target_vectors, dtype=float)
+            except (TypeError, ValueError):
+                targets = np.empty((0, 3))
+            if targets.ndim != 2 or targets.shape[1] != 3 or targets.shape[0] == 0:
+                errors.append(
+                    "augment.accel_rotation.target_vectors must be a non-empty [N, 3] list for target_gravity"
+                )
+            elif np.any(np.linalg.norm(targets, axis=1) <= 0.0):
+                errors.append(
+                    "augment.accel_rotation.target_vectors cannot contain zero vectors"
+                )
+            target_probabilities = rotation_cfg.get("target_probabilities")
+            if target_probabilities is not None:
+                try:
+                    probs = np.asarray(target_probabilities, dtype=float)
+                except (TypeError, ValueError):
+                    probs = np.empty((0,))
+                if probs.shape != (targets.shape[0],):
+                    errors.append(
+                        "augment.accel_rotation.target_probabilities length must match target_vectors"
+                    )
+                elif np.any(probs < 0.0) or float(np.sum(probs)) <= 0.0:
+                    errors.append(
+                        "augment.accel_rotation.target_probabilities must be non-negative and sum to > 0"
+                    )
 
     if bool(_get(cfg, "normalization.diagnostic_skip_inference_norm", False)):
         if not bool(_get(cfg, "m3.diagnostic_only", False)):

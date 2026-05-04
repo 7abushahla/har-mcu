@@ -1,0 +1,165 @@
+{
+  "tag": "fp32_tflite_daghero_cnn_2layer_conv2d_E04_daghero_cnn_2layer_conv2d_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E04_wisdm_to_g_arduino_g/accel_rotation/daghero_cnn_2layer_conv2d/e04/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E04_daghero_cnn_2layer_conv2d_r0_fp32.tflite",
+  "model_size_kb": 80.40625,
+  "input_dtype": "<class 'numpy.float32'>",
+  "output_dtype": "<class 'numpy.float32'>",
+  "interpreter_ops": [
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "MAX_POOL_2D",
+    "MEAN",
+    "RESHAPE",
+    "SOFTMAX"
+  ],
+  "interpreter_op_count": 6,
+  "accuracy": 0.5587863463969659,
+  "macro_f1": 0.525089035582826,
+  "confusion_matrix": [
+    [
+      97,
+      0,
+      167,
+      0,
+      0,
+      0
+    ],
+    [
+      5,
+      242,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      112,
+      3,
+      148,
+      1,
+      0,
+      0
+    ],
+    [
+      121,
+      1,
+      142,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      264,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      130,
+      133
+    ]
+  ],
+  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation/daghero_cnn_2layer_conv2d/e04/m3/confusion_fp32_tflite_daghero_cnn_2layer_conv2d_E04_daghero_cnn_2layer_conv2d_r0_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.28955223880597014,
+      "recall": 0.36742424242424243,
+      "f1": 0.32387312186978295,
+      "support": 264
+    },
+    "Jogging": {
+      "precision": 0.983739837398374,
+      "recall": 0.9201520912547528,
+      "f1": 0.9508840864440079,
+      "support": 263
+    },
+    "Upstairs": {
+      "precision": 0.3128964059196617,
+      "recall": 0.5606060606060606,
+      "f1": 0.4016282225237449,
+      "support": 264
+    },
+    "Downstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 264
+    },
+    "Sitting": {
+      "precision": 0.6700507614213198,
+      "recall": 1.0,
+      "f1": 0.8024316109422492,
+      "support": 264
+    },
+    "Standing": {
+      "precision": 1.0,
+      "recall": 0.5057034220532319,
+      "f1": 0.6717171717171717,
+      "support": 263
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.28955223880597014,
+      "recall": 0.36742424242424243,
+      "f1-score": 0.32387312186978295,
+      "support": 264.0
+    },
+    "Jogging": {
+      "precision": 0.983739837398374,
+      "recall": 0.9201520912547528,
+      "f1-score": 0.9508840864440079,
+      "support": 263.0
+    },
+    "Upstairs": {
+      "precision": 0.3128964059196617,
+      "recall": 0.5606060606060606,
+      "f1-score": 0.4016282225237449,
+      "support": 264.0
+    },
+    "Downstairs": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 264.0
+    },
+    "Sitting": {
+      "precision": 0.6700507614213198,
+      "recall": 1.0,
+      "f1-score": 0.8024316109422492,
+      "support": 264.0
+    },
+    "Standing": {
+      "precision": 1.0,
+      "recall": 0.5057034220532319,
+      "f1-score": 0.6717171717171717,
+      "support": 263.0
+    },
+    "accuracy": 0.5587863463969659,
+    "macro avg": {
+      "precision": 0.5427065405908876,
+      "recall": 0.5589809693897146,
+      "f1-score": 0.525089035582826,
+      "support": 1582.0
+    },
+    "weighted avg": {
+      "precision": 0.5421386981406875,
+      "recall": 0.5587863463969659,
+      "f1-score": 0.5247272004456608,
+      "support": 1582.0
+    }
+  },
+  "inference_latency_ms_median": 0.039555499995458376,
+  "inference_latency_ms_p95": 0.04982350000659608,
+  "inference_latency_ms_mean": 0.0410286757828171,
+  "warmup_samples": 32,
+  "timed_samples": 256
+}

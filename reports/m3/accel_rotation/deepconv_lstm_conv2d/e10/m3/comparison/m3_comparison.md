@@ -1,0 +1,13 @@
+# m3 Comparison
+
+- Notes: Train from scratch on Arduino train split and evaluate untouched Arduino test split.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | ptq_status | qat_status | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.97724399494311 | 0.9772636834105509 | 513.6171875 | 18.6892412950001 | — | — | — | — | ok | ok | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9608091024020228 | 0.9612101771780476 | 136.921875 | — | 4.245906000051036 | 4.299062000086451 | — | — | ok | — | ok |
+| WISDM replication | random_stratified | QAT int8 | 0.3141592920353982 | 0.2989361196990518 | 137.34375 | 7.252222467000138 | 4.243201000122099 | 4.293879499925879 | — | — | — | ok | ok |
+| paper target | — | baseline float | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | — | — | reference |
+

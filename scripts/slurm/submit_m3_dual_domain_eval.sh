@@ -27,6 +27,12 @@ TASK_LIMIT="${M3_DUAL_EVAL_TASK_LIMIT:-15}"
 TASKS_PER_ARRAY_TASK="${M3_DUAL_EVAL_TASKS_PER_ARRAY_TASK:-${M3_DUAL_EVAL_TASKS_PER_ARRAY:-1}}"
 MATRIX_ONLY="${M3_DUAL_EVAL_MATRIX_ONLY:-0}"
 DEPENDENCY="${M3_SLURM_DEPENDENCY:-}"
+OUTPUT_DIR="${M3_DUAL_EVAL_OUTPUT_DIR:-reports/m3/dual_domain_eval}"
+if [ -n "${M3_DUAL_EVAL_ON_ARTIFACT_SUFFIX:-}" ]; then
+  ON_ARTIFACT_SUFFIX="$M3_DUAL_EVAL_ON_ARTIFACT_SUFFIX"
+else
+  ON_ARTIFACT_SUFFIX='accel_rotation/{model_variant}/{experiment_code}'
+fi
 if [ -n "${M3_DUAL_EVAL_OFF_ARTIFACT_SUFFIX:-}" ]; then
   OFF_ARTIFACT_SUFFIX="$M3_DUAL_EVAL_OFF_ARTIFACT_SUFFIX"
 else
@@ -53,8 +59,8 @@ if [ "${ACTIVE_JOBS:-0}" -ge "$MAX_ACTIVE_JOBS" ]; then
   exit 1
 fi
 
-mkdir -p "$REPO_ROOT/slurm_logs" "$REPO_ROOT/reports/m3/dual_domain_eval"
-JOB_FILE="$REPO_ROOT/reports/m3/dual_domain_eval/job_matrix.tsv"
+mkdir -p "$REPO_ROOT/slurm_logs" "$REPO_ROOT/$OUTPUT_DIR"
+JOB_FILE="$REPO_ROOT/$OUTPUT_DIR/job_matrix.tsv"
 : > "$JOB_FILE"
 
 declare -a CONFIGS=(
@@ -80,9 +86,9 @@ for item in "${CONFIGS[@]}"; do
   IFS='|' read -r cfg code <<<"$item"
   code_lower="${code,,}"
   for model in "${MODELS[@]}"; do
-    # Augmentation ON artifacts from scripts/slurm/submit_m3_accel_rotation_runs.sh.
+    # Augmentation ON artifacts.
     printf '%s\t%s\t%s\t%s\t%s\n' \
-      "$cfg" "$model" "on" "accel_rotation/{model_variant}/{experiment_code}" "" >> "$JOB_FILE"
+      "$cfg" "$model" "on" "$ON_ARTIFACT_SUFFIX" "" >> "$JOB_FILE"
 
     # Augmentation OFF artifacts from the clean no-rotation rerun.
     off_suffix="$OFF_ARTIFACT_SUFFIX"
@@ -190,7 +196,7 @@ for matrix_row in \$(seq "\$first_row" "\$last_row"); do
     --model-variant "\$model"
     --augment-label "\$augment_label"
     --artifact-suffix "\$artifact_suffix"
-    --output-dir reports/m3/dual_domain_eval
+    --output-dir "${OUTPUT_DIR}"
   )
   if [ -n "\$run_id" ]; then
     args+=(--run-id "\$run_id")
@@ -207,4 +213,4 @@ if [ "${ROW_END}" -lt $((TASK_COUNT - 1)) ]; then
   echo "  M3_DUAL_EVAL_TASK_START=$((ROW_END + 1)) M3_DUAL_EVAL_TASK_LIMIT=${TASK_LIMIT} bash scripts/slurm/submit_m3_dual_domain_eval.sh"
 fi
 echo "After completion, aggregate with:"
-echo "  ${CONDA_ENV}/bin/python -m src.m3.dual_domain_eval --aggregate-only --output-dir reports/m3/dual_domain_eval"
+echo "  ${CONDA_ENV}/bin/python -m src.m3.dual_domain_eval --aggregate-only --output-dir ${OUTPUT_DIR}"

@@ -79,6 +79,9 @@ augment:
     probability: 0.5
     apply_in_qat: true
     mode: uniform_so3
+    max_angle_degrees: null
+    target_vectors: null
+    target_probabilities: null
 quant:
   ptq:
     representative_samples: 256

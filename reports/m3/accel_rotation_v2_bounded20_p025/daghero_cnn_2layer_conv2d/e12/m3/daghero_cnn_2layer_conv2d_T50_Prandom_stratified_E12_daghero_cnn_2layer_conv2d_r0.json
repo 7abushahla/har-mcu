@@ -1,0 +1,150 @@
+{
+  "paper_slug": "m3",
+  "model_name": "daghero_cnn_2layer_conv2d",
+  "run_id": "E12_daghero_cnn_2layer_conv2d_r0",
+  "window_size": 50,
+  "protocol": "random_stratified",
+  "seed": 42,
+  "accuracy": 0.9861198738170347,
+  "macro_f1": 0.9861115594418098,
+  "per_class": {
+    "Walking": {
+      "precision": 0.9906015037593985,
+      "recall": 0.996219281663516,
+      "f1": 0.9934024505183789,
+      "support": 529
+    },
+    "Jogging": {
+      "precision": 0.9961904761904762,
+      "recall": 0.990530303030303,
+      "f1": 0.99335232668566,
+      "support": 528
+    },
+    "Upstairs": {
+      "precision": 0.9766990291262136,
+      "recall": 0.9508506616257089,
+      "f1": 0.9636015325670498,
+      "support": 529
+    },
+    "Downstairs": {
+      "precision": 0.955637707948244,
+      "recall": 0.9791666666666666,
+      "f1": 0.9672591206735267,
+      "support": 528
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 528
+    },
+    "Standing": {
+      "precision": 0.998109640831758,
+      "recall": 1.0,
+      "f1": 0.9990539262062441,
+      "support": 528
+    }
+  },
+  "confusion_matrix": [
+    [
+      527,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      523,
+      0,
+      4,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      503,
+      20,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      11,
+      517,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      528,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      528
+    ]
+  ],
+  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/accel_rotation_v2_bounded20_p025/daghero_cnn_2layer_conv2d/e12/m3/confusion_daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E12_daghero_cnn_2layer_conv2d_r0.png",
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9906015037593985,
+      "recall": 0.996219281663516,
+      "f1-score": 0.9934024505183789,
+      "support": 529.0
+    },
+    "Jogging": {
+      "precision": 0.9961904761904762,
+      "recall": 0.990530303030303,
+      "f1-score": 0.99335232668566,
+      "support": 528.0
+    },
+    "Upstairs": {
+      "precision": 0.9766990291262136,
+      "recall": 0.9508506616257089,
+      "f1-score": 0.9636015325670498,
+      "support": 529.0
+    },
+    "Downstairs": {
+      "precision": 0.955637707948244,
+      "recall": 0.9791666666666666,
+      "f1-score": 0.9672591206735267,
+      "support": 528.0
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 528.0
+    },
+    "Standing": {
+      "precision": 0.998109640831758,
+      "recall": 1.0,
+      "f1-score": 0.9990539262062441,
+      "support": 528.0
+    },
+    "accuracy": 0.9861198738170347,
+    "macro avg": {
+      "precision": 0.986206392976015,
+      "recall": 0.9861278188310324,
+      "f1-score": 0.9861115594418098,
+      "support": 3170.0
+    },
+    "weighted avg": {
+      "precision": 0.9862047802778869,
+      "recall": 0.9861198738170347,
+      "f1-score": 0.9861067584525992,
+      "support": 3170.0
+    }
+  }
+}

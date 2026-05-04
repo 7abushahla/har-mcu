@@ -1,0 +1,8 @@
+# Master Results
+
+- Total rows: `1`
+
+| paper_slug | protocol | variant | run_id | run_mode | compression_focus | accuracy | macro_f1 | ptq_status | qat_status | train_device | eval_fp32_device | ptq_device | eval_ptq_device | qat_device | eval_qat_device | fp32_training_time_sec | fp32_model_size_kb | fp32_tflite_status | fp32_tflite_eval_status | fp32_tflite_accuracy | fp32_tflite_macro_f1 | qat_training_time_sec | ptq_inference_latency_ms_median | ptq_inference_latency_ms_p95 | qat_inference_latency_ms_median | qat_inference_latency_ms_p95 | ptq_model_size_kb | qat_model_size_kb | paper_target_score | delta_vs_paper | notes_assumptions |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| m3 | random_stratified | daghero_cnn_2layer_conv2d | E09_daghero_cnn_2layer_conv2d_r0 | sanity_check | ptq_qat_only | 0.9848293299620733 | 0.9847141600689054 | ok | ok | gpu | gpu | gpu | gpu | cpu | cpu | 12.210102779999943 | 80.40625 | ok | ok | 0.9848293299620733 | 0.9847141600689054 | 5.686593055999992 | 0.0749365000274338 | 0.09119700001747333 | 0.07509149997986242 | 0.0918920000003709 | 26.1328125 | 26.734375 | — | — | finetune pretrain=wisdm target=arduino; final normalization fitted on target train split only |
+
