@@ -1,0 +1,968 @@
+{
+  "fp32_metrics": {
+    "accuracy": 0.17256637168141592,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Standing": {
+        "f1-score": 0.39969604863221886,
+        "precision": 0.24976258309591642,
+        "recall": 1.0,
+        "support": 263.0
+      },
+      "Upstairs": {
+        "f1-score": 0.037037037037037035,
+        "precision": 0.036231884057971016,
+        "recall": 0.03787878787878788,
+        "support": 264.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "accuracy": 0.17256637168141592,
+      "macro avg": {
+        "f1-score": 0.07278884761154265,
+        "precision": 0.0476657445256479,
+        "recall": 0.17297979797979798,
+        "support": 1582.0
+      },
+      "weighted avg": {
+        "f1-score": 0.07262821654111967,
+        "precision": 0.04756812689350845,
+        "recall": 0.17256637168141592,
+        "support": 1582.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        263
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        14,
+        249
+      ],
+      [
+        0,
+        0,
+        10,
+        0,
+        126,
+        128
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        112,
+        150
+      ],
+      [
+        0,
+        0,
+        264,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        263
+      ]
+    ],
+    "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0.png",
+    "macro_f1": 0.07278884761154265,
+    "model_name": "deepconv_lstm_conv2d",
+    "paper_slug": "m3",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Standing": {
+        "f1": 0.39969604863221886,
+        "precision": 0.24976258309591642,
+        "recall": 1.0,
+        "support": 263
+      },
+      "Upstairs": {
+        "f1": 0.037037037037037035,
+        "precision": 0.036231884057971016,
+        "recall": 0.03787878787878788,
+        "support": 264
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      }
+    },
+    "protocol": "random_stratified",
+    "run_id": "E03_deepconv_lstm_r0",
+    "seed": 42,
+    "window_size": 100
+  },
+  "fp32_tflite_error": null,
+  "fp32_tflite_eval_error": null,
+  "fp32_tflite_eval_metrics": {
+    "accuracy": 0.252212389380531,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Standing": {
+        "f1-score": 0.39341810022438295,
+        "precision": 0.24487895716945995,
+        "recall": 1.0,
+        "support": 263.0
+      },
+      "Upstairs": {
+        "f1-score": 0.35233160621761656,
+        "precision": 0.2677165354330709,
+        "recall": 0.5151515151515151,
+        "support": 264.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "accuracy": 0.252212389380531,
+      "macro avg": {
+        "f1-score": 0.12429161774033326,
+        "precision": 0.08543258210042182,
+        "recall": 0.25252525252525254,
+        "support": 1582.0
+      },
+      "weighted avg": {
+        "f1-score": 0.12420006599270765,
+        "precision": 0.0853857971491142,
+        "recall": 0.252212389380531,
+        "support": 1582.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        263
+      ],
+      [
+        0,
+        0,
+        3,
+        0,
+        0,
+        260
+      ],
+      [
+        0,
+        0,
+        136,
+        0,
+        0,
+        128
+      ],
+      [
+        0,
+        0,
+        104,
+        0,
+        0,
+        160
+      ],
+      [
+        0,
+        0,
+        264,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        263
+      ]
+    ],
+    "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/confusion_fp32_tflite_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.png",
+    "inference_latency_ms_mean": 0.6470205781279326,
+    "inference_latency_ms_median": 0.6484125000270069,
+    "inference_latency_ms_p95": 0.6600529999900573,
+    "input_dtype": "<class 'numpy.float32'>",
+    "interpreter_op_count": 5,
+    "interpreter_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "RESHAPE",
+      "SOFTMAX",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM"
+    ],
+    "macro_f1": 0.12429161774033326,
+    "metrics_json": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/fp32_tflite_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.json",
+    "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_fp32.tflite",
+    "model_size_kb": 513.6171875,
+    "output_dtype": "<class 'numpy.float32'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Standing": {
+        "f1": 0.39341810022438295,
+        "precision": 0.24487895716945995,
+        "recall": 1.0,
+        "support": 263
+      },
+      "Upstairs": {
+        "f1": 0.35233160621761656,
+        "precision": 0.2677165354330709,
+        "recall": 0.5151515151515151,
+        "support": 264
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "fp32_tflite_deepconv_lstm_conv2d_E03_deepconv_lstm_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 100
+  },
+  "fp32_tflite_eval_status": "ok",
+  "fp32_tflite_model": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_fp32.tflite",
+  "fp32_tflite_status": "ok",
+  "fp32_training_time_sec": 55.37359373000004,
+  "paper_slug": "m3",
+  "protocol": "random_stratified",
+  "ptq_eval_metrics": {
+    "accuracy": 0.2370417193426043,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263.0
+      },
+      "Sitting": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Standing": {
+        "f1-score": 0.35658914728682173,
+        "precision": 0.22395326192794549,
+        "recall": 0.8745247148288974,
+        "support": 263.0
+      },
+      "Upstairs": {
+        "f1-score": 0.3545232273838631,
+        "precision": 0.26173285198555957,
+        "recall": 0.5492424242424242,
+        "support": 264.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "accuracy": 0.2370417193426043,
+      "macro avg": {
+        "f1-score": 0.11851872911178081,
+        "precision": 0.08094768565225084,
+        "recall": 0.2372945231785536,
+        "support": 1582.0
+      },
+      "weighted avg": {
+        "f1-score": 0.11844315914397849,
+        "precision": 0.08090845816133843,
+        "recall": 0.2370417193426043,
+        "support": 1582.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        4,
+        0,
+        0,
+        260
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        262
+      ],
+      [
+        0,
+        0,
+        145,
+        0,
+        0,
+        119
+      ],
+      [
+        0,
+        0,
+        108,
+        0,
+        0,
+        156
+      ],
+      [
+        0,
+        0,
+        264,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        32,
+        0,
+        1,
+        230
+      ]
+    ],
+    "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/confusion_ptq_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.png",
+    "inference_latency_ms_mean": 4.252346089842707,
+    "inference_latency_ms_median": 4.245213000046988,
+    "inference_latency_ms_p95": 4.281367250001722,
+    "input_dtype": "<class 'numpy.int8'>",
+    "interpreter_op_count": 5,
+    "interpreter_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "RESHAPE",
+      "SOFTMAX",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM"
+    ],
+    "macro_f1": 0.11851872911178081,
+    "metrics_json": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/ptq_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.json",
+    "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_ptq_int8.tflite",
+    "model_size_kb": 136.921875,
+    "output_dtype": "<class 'numpy.int8'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263
+      },
+      "Sitting": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Standing": {
+        "f1": 0.35658914728682173,
+        "precision": 0.22395326192794549,
+        "recall": 0.8745247148288974,
+        "support": 263
+      },
+      "Upstairs": {
+        "f1": 0.3545232273838631,
+        "precision": 0.26173285198555957,
+        "recall": 0.5492424242424242,
+        "support": 264
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "ptq_deepconv_lstm_conv2d_E03_deepconv_lstm_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 100
+  },
+  "ptq_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "allowed_ops_profile": "micro_mutable_main",
+    "allowed_ops_used": [
+      "ADD",
+      "ARG_MAX",
+      "ARG_MIN",
+      "AVERAGE_POOL_2D",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CAST",
+      "CEIL",
+      "CIRCULAR_BUFFER",
+      "CONCATENATION",
+      "CONV_2D",
+      "COS",
+      "CUMSUM",
+      "DEPTHWISE_CONV_2D",
+      "DEPTH_TO_SPACE",
+      "DEQUANTIZE",
+      "DIV",
+      "ELU",
+      "EQUAL",
+      "ETHOSU",
+      "EXP",
+      "EXPAND_DIMS",
+      "FILL",
+      "FLOOR",
+      "FLOOR_DIV",
+      "FLOOR_MOD",
+      "FULLY_CONNECTED",
+      "GATHER",
+      "GATHER_ND",
+      "GREATER",
+      "GREATER_EQUAL",
+      "HARD_SWISH",
+      "IF",
+      "L2_NORMALIZATION",
+      "L2_POOL_2D",
+      "LEAKY_RELU",
+      "LESS",
+      "LESS_EQUAL",
+      "LOG",
+      "LOGICAL_AND",
+      "LOGICAL_NOT",
+      "LOGICAL_OR",
+      "LOGISTIC",
+      "LOG_SOFTMAX",
+      "MAXIMUM",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MINIMUM",
+      "MIRROR_PAD",
+      "MUL",
+      "NEG",
+      "NOT_EQUAL",
+      "PACK",
+      "PAD",
+      "PADV2",
+      "PRELU",
+      "QUANTIZE",
+      "READ_VARIABLE",
+      "REDUCE_MAX",
+      "REDUCE_MIN",
+      "RELU",
+      "RELU6",
+      "RELU_0_TO_1",
+      "RELU_N1_TO_1",
+      "RESHAPE",
+      "RESIZE_BILINEAR",
+      "RESIZE_NEAREST_NEIGHBOR",
+      "ROUND",
+      "RSQRT",
+      "SELECT_V2",
+      "SHAPE",
+      "SIN",
+      "SLICE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SPACE_TO_DEPTH",
+      "SPLIT",
+      "SPLIT_V",
+      "SQRT",
+      "SQUARE",
+      "SQUARED_DIFFERENCE",
+      "SQUEEZE",
+      "STRIDED_SLICE",
+      "SUB",
+      "SVDF",
+      "TANH",
+      "TRANSPOSE",
+      "TRANSPOSE_CONV",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM",
+      "UNPACK",
+      "VAR_HANDLE",
+      "WHILE",
+      "ZEROS_LIKE"
+    ],
+    "checkpoint": "/shared/b00088568/github/har-mcu/checkpoints/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0.keras",
+    "compat_error": null,
+    "compatibility_scope": "micro_mutable_main",
+    "deployable_full_int8": true,
+    "error": null,
+    "fp32_checkpoint_size_kb": 1062.0888671875,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": true,
+    "has_while_op": false,
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "deepconv_lstm_conv2d",
+    "notes": [
+      "Converted with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "possibly_supported_upstream_tflm": [],
+    "protocol": "random_stratified",
+    "ptq_status": "ok",
+    "ptq_tflite_size_kb": 136.921875,
+    "representative_samples": 256,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "E03_deepconv_lstm_r0",
+    "size_reduction_vs_ckpt_percent": 87.1082468491944,
+    "status": "ok",
+    "strict_full_int8": true,
+    "tflite_model": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_ptq_int8.tflite",
+    "tflm_compatible": true,
+    "tflm_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "RESHAPE",
+      "SOFTMAX",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM"
+    ],
+    "unsupported_in_reference": [],
+    "unsupported_ops": [],
+    "unsupported_ops_micro_mutable": [],
+    "unsupported_ops_profile": [],
+    "variant": "default",
+    "window_size": 100
+  },
+  "qat_eval_metrics": {
+    "accuracy": 0.1845764854614412,
+    "classification_report": {
+      "Downstairs": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "Jogging": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263.0
+      },
+      "Sitting": {
+        "f1-score": 0.1939799331103679,
+        "precision": 0.8285714285714286,
+        "recall": 0.10984848484848485,
+        "support": 264.0
+      },
+      "Standing": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263.0
+      },
+      "Upstairs": {
+        "f1-score": 0.29044726670347876,
+        "precision": 0.1700064641241112,
+        "recall": 0.9962121212121212,
+        "support": 264.0
+      },
+      "Walking": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264.0
+      },
+      "accuracy": 0.1845764854614412,
+      "macro avg": {
+        "f1-score": 0.0807378666356411,
+        "precision": 0.16642964878258995,
+        "recall": 0.18434343434343434,
+        "support": 1582.0
+      },
+      "weighted avg": {
+        "f1-score": 0.08083993726349906,
+        "precision": 0.16664005288977404,
+        "recall": 0.1845764854614412,
+        "support": 1582.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        264,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        263,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        263,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        262,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        235,
+        0,
+        29,
+        0
+      ],
+      [
+        0,
+        0,
+        260,
+        0,
+        3,
+        0
+      ]
+    ],
+    "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/confusion_qat_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.png",
+    "inference_latency_ms_mean": 4.257433949220957,
+    "inference_latency_ms_median": 4.247607999957381,
+    "inference_latency_ms_p95": 4.295441500033803,
+    "input_dtype": "<class 'numpy.int8'>",
+    "interpreter_op_count": 5,
+    "interpreter_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "RESHAPE",
+      "SOFTMAX",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM"
+    ],
+    "macro_f1": 0.0807378666356411,
+    "metrics_json": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/m3/qat_deepconv_lstm_conv2d_E03_deepconv_lstm_r0_T100_Prandom_stratified.json",
+    "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_qat.tflite",
+    "model_size_kb": 137.34375,
+    "output_dtype": "<class 'numpy.int8'>",
+    "per_class": {
+      "Downstairs": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      },
+      "Jogging": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263
+      },
+      "Sitting": {
+        "f1": 0.1939799331103679,
+        "precision": 0.8285714285714286,
+        "recall": 0.10984848484848485,
+        "support": 264
+      },
+      "Standing": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 263
+      },
+      "Upstairs": {
+        "f1": 0.29044726670347876,
+        "precision": 0.1700064641241112,
+        "recall": 0.9962121212121212,
+        "support": 264
+      },
+      "Walking": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 264
+      }
+    },
+    "protocol": "random_stratified",
+    "tag": "qat_deepconv_lstm_conv2d_E03_deepconv_lstm_r0",
+    "timed_samples": 256,
+    "warmup_samples": 32,
+    "window_size": 100
+  },
+  "qat_metrics": {
+    "accepted_integer_io_dtypes": [
+      "int8",
+      "uint8"
+    ],
+    "allowed_ops_profile": "micro_mutable_main",
+    "allowed_ops_used": [
+      "ADD",
+      "ARG_MAX",
+      "ARG_MIN",
+      "AVERAGE_POOL_2D",
+      "BATCH_MATMUL",
+      "BATCH_TO_SPACE_ND",
+      "CAST",
+      "CEIL",
+      "CIRCULAR_BUFFER",
+      "CONCATENATION",
+      "CONV_2D",
+      "COS",
+      "CUMSUM",
+      "DEPTHWISE_CONV_2D",
+      "DEPTH_TO_SPACE",
+      "DEQUANTIZE",
+      "DIV",
+      "ELU",
+      "EQUAL",
+      "ETHOSU",
+      "EXP",
+      "EXPAND_DIMS",
+      "FILL",
+      "FLOOR",
+      "FLOOR_DIV",
+      "FLOOR_MOD",
+      "FULLY_CONNECTED",
+      "GATHER",
+      "GATHER_ND",
+      "GREATER",
+      "GREATER_EQUAL",
+      "HARD_SWISH",
+      "IF",
+      "L2_NORMALIZATION",
+      "L2_POOL_2D",
+      "LEAKY_RELU",
+      "LESS",
+      "LESS_EQUAL",
+      "LOG",
+      "LOGICAL_AND",
+      "LOGICAL_NOT",
+      "LOGICAL_OR",
+      "LOGISTIC",
+      "LOG_SOFTMAX",
+      "MAXIMUM",
+      "MAX_POOL_2D",
+      "MEAN",
+      "MINIMUM",
+      "MIRROR_PAD",
+      "MUL",
+      "NEG",
+      "NOT_EQUAL",
+      "PACK",
+      "PAD",
+      "PADV2",
+      "PRELU",
+      "QUANTIZE",
+      "READ_VARIABLE",
+      "REDUCE_MAX",
+      "REDUCE_MIN",
+      "RELU",
+      "RELU6",
+      "RELU_0_TO_1",
+      "RELU_N1_TO_1",
+      "RESHAPE",
+      "RESIZE_BILINEAR",
+      "RESIZE_NEAREST_NEIGHBOR",
+      "ROUND",
+      "RSQRT",
+      "SELECT_V2",
+      "SHAPE",
+      "SIN",
+      "SLICE",
+      "SOFTMAX",
+      "SPACE_TO_BATCH_ND",
+      "SPACE_TO_DEPTH",
+      "SPLIT",
+      "SPLIT_V",
+      "SQRT",
+      "SQUARE",
+      "SQUARED_DIFFERENCE",
+      "SQUEEZE",
+      "STRIDED_SLICE",
+      "SUB",
+      "SVDF",
+      "TANH",
+      "TRANSPOSE",
+      "TRANSPOSE_CONV",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM",
+      "UNPACK",
+      "VAR_HANDLE",
+      "WHILE",
+      "ZEROS_LIKE"
+    ],
+    "compat_error": null,
+    "compatibility_scope": "micro_mutable_main",
+    "deployable_full_int8": true,
+    "epochs_ran": 10,
+    "error": null,
+    "fallback_reason": null,
+    "fallback_triggered": false,
+    "full_integer_io": true,
+    "has_unidirectional_sequence_lstm": true,
+    "has_while_op": false,
+    "history_json": "/shared/b00088568/github/har-mcu/checkpoints/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/history_deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_qat.json",
+    "input_dtype": "<class 'numpy.int8'>",
+    "input_dtype_normalized": "int8",
+    "model_name": "deepconv_lstm_conv2d",
+    "notes": [
+      "QAT strategy: annotate_policy_auto",
+      "Exported with builtin TFLite ops path"
+    ],
+    "output_dtype": "<class 'numpy.int8'>",
+    "output_dtype_normalized": "int8",
+    "possibly_supported_upstream_tflm": [],
+    "protocol": "random_stratified",
+    "qat_checkpoint": "/shared/b00088568/github/har-mcu/checkpoints/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_qat.keras",
+    "qat_device_attempted": [
+      "/GPU:0"
+    ],
+    "qat_device_preference": "gpu",
+    "qat_device_used": "/GPU:0",
+    "qat_status": "ok",
+    "qat_tflite": "/shared/b00088568/github/har-mcu/models_tflite/m3/E03_arduino_downsample_20hz_T100/no_accel_rotation_v2/deepconv_lstm_conv2d/e03/deepconv_lstm_conv2d_T100_Prandom_stratified_E03_deepconv_lstm_r0_qat.tflite",
+    "representative_samples": 256,
+    "representative_source": "train",
+    "require_tflm_compatible": true,
+    "run_id": "E03_deepconv_lstm_r0",
+    "status": "ok",
+    "strict_full_int8": true,
+    "tflm_compatible": true,
+    "tflm_ops": [
+      "CONV_2D",
+      "FULLY_CONNECTED",
+      "RESHAPE",
+      "SOFTMAX",
+      "UNIDIRECTIONAL_SEQUENCE_LSTM"
+    ],
+    "training_time_sec": 18.639742963999993,
+    "unsupported_in_reference": [],
+    "unsupported_ops": [],
+    "unsupported_ops_micro_mutable": [],
+    "unsupported_ops_profile": [],
+    "variant": "default",
+    "window_size": 100
+  },
+  "run_id": "E03_deepconv_lstm_r0",
+  "run_mode": "sanity_check",
+  "seed": 42,
+  "stage_devices": {
+    "eval_fp32": "gpu",
+    "eval_ptq": "gpu",
+    "eval_qat": "cpu",
+    "ptq": "gpu",
+    "qat": "cpu",
+    "train": "gpu"
+  },
+  "transfer_mode": "zero_shot",
+  "transfer_notes": "zero_shot source=wisdm eval=arduino; target arrays normalized with source train stats",
+  "variant": "deepconv_lstm_conv2d",
+  "window_size": 100
+}

@@ -1,0 +1,150 @@
+{
+  "paper_slug": "m3",
+  "model_name": "deepconv_lstm_conv2d",
+  "run_id": "E09_deepconv_lstm_r0",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "seed": 42,
+  "accuracy": 0.9943109987357776,
+  "macro_f1": 0.9943085619810995,
+  "per_class": {
+    "Walking": {
+      "precision": 0.9924812030075187,
+      "recall": 1.0,
+      "f1": 0.9962264150943396,
+      "support": 264
+    },
+    "Jogging": {
+      "precision": 0.9885931558935361,
+      "recall": 0.9885931558935361,
+      "f1": 0.9885931558935361,
+      "support": 263
+    },
+    "Upstairs": {
+      "precision": 0.9886363636363636,
+      "recall": 0.9886363636363636,
+      "f1": 0.9886363636363636,
+      "support": 264
+    },
+    "Downstairs": {
+      "precision": 0.9961832061068703,
+      "recall": 0.9886363636363636,
+      "f1": 0.9923954372623575,
+      "support": 264
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 264
+    },
+    "Standing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 263
+    }
+  },
+  "confusion_matrix": [
+    [
+      264,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      260,
+      1,
+      1,
+      0,
+      0
+    ],
+    [
+      1,
+      2,
+      261,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      2,
+      261,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      264,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      263
+    ]
+  ],
+  "confusion_plot": "/shared/b00088568/github/har-mcu/reports/m3/no_accel_rotation_v2/deepconv_lstm_conv2d/e09/m3/confusion_deepconv_lstm_conv2d_T100_Prandom_stratified_E09_deepconv_lstm_r0.png",
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9924812030075187,
+      "recall": 1.0,
+      "f1-score": 0.9962264150943396,
+      "support": 264.0
+    },
+    "Jogging": {
+      "precision": 0.9885931558935361,
+      "recall": 0.9885931558935361,
+      "f1-score": 0.9885931558935361,
+      "support": 263.0
+    },
+    "Upstairs": {
+      "precision": 0.9886363636363636,
+      "recall": 0.9886363636363636,
+      "f1-score": 0.9886363636363636,
+      "support": 264.0
+    },
+    "Downstairs": {
+      "precision": 0.9961832061068703,
+      "recall": 0.9886363636363636,
+      "f1-score": 0.9923954372623575,
+      "support": 264.0
+    },
+    "Sitting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 264.0
+    },
+    "Standing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 263.0
+    },
+    "accuracy": 0.9943109987357776,
+    "macro avg": {
+      "precision": 0.9943156547740482,
+      "recall": 0.9943109805277106,
+      "f1-score": 0.9943085619810995,
+      "support": 1582.0
+    },
+    "weighted avg": {
+      "precision": 0.9943156788914024,
+      "recall": 0.9943109987357776,
+      "f1-score": 0.9943085771315854,
+      "support": 1582.0
+    }
+  }
+}

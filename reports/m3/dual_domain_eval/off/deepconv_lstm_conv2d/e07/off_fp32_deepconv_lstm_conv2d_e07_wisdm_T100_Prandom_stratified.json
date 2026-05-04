@@ -1,0 +1,164 @@
+{
+  "tag": "off_fp32_deepconv_lstm_conv2d_e07_wisdm",
+  "window_size": 100,
+  "protocol": "random_stratified",
+  "model_path": "/shared/b00088568/github/har-mcu/models_tflite/m3/E07_skip_inference_norm_diag/no_accel_rotation/deepconv_lstm_conv2d/e07/deepconv_lstm_conv2d_T100_Prandom_stratified_E07_deepconv_lstm_r0_fp32.tflite",
+  "model_size_kb": 513.6171875,
+  "input_dtype": "<class 'numpy.float32'>",
+  "output_dtype": "<class 'numpy.float32'>",
+  "interpreter_ops": [
+    "CONV_2D",
+    "FULLY_CONNECTED",
+    "RESHAPE",
+    "SOFTMAX",
+    "UNIDIRECTIONAL_SEQUENCE_LSTM"
+  ],
+  "interpreter_op_count": 5,
+  "accuracy": 0.9824407374890255,
+  "macro_f1": 0.971875260855021,
+  "confusion_matrix": [
+    [
+      2696,
+      0,
+      21,
+      4,
+      2,
+      0
+    ],
+    [
+      2,
+      2099,
+      5,
+      3,
+      0,
+      0
+    ],
+    [
+      2,
+      8,
+      710,
+      9,
+      1,
+      0
+    ],
+    [
+      17,
+      0,
+      19,
+      550,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      2,
+      377,
+      1
+    ],
+    [
+      0,
+      0,
+      22,
+      0,
+      0,
+      282
+    ]
+  ],
+  "confusion_plot": "reports/m3/dual_domain_eval/off/deepconv_lstm_conv2d/e07/confusion_off_fp32_deepconv_lstm_conv2d_e07_wisdm_T100_Prandom_stratified.png",
+  "per_class": {
+    "Walking": {
+      "precision": 0.9922708870077291,
+      "recall": 0.9900844656628718,
+      "f1": 0.9911764705882353,
+      "support": 2723
+    },
+    "Jogging": {
+      "precision": 0.996203132415757,
+      "recall": 0.9952584163110479,
+      "f1": 0.99573055028463,
+      "support": 2109
+    },
+    "Upstairs": {
+      "precision": 0.9125964010282777,
+      "recall": 0.9726027397260274,
+      "f1": 0.9416445623342176,
+      "support": 730
+    },
+    "Downstairs": {
+      "precision": 0.9683098591549296,
+      "recall": 0.9369676320272572,
+      "f1": 0.9523809523809523,
+      "support": 587
+    },
+    "Sitting": {
+      "precision": 0.989501312335958,
+      "recall": 0.989501312335958,
+      "f1": 0.989501312335958,
+      "support": 381
+    },
+    "Standing": {
+      "precision": 0.9964664310954063,
+      "recall": 0.9276315789473685,
+      "f1": 0.9608177172061328,
+      "support": 304
+    }
+  },
+  "classification_report": {
+    "Walking": {
+      "precision": 0.9922708870077291,
+      "recall": 0.9900844656628718,
+      "f1-score": 0.9911764705882353,
+      "support": 2723.0
+    },
+    "Jogging": {
+      "precision": 0.996203132415757,
+      "recall": 0.9952584163110479,
+      "f1-score": 0.99573055028463,
+      "support": 2109.0
+    },
+    "Upstairs": {
+      "precision": 0.9125964010282777,
+      "recall": 0.9726027397260274,
+      "f1-score": 0.9416445623342176,
+      "support": 730.0
+    },
+    "Downstairs": {
+      "precision": 0.9683098591549296,
+      "recall": 0.9369676320272572,
+      "f1-score": 0.9523809523809523,
+      "support": 587.0
+    },
+    "Sitting": {
+      "precision": 0.989501312335958,
+      "recall": 0.989501312335958,
+      "f1-score": 0.989501312335958,
+      "support": 381.0
+    },
+    "Standing": {
+      "precision": 0.9964664310954063,
+      "recall": 0.9276315789473685,
+      "f1-score": 0.9608177172061328,
+      "support": 304.0
+    },
+    "accuracy": 0.9824407374890255,
+    "macro avg": {
+      "precision": 0.9758913371730097,
+      "recall": 0.968674357501755,
+      "f1-score": 0.971875260855021,
+      "support": 6834.0
+    },
+    "weighted avg": {
+      "precision": 0.9829477738827141,
+      "recall": 0.9824407374890255,
+      "f1-score": 0.9825147783939585,
+      "support": 6834.0
+    }
+  },
+  "inference_latency_ms_median": null,
+  "inference_latency_ms_p95": null,
+  "inference_latency_ms_mean": null,
+  "warmup_samples": 0,
+  "timed_samples": 0
+}

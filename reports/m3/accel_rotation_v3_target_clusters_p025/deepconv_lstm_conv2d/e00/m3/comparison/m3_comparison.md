@@ -1,0 +1,13 @@
+# m3 Comparison
+
+- Notes: M3 WISDM M2 anchor.
+
+| pipeline | protocol | model | accuracy | macro_f1 | model_size_kb | training_time_sec | inference_latency_ms_median | inference_latency_ms_p95 | paper_target_accuracy | acc_delta_vs_target | ptq_status | qat_status | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WISDM replication | random_stratified | baseline float | 0.9885864793678666 | 0.9834983523822515 | 513.6171875 | 71.10881694400001 | — | — | — | — | ok | ok | ok |
+| WISDM replication | random_stratified | PTQ int8 | 0.9811237928007024 | 0.9709865786059529 | 136.921875 | — | 4.2460875000358556 | 4.3279140000009875 | — | — | ok | — | ok |
+| WISDM replication | random_stratified | QAT int8 | 0.8340649692712906 | 0.8043430651952991 | 137.34375 | 20.63743365800002 | 4.258372999998983 | 4.311135500032037 | — | — | — | ok | ok |
+| paper target | — | baseline float | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | PTQ int8 | — | — | — | — | — | — | — | — | — | — | reference |
+| paper target | — | QAT int8 | — | — | — | — | — | — | — | — | — | — | reference |
+

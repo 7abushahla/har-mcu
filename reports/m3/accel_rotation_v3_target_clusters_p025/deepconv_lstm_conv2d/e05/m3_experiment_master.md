@@ -1,0 +1,8 @@
+# M3 Experiment Master
+
+- Total rows: `1`
+
+| experiment_id | model_variant | data_source | train_domain | eval_domain | sample_rate_hz | target_sample_rate_hz | downsample | window_size_samples | window_duration_seconds | overlap | unit_mode | normalization_mode | inference_norm_applied | split_protocol | transfer_mode | seed | fp32_accuracy | fp32_macro_f1 | ptq_accuracy | ptq_macro_f1 | qat_accuracy | qat_macro_f1 | model_size_kb | latency_mean_ms | latency_median_ms | latency_p95_ms | fp32_accuracy_wisdm_test | fp32_macro_f1_wisdm_test | fp32_accuracy_arduino_test | fp32_macro_f1_arduino_test | ptq_accuracy_wisdm_test | ptq_macro_f1_wisdm_test | ptq_accuracy_arduino_test | ptq_macro_f1_arduino_test | qat_accuracy_wisdm_test | qat_macro_f1_wisdm_test | qat_accuracy_arduino_test | qat_macro_f1_arduino_test | deploy_gate_status | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| E05_legacy_arduino_to_mps2 | deepconv_lstm_conv2d | wisdm_arduino | wisdm | arduino | 20.0 | 20.0 | False | 100 | 5.0 | 0.5 | arduino_to_mps2_legacy | train_zscore | True | random_stratified | zero_shot | 42 | 0.5151706700379267 | 0.4469346095372822 | 0.5075853350189633 | 0.44039173396030257 | 0.4797724399494311 | 0.4684106797299625 | 136.921875 | 4.273026242183509 | 4.2566380000153 | 4.340256500057649 | — | — | — | — | — | — | — | — | — | — | — | — | ptq=ok;qat=ok | run_id=E05_deepconv_lstm_r0; fp32_tflite=ok; ptq=ok; qat=ok; zero_shot source=wisdm eval=arduino; target arrays normalized with source train stats; Legacy negative-control Arduino conversion to m/s^2. |
+
