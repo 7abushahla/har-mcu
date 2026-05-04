@@ -27,6 +27,7 @@ from src.run_paper_experiment import (
     _read_json,
     _write_run_artifact,
 )
+from src.train.augment import build_training_input
 from src.train import train_model as train_model_module
 from src.train.train_model import _compile_model
 from src.utils import artifacts as artifacts_module
@@ -125,15 +126,24 @@ def _finetune_checkpoint(
         ),
     ]
 
-    t0 = time.perf_counter()
-    history = model.fit(
+    train_input = build_training_input(
+        cfg,
         X_train,
         y_train_oh,
+        processed_dir=processed_dir,
+        window_size=window_size,
+        protocol=protocol,
+        batch_size=int(cfg.get("train", {}).get("batch_size", 64)),
+    )
+
+    t0 = time.perf_counter()
+    history = model.fit(
+        *train_input.fit_args(),
         validation_data=(X_val, y_val_oh),
         epochs=int(cfg.get("train", {}).get("epochs", 50)),
-        batch_size=int(cfg.get("train", {}).get("batch_size", 64)),
         callbacks=callbacks,
         verbose=2,
+        **train_input.fit_kwargs,
     )
     training_time_sec = float(time.perf_counter() - t0)
 

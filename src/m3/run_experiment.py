@@ -112,6 +112,11 @@ def _apply_full_dataset_overrides(cfg: dict[str, Any], args: argparse.Namespace)
     cfg.setdefault("smoke", {})["max_windows_per_class"] = None
 
 
+def _apply_augmentation_overrides(cfg: dict[str, Any], args: argparse.Namespace) -> None:
+    if bool(getattr(args, "disable_accel_rotation", False)):
+        cfg.setdefault("augment", {}).setdefault("accel_rotation", {})["enabled"] = False
+
+
 def _print_summary(summary: dict[str, Any]) -> None:
     for key, value in summary.items():
         if isinstance(value, list):
@@ -154,6 +159,11 @@ def main() -> None:
         help="Override experiment.model_kwargs entry as KEY=VALUE. May be repeated.",
     )
     parser.add_argument("--disable-qat", action="store_true")
+    parser.add_argument(
+        "--disable-accel-rotation",
+        action="store_true",
+        help="Disable augment.accel_rotation.enabled for this run without editing the config file.",
+    )
     parser.add_argument("--representative-samples", type=int, default=16)
     parser.add_argument("--timing-warmup-samples", type=int, default=2)
     parser.add_argument("--timing-timed-samples", type=int, default=8)
@@ -163,6 +173,7 @@ def main() -> None:
     _apply_experiment_overrides(cfg, args)
     _apply_smoke_overrides(cfg, args)
     _apply_full_dataset_overrides(cfg, args)
+    _apply_augmentation_overrides(cfg, args)
     errors = validate_m3_config(cfg)
     summary = asdict(summarize_m3_config(cfg))
 

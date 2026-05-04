@@ -30,6 +30,7 @@ VALID_UNIT_MODES = {
     "arduino_to_mps2_legacy",
 }
 VALID_NORM_MODES = {"train_zscore", "none"}
+VALID_AUGMENT_MODES = {"uniform_so3"}
 
 M3_MASTER_COLUMNS = [
     "experiment_id",
@@ -203,6 +204,17 @@ def validate_m3_config(cfg: dict[str, Any]) -> list[str]:
     norm_mode = _get(cfg, "normalization.mode")
     if norm_mode not in VALID_NORM_MODES:
         errors.append(f"normalization.mode must be one of {sorted(VALID_NORM_MODES)}")
+
+    rotation_cfg = _get(cfg, "augment.accel_rotation", {})
+    if isinstance(rotation_cfg, dict) and bool(rotation_cfg.get("enabled", False)):
+        mode = str(rotation_cfg.get("mode", "uniform_so3")).strip().lower()
+        probability = float(rotation_cfg.get("probability", -1.0))
+        if mode not in VALID_AUGMENT_MODES:
+            errors.append(f"augment.accel_rotation.mode must be one of {sorted(VALID_AUGMENT_MODES)}")
+        if not 0.0 <= probability <= 1.0:
+            errors.append("augment.accel_rotation.probability must be in [0, 1]")
+        if rotation_cfg.get("apply_in_qat", True) not in {True, False}:
+            errors.append("augment.accel_rotation.apply_in_qat must be boolean")
 
     if bool(_get(cfg, "normalization.diagnostic_skip_inference_norm", False)):
         if not bool(_get(cfg, "m3.diagnostic_only", False)):

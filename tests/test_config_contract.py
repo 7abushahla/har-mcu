@@ -37,6 +37,10 @@ def test_default_config_contract():
     assert "paper_targets" in cfg.get("experiment", {})
     for key in ("fp32_accuracy", "ptq_accuracy", "qat_accuracy", "notes"):
         assert key in cfg["experiment"]["paper_targets"]
+    assert cfg.get("augment", {}).get("accel_rotation", {}).get("enabled") is False
+    assert cfg["augment"]["accel_rotation"].get("mode") == "uniform_so3"
+    assert 0.0 <= float(cfg["augment"]["accel_rotation"].get("probability")) <= 1.0
+    assert cfg["augment"]["accel_rotation"].get("apply_in_qat") in {True, False}
     assert cfg.get("runtime", {}).get("run_mode") in {"sanity_check", "full_run"}
     assert cfg.get("runtime", {}).get("gpu_fallback_to_cpu") in {True, False}
     assert cfg.get("runtime", {}).get("fail_if_gpu_missing") in {True, False}

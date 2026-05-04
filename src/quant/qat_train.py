@@ -18,6 +18,7 @@ from src.quant.deploy_gate import (
     representative_array,
     representative_dataset,
 )
+from src.train.augment import build_training_input
 from src.train.train_baseline import train_baseline_for_protocol
 from src.utils.artifacts import (
     baseline_ckpt_path,
@@ -463,14 +464,25 @@ def qat_for_protocol(
                     metrics=["accuracy"],
                 )
 
-                train_t0 = time.perf_counter()
-                hist = qat_model.fit(
+                qat_batch_size = int(qat_cfg.get("batch_size", cfg["train"].get("batch_size", 64)))
+                train_input = build_training_input(
+                    cfg,
                     X_train,
                     y_train_oh,
+                    processed_dir=processed_dir,
+                    window_size=window_size,
+                    protocol=protocol,
+                    batch_size=qat_batch_size,
+                    for_qat=True,
+                )
+
+                train_t0 = time.perf_counter()
+                hist = qat_model.fit(
+                    *train_input.fit_args(),
                     validation_data=(X_val, y_val_oh),
                     epochs=int(qat_cfg.get("epochs", 10)),
-                    batch_size=int(qat_cfg.get("batch_size", cfg["train"].get("batch_size", 64))),
                     verbose=2,
+                    **train_input.fit_kwargs,
                 )
                 training_time_sec = float(time.perf_counter() - train_t0)
 

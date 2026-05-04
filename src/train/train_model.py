@@ -10,6 +10,7 @@ import tensorflow as tf
 
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
+from src.train.augment import build_training_input
 from src.utils.artifacts import model_ckpt_path, model_history_path
 from src.utils.config import ensure_path_dirs
 from src.utils.repro import dump_json, set_global_seed
@@ -81,15 +82,24 @@ def train_model_for_protocol(
         ),
     ]
 
-    train_t0 = time.perf_counter()
-    history = model.fit(
+    train_input = build_training_input(
+        cfg,
         X_train,
         y_train_oh,
+        processed_dir=processed_dir,
+        window_size=window_size,
+        protocol=protocol,
+        batch_size=int(cfg.get("train", {}).get("batch_size", 64)),
+    )
+
+    train_t0 = time.perf_counter()
+    history = model.fit(
+        *train_input.fit_args(),
         validation_data=(X_val, y_val_oh),
         epochs=int(cfg.get("train", {}).get("epochs", 50)),
-        batch_size=int(cfg.get("train", {}).get("batch_size", 64)),
         callbacks=callbacks,
         verbose=2,
+        **train_input.fit_kwargs,
     )
     training_time_sec = float(time.perf_counter() - train_t0)
 

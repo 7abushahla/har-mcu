@@ -1,6 +1,8 @@
 # M3 DeepConvLSTM And Architecture Sweep Runbook
 
-This document summarizes the Milestone 3 DeepConvLSTM implementation, all-architecture sweep workflow, notebooks, Slurm workflow, experiment outputs, and Arduino deployment path.
+This document summarizes the Milestone 3 DeepConvLSTM implementation, all-architecture sweep workflow, notebooks, Slurm workflow, experiment outputs, accelerometer-rotation augmentation runs, dual-domain evaluation, and Arduino deployment path.
+
+For the code-level end-to-end training, validation, evaluation, quantization, and deployment contract, see `docs/m3_end_to_end_pipeline.md`.
 
 ## What We Changed
 
@@ -8,16 +10,22 @@ The M3 work adds an operational experiment layer around the existing HAR/TinyML 
 
 Code and config additions:
 
-- `configs/m3/`: M3 experiment configs E00-E10. E01 user-holdout remains tooling-only and was not run.
+- `configs/m3/`: M3 experiment configs E00-E12. E01 user-holdout remains tooling-only and was not run; E02 remains the future true-100-Hz Arduino path.
 - `src/m3/`: M3 orchestration, transfer experiments, reporting, and dataset build entry points.
 - `src/data/load_har.py`, `src/data/resample.py`, `src/data/units.py`: WISDM-style CSV loading, resampling/downsampling, unit-mode handling, and metadata preservation.
 - `src/data/build_dataset.py`, `src/data/load_wisdm.py`: M3-aware normalization, external/source normalization support, datacards, and split metadata.
 - `src/utils/tflite_export.py`: shared TFLite conversion hardening for DeepConvLSTM, including fixed single-batch input shape handling where possible.
 - `src/run_paper_experiment.py`, `src/quant/ptq_full_int8.py`, `src/quant/qat_train.py`: FP32 TFLite export, PTQ INT8, QAT INT8, TFLite host evaluation, and M3 report metadata.
+- `src/train/augment.py`: training-only accelerometer window rotation. It samples one uniform SO(3) rotation per `[T, 3]` training window, denormalizes with the saved train-split mean/std, rotates in raw accelerometer units, and re-applies the same normalization. Validation, test, PTQ representative data, and inference/on-device preprocessing are untouched. The rotation-augmentation idea follows orientation-robust HAR literature, especially Yurtman and Barshan 2017 (`10.3390/s17081838`) and Caramaschi, Papini, and Caiani 2023 (`10.3390/app13074175`).
+- `src/m3/dual_domain_eval.py`: eval-only comparison runner for the augmentation off/on table. It evaluates FP32, PTQ, and QAT TFLite exports against both WISDM and Arduino test splits while normalizing each eval dataset with the trained model's saved train-split stats.
 - `src/eval/reporting.py` and `src/m3/reporting.py`: fixed-schema M3 report rows with FP32/PTQ/QAT metrics and deploy-gate status.
 - `deploy/arduino_infer/arduino_infer.ino`: live IMU inference sketch using the exported model and normalization headers.
 - `src/deploy/export_c_array.py`, `src/deploy/export_norm_header.py`: deployment header generation for `model_data.*` and `norm_stats.h`.
 - `scripts/slurm/`: Slurm-first wrappers for dry runs, experiments, notebook checks, dataset builds, deployment export, and architecture sweeps.
+- `scripts/slurm/submit_m3_accel_rotation_runs.sh`: submits the DeepConvLSTM and Daghero augmented training matrix.
+- `scripts/slurm/submit_m3_rotation_ablation_train.sh`: submits the clean full-dataset DeepConvLSTM/Daghero augmentation off/on training matrix.
+- `scripts/slurm/submit_m3_dual_domain_eval.sh`: submits augmentation off/on dual-domain TFLite evaluation. It supports grouped matrix rows per Slurm array task so the full comparison can fit under the QOS submit cap.
+- `scripts/slurm/auto_submit_m3_dual_domain_eval.sh`: optional headroom-aware autosubmitter for environments where a detached queue watcher is preferred.
 - `notebooks/m3_deepconvlstm.ipynb`, `notebooks/m3_architecture_sweeps.ipynb`, plus per-experiment notebooks `notebooks/m3_E*.ipynb`.
 - `reports/m3/`: consolidated M3 reports, domain-gap summary, final deployment summary, and live-trial templates.
 
@@ -103,6 +111,28 @@ All-architecture full runs:
 
 All 63 full-run Slurm jobs completed with exit `0:0`. E01 user-holdout and E02 true-100-Hz runs were not submitted.
 
+Accelerometer-rotation ablation reruns:
+
+- Historical Slurm job `7497` completed with exit `0:0`, and historical dual-domain eval jobs `7606` and `7624` completed with exit `0:0`.
+- On 2026-05-03, those generated ablation/eval artifacts were intentionally deleted for a clean-slate rerun with no checkpoint reuse or continued training.
+- The clean rerun uses [scripts/slurm/submit_m3_rotation_ablation_train.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_rotation_ablation_train.sh), which submits four array tasks: augmentation off/on times DeepConvLSTM/Daghero.
+- Clean training Slurm array job `7641` was submitted on 2026-05-03. The four array children started configuring on separate GPU nodes.
+- Each array task loops over E00, E03, E04, E05, E06, E07, E08, E09, E10, E11, and E12 with `--full-dataset`.
+- Augmentation-on outputs are isolated under `accel_rotation/<model_variant>/<experiment_code>/`.
+- Augmentation-off outputs are isolated under `no_accel_rotation/<model_variant>/<experiment_code>/`.
+- The expected training shape is 44 model/config/augmentation bundles and 132 TFLite exports: FP32, PTQ INT8, and QAT INT8 for every bundle.
+
+Dual-domain augmentation off/on evaluation:
+
+- [scripts/slurm/submit_m3_dual_domain_eval.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_dual_domain_eval.sh) builds the 44-row eval matrix from the clean `accel_rotation` and `no_accel_rotation` artifact roots.
+- The eval job should be submitted with `M3_SLURM_DEPENDENCY=afterok:<TRAIN_ARRAY_JOBID>` so it starts only after clean training succeeds.
+- Clean eval Slurm array job `7647` was submitted on 2026-05-03 with dependency `afterok:7641`. Earlier dependent eval job `7646` was canceled before execution because the off-artifact suffix default was malformed; [scripts/slurm/submit_m3_dual_domain_eval.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_dual_domain_eval.sh) now builds the default suffix without shell-brace expansion.
+- Each eval matrix row evaluates FP32, PTQ INT8, and QAT INT8 TFLite exports on both WISDM and Arduino test splits.
+- Expected final result shape: 44 per-run CSVs and 264 master rows: 44 `{experiment, model, augmentation off/on}` combinations times 2 eval domains times 3 tiers.
+- Aggregate outputs:
+  - `reports/m3/dual_domain_eval/dual_domain_eval_master.csv`
+  - `reports/m3/dual_domain_eval/dual_domain_eval_master.md`
+
 ## Key Results
 
 The aggregate report is:
@@ -125,6 +155,42 @@ models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<
 models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
 models_tflite/m3/<experiment_id>/full_eXX/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
 ```
+
+Accelerometer-rotation rerun export pattern:
+
+```text
+models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+```
+
+No-rotation ablation rerun export pattern:
+
+```text
+models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_fp32.tflite
+models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_ptq_int8.tflite
+models_tflite/m3/<experiment_id>/no_accel_rotation/<model_variant>/<experiment_code>/<model>_T<window>_Prandom_stratified_<run_id>_qat.tflite
+```
+
+Accelerometer-rotation TFLite sizes from the completed rerun:
+
+| Model | Window | FP32 TFLite KB | PTQ INT8 KB | QAT INT8 KB |
+| --- | ---: | ---: | ---: | ---: |
+| `deepconv_lstm_conv2d` | 100 | 513.617 | 136.922 | 137.344 |
+| `deepconv_lstm_conv2d` | 50 | 396.430 | 107.625 | 108.047 |
+| `daghero_cnn_2layer_conv2d` | 100 | 80.406 | 26.133 | 26.734 |
+| `daghero_cnn_2layer_conv2d` | 50 | 80.406 | 26.133 | 26.734 |
+
+Dual-domain comparison outputs:
+
+```text
+reports/m3/dual_domain_eval/<augment_label>/<model_variant>/<experiment_code>/dual_domain_eval.csv
+reports/m3/dual_domain_eval/<augment_label>/<model_variant>/<experiment_code>/dual_domain_eval.json
+reports/m3/dual_domain_eval/dual_domain_eval_master.csv
+reports/m3/dual_domain_eval/dual_domain_eval_master.md
+```
+
+The master table records `model_path`, `normalization_stats`, `processed_dir`, `accuracy`, `macro_f1`, `model_size_kb`, `input_dtype`, and `output_dtype` for every FP32/PTQ/QAT evaluation on WISDM and Arduino.
 
 Example deployment candidate exports:
 
@@ -256,6 +322,29 @@ Registered Conv2D-safe architecture variants:
 - `xtinyhar_student_conv2d`
 - `xtinyhar_student_conv2d_relu`
 
+Run the clean full-dataset DeepConvLSTM/Daghero augmentation ablation matrix:
+
+```bash
+bash scripts/slurm/submit_m3_rotation_ablation_train.sh
+```
+
+Run the dual-domain off/on TFLite comparison after the training array succeeds:
+
+```bash
+M3_SLURM_DEPENDENCY=afterok:<TRAIN_ARRAY_JOBID> \
+M3_DUAL_EVAL_TASK_START=0 \
+M3_DUAL_EVAL_TASK_LIMIT=44 \
+M3_DUAL_EVAL_TASKS_PER_ARRAY_TASK=4 \
+M3_DUAL_EVAL_ARRAY_CONCURRENCY=11 \
+bash scripts/slurm/submit_m3_dual_domain_eval.sh
+```
+
+Aggregate after all chunks finish:
+
+```bash
+/shared/b00088568/myenvs/tinymlproj/bin/python -m src.m3.dual_domain_eval --aggregate-only --output-dir reports/m3/dual_domain_eval
+```
+
 Monitor jobs:
 
 ```bash
@@ -380,6 +469,20 @@ Summary:
 - `xtinyhar_student_conv2d_relu` is the compatibility variant to use if XTinyHAR is selected for on-device deployment.
 - E08 XTinyHAR runs use `patch_size=10`; non-E08 XTinyHAR runs keep the default `patch_size=20`.
 
+## DeepConvLSTM And Daghero End-To-End Contract
+
+The current DeepConvLSTM and Daghero M3 code path is documented in detail in `docs/m3_end_to_end_pipeline.md`. That document includes:
+
+- raw inputs and processed array shapes;
+- transfer-mode flow;
+- train-time rotation behavior;
+- FP32, PTQ, and QAT training and export paths;
+- callbacks, loss functions, optimizers, scheduler behavior, and metrics;
+- exact DeepConvLSTM and Daghero layer summaries;
+- TFLite sizes for T100 and T50;
+- host-side TFLite evaluation and dual-domain comparison;
+- Arduino deployment header generation and live inference behavior.
+
 ## On-Device Deployment Integration
 
 The live Arduino sketch uses:
@@ -444,3 +547,5 @@ Do not commit or push:
 - generated architecture-sweep TFLites under `models_tflite/m3/*/arch_sweeps/`
 
 The first three exclusions were explicitly requested for this repo handoff. The generated data and executed notebook outputs are also local/reproducible artifacts and are ignored to keep the Git history lightweight.
+
+The ablation TFLite exports under `models_tflite/m3/*/accel_rotation/` and `models_tflite/m3/*/no_accel_rotation/` are not ignored by `.gitignore`; include them in the handoff commit if the commit is meant to preserve the clean augmented/no-augmentation model exports. The dual-domain aggregate reports under `reports/m3/dual_domain_eval/` are also reproducibility outputs for the augmentation off/on comparison and should be reviewed before deciding whether to commit them.

@@ -73,6 +73,12 @@ train:
   reduce_lr_factor: 0.5
   reduce_lr_patience: 5
   early_stopping_patience: 10
+augment:
+  accel_rotation:
+    enabled: false
+    probability: 0.5
+    apply_in_qat: true
+    mode: uniform_so3
 quant:
   ptq:
     representative_samples: 256

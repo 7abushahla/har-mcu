@@ -10,6 +10,7 @@ import tensorflow as tf
 from src.data.build_dataset import build_dataset_for_protocol
 from src.data.io import dataset_exists, load_split_arrays
 from src.models.deepconv_lstm import build_deepconv_lstm, build_deepconv_lstm_conv2d, compile_deepconv_lstm
+from src.train.augment import build_training_input
 from src.utils.artifacts import baseline_ckpt_path, history_path
 from src.utils.config import apply_common_overrides, build_parser, ensure_path_dirs, load_yaml
 from src.utils.repro import dump_json, set_global_seed
@@ -78,14 +79,23 @@ def train_baseline_for_protocol(
         ),
     ]
 
-    history = model.fit(
+    train_input = build_training_input(
+        cfg,
         X_train,
         y_train_oh,
+        processed_dir=processed_dir,
+        window_size=window_size,
+        protocol=protocol,
+        batch_size=int(cfg["train"]["batch_size"]),
+    )
+
+    history = model.fit(
+        *train_input.fit_args(),
         validation_data=(X_val, y_val_oh),
         epochs=int(cfg["train"]["epochs"]),
-        batch_size=int(cfg["train"]["batch_size"]),
         callbacks=callbacks,
         verbose=2,
+        **train_input.fit_kwargs,
     )
 
     ckpt_path = baseline_ckpt_path(cfg["paths"]["checkpoints_dir"], window_size, protocol)

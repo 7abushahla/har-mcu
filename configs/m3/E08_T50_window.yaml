@@ -34,6 +34,12 @@ data:
 normalization:
   mode: train_zscore
   diagnostic_skip_inference_norm: false
+augment:
+  accel_rotation:
+    enabled: true
+    probability: 0.5
+    apply_in_qat: true
+    mode: uniform_so3
 window_size_default: 50
 window_sizes_sweep:
 - 50
