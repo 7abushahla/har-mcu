@@ -894,11 +894,18 @@ During `AllocateTensors()`, TensorFlow Lite reads the flatbuffer as **structured
 
 ### Fix
 
-Declare the embedded model with **16-byte alignment** (flatbuffers often assume aligned access for internal offsets):
+Declare the embedded model with explicit alignment so the linker cannot place the flatbuffer at an arbitrary byte offset:
 
 ```cpp
 alignas(16) const unsigned char my_model_tflite[] = { ... };
 ```
+
+**What `alignas(16)` means.** In C++, `alignas(N)` sets the **minimum alignment** (in bytes) of the **next** object. The compiler and linker then reserve the symbol so its **starting address** is a multiple of `N`. Without it, `const unsigned char model[]` is just a byte array: the linker may put it at any address (e.g. ending in `…c1`), which is what triggered the fault.
+
+**Why 16 — not “this model only”.** The literal **`16` is not fitted to Daghero vs DeepConvLSTM** or to the `.tflite` file size. It is a **small, safe default** for embedding **any** TFLite FlatBuffer blob on MCU:
+
+- FlatBuffers layout rules assume the buffer base can be accessed sensibly; **16-byte** alignment matches common **SIMD / vector** boundaries on many CPUs and is widely used as a **“round up to safe boundary”** choice in embedded TFLite examples (same idea as aligning the **tensor arena** — often 16 bytes — for the interpreter scratch region).
+- Using **`alignas(8)`** would also fix many unaligned-base crashes on ARM; **`alignas(16)`** is slightly stricter, costs at most a few bytes of **padding** before the array in flash, and stays **one rule for all models** in this repo.
 
 Regenerate deployment headers from the export scripts so every new `.tflite` → `.h` emit uses `alignas(16)`. In this repo, `har-mcu/src/deploy/export_c_array.py` writes the array that way; always **re-export** after changing models instead of hand-copying a bare `const unsigned char[]`.
 
