@@ -85,11 +85,11 @@ class BleWorker:
 
     # ── public: called from GUI thread ──
     def send_cmd(self, cmd: bytes) -> None:
-        if self._loop:
+        if self._loop and not self._loop.is_closed():
             asyncio.run_coroutine_threadsafe(self._write_cmd(cmd), self._loop)
 
     def stop(self) -> None:
-        if self._loop:
+        if self._loop and not self._loop.is_closed():
             asyncio.run_coroutine_threadsafe(self._disconnect(), self._loop)
 
     # ── internal async helpers ──
