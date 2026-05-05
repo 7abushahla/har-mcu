@@ -2,6 +2,42 @@
 
 This document describes the code path used for the M3 accelerometer-only HAR experiments with DeepConvLSTM and Daghero, from raw CSV input through training, validation, TFLite evaluation, and Arduino deployment.
 
+**Table of contents**
+
+- [Scope And Invariants](#scope-and-invariants)
+- [Pipeline Diagram](#pipeline-diagram)
+- [M3 Entry Points](#m3-entry-points)
+- [Dataset Construction](#dataset-construction)
+- [Train-Time Rotation Augmentation](#train-time-rotation-augmentation)
+- [Axis EDA And Domain Shift](#axis-eda-and-domain-shift)
+- [Model Architectures](#model-architectures)
+  - [DeepConvLSTM](#deepconvlstm)
+  - [Daghero](#daghero)
+- [TFLite Model Sizes](#tflite-model-sizes)
+- [Training, Validation, And Callbacks](#training-validation-and-callbacks)
+- [Quantization And Deploy Gate](#quantization-and-deploy-gate)
+- [Evaluation Metrics](#evaluation-metrics)
+- [Dual-Domain Off/On Comparison](#dual-domain-offon-comparison)
+- [Deployment](#deployment)
+- [Output Locations](#output-locations)
+- [Slurm Commands](#slurm-commands)
+- [AllocateTensors failures: embedded model must be aligned](#allocatetensors-failures-embedded-model-must-be-aligned)
+  - [Symptom](#symptom)
+  - [Cause](#cause)
+  - [Fix](#fix)
+- [BLE desktop controller (`ble_controller.py`) vs USB Serial](#ble-desktop-controller-ble_controllerpy-vs-usb-serial)
+  - [How to run](#how-to-run)
+  - [Architecture (desktop)](#architecture-desktop)
+  - [GATT service (must match firmware UUIDs)](#gatt-service-must-match-firmware-uuids)
+  - [Command bytes (central writes to **cmd**)](#command-bytes-central-writes-to-cmd)
+  - [Status notify payload (device → central, **4 bytes**)](#status-notify-payload-device-central-4-bytes)
+  - [BLE vs Serial responsibilities](#ble-vs-serial-responsibilities)
+  - [Robustness notes](#robustness-notes)
+- [Flash vs SRAM: model flatbuffer vs tensor arena](#flash-vs-sram-model-flatbuffer-vs-tensor-arena)
+- [Arena size vs inference latency](#arena-size-vs-inference-latency)
+- [On-device SRAM breakdown (reference)](#on-device-sram-breakdown-reference)
+- [Mapping to common deployment metrics](#mapping-to-common-deployment-metrics)
+
 ## Scope And Invariants
 
 The M3 pipeline is accelerometer-only. The raw schema is:
