@@ -3,10 +3,14 @@
 //
 // BLE service "HAR Control" (UUID 19B10000-E8F2-537E-4F6C-D104768A1214):
 //   cmd  characteristic (write, UUID ...0001): 0x01=toggle START/STOP, 0x02=average, 0x10..0x15=set GT, 0x1F=clear GT
-//   status characteristic (notify, UUID ...0002): 1 byte state + 1 byte last pred class
-//     byte[0]: 0=idle, 1=recording  byte[1]: last predicted class index (0–5, 0xFF if none)
+//   status characteristic (notify, UUID ...0002): 3 bytes
+//     byte[0]: 0=idle, 1=recording, 2=average result (not a window)
+//     byte[1]: last predicted class index (0–5, 0xFF if none)
+//     byte[2]: softmax confidence 0–100 (integer %)
 //
 // Desktop app: deploy/m3_nano_int8_ble_imu/ble_controller.py (Python + bleak + tkinter).
+//   If you change M3_KWINDOW_SIZE / M3_MODEL_SYM below, update DEFAULT_SKETCH_* in ble_controller.py
+//   (or pass --window-t / --model) so the UI “Firmware config” box matches Serial boot.
 //
 // Preprocessing (matches har-mcu `train_zscore` + `raw_no_conversion` in norm_stats JSON):
 //   1) Optional unit scale: accel * UNIT_PRE_MULTIPLY * UNIT_SCALE (from norm header; usually 1).

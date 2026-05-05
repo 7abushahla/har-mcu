@@ -16,9 +16,10 @@ Usage:
 BLE protocol (same UUIDs as the .ino):
     cmd  (write)  0x01 = toggle START / STOP
                   0x02 = long-hold average
-    status (notify, 2 bytes)
-                  byte[0]  0 = idle, 1 = recording
+    status (notify, 3 bytes)
+                  byte[0]  0 = idle, 1 = recording, 2 = average result (not a window)
                   byte[1]  last predicted class index (0xFF = none yet)
+                  byte[2]  softmax confidence 0–100 (0xFF = unknown)
 """
 from __future__ import annotations
 
@@ -48,6 +49,11 @@ BLE_STATE_REC  = 0x01
 BLE_STATE_AVG  = 0x02   # average-result notification — not a live window
 
 CLASS_NAMES = ["Walking", "Jogging", "Upstairs", "Downstairs", "Sitting", "Standing"]
+
+# Must match m3_nano_int8_ble_imu.ino: M3_KWINDOW_SIZE and M3_MODEL_SYM (Serial boot line).
+# Override with --window-t / --model if you flash a different build.
+DEFAULT_SKETCH_WINDOW_T = 100
+DEFAULT_SKETCH_MODEL = "m3_daghero_finetune_t100_qat_int8"
 
 # ── Colour palette ────────────────────────────────────────────────────────────
 CLR_BG       = "#1e1e2e"
@@ -159,11 +165,19 @@ class BleWorker:
 class App(tk.Tk):
     POLL_MS = 50  # how often to drain the BLE→GUI queue
 
-    def __init__(self, device_name: str | None, device_address: str | None) -> None:
+    def __init__(
+        self,
+        device_name: str | None,
+        device_address: str | None,
+        sketch_window_t: int,
+        sketch_model: str,
+    ) -> None:
         super().__init__()
         self.title("HAR Nano BLE Controller")
         self.configure(bg=CLR_BG)
         self.resizable(False, False)
+        self._sketch_window_t = sketch_window_t
+        self._sketch_model = sketch_model
 
         self._to_gui:   queue.Queue = queue.Queue()
         self._from_gui: queue.Queue = queue.Queue()
@@ -207,6 +221,29 @@ class App(tk.Tk):
         self._lbl_state = tk.Label(status_frame, text="idle",
                                     bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9, "bold"))
         self._lbl_state.grid(row=0, column=3, padx=(0, 16), pady=6, sticky="w")
+
+        # Firmware config (mirrors Serial: "config: T=…  model=…")
+        cfg_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
+        cfg_frame.pack(fill="x", padx=16, pady=(4, 4))
+        tk.Label(
+            cfg_frame,
+            text="Firmware config (expected on Nano)",
+            bg=CLR_SURFACE,
+            fg=CLR_MUTED,
+            font=("Helvetica", 9),
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+        cfg_line = (
+            f"config: T={self._sketch_window_t}  model={self._sketch_model}"
+        )
+        tk.Label(
+            cfg_frame,
+            text=cfg_line,
+            bg=CLR_SURFACE,
+            fg=CLR_TEXT,
+            font=("Courier", 10),
+            justify="left",
+            wraplength=420,
+        ).pack(anchor="w", padx=10, pady=(0, 8))
 
         # Prediction display — live session aggregation (top-3 by vote count)
         pred_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
@@ -451,9 +488,25 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="HAR Nano BLE Desktop Controller")
     ap.add_argument("--name",    default="HAR-Nano", help="BLE device name (default: HAR-Nano)")
     ap.add_argument("--address", default=None,       help="BLE device address (overrides --name)")
+    ap.add_argument(
+        "--window-t",
+        type=int,
+        default=DEFAULT_SKETCH_WINDOW_T,
+        help=f"Window length T shown in UI (default: {DEFAULT_SKETCH_WINDOW_T}; match M3_KWINDOW_SIZE in .ino)",
+    )
+    ap.add_argument(
+        "--model",
+        default=DEFAULT_SKETCH_MODEL,
+        help=f"Model symbol shown in UI (default: {DEFAULT_SKETCH_MODEL}; match M3_MODEL_SYM in .ino)",
+    )
     args = ap.parse_args()
 
-    app = App(device_name=args.name, device_address=args.address)
+    app = App(
+        device_name=args.name,
+        device_address=args.address,
+        sketch_window_t=args.window_t,
+        sketch_model=args.model,
+    )
     app.mainloop()
 
 
