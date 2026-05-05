@@ -748,6 +748,7 @@ static void run_sliding_session_inference() {
 
   int win = 0;
   for (int s = 0; s + WINDOW_SIZE <= n; s += kWindowHop) {
+    BLE.poll();  // keep connection alive during long inference; each invoke ~150ms
     copy_session_window_to_ring(s);
     run_one_invoke(win + 1, n_wins, s);
     win++;
@@ -914,6 +915,7 @@ static void run_averaging_of_buffered_trials() {
     }
 
     set_activity_busy_led(true);
+    BLE.poll();  // averaging + serial printing can be slow; keep connection alive
     g_ble_last_pred_class = static_cast<uint8_t>(best);
     g_ble_conf_tenths     = conf_percent_to_tenths(conf);
     g_ble_is_avg_result   = true;   // tells Python: this is the averaged result, not a new window
