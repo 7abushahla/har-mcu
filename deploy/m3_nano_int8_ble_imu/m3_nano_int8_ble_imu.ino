@@ -664,7 +664,32 @@ static void run_one_invoke(
   Serial.print(kClassNames[best]);
   Serial.print(F(" conf="));
   Serial.print(conf, 1);
-  Serial.println(F("%"));
+  Serial.print(F("%"));
+  // Top-2 and top-3 runners-up appended on same line.
+  {
+    int r2 = -1, r3 = -1;
+    for (int k = 0; k < NUM_CLASSES; ++k) {
+      if (k == best) continue;
+      if (r2 < 0 || logits[k] > logits[r2]) { r3 = r2; r2 = k; }
+      else if (r3 < 0 || logits[k] > logits[r3]) { r3 = k; }
+    }
+    if (r2 >= 0) {
+      Serial.print(F("  ["));
+      Serial.print(kClassNames[r2]);
+      Serial.print(F("="));
+      Serial.print(confidence_percent(logits, r2), 1);
+      Serial.print(F("%"));
+      if (r3 >= 0) {
+        Serial.print(F("  "));
+        Serial.print(kClassNames[r3]);
+        Serial.print(F("="));
+        Serial.print(confidence_percent(logits, r3), 1);
+        Serial.print(F("%"));
+      }
+      Serial.print(F("]"));
+    }
+  }
+  Serial.println();
   g_ble_last_pred_class = static_cast<uint8_t>(best);
   ble_update_status();
 }
@@ -864,8 +889,33 @@ static void run_averaging_of_buffered_trials() {
     Serial.print(kClassNames[best]);
     Serial.print(F(" conf="));
     Serial.print(conf, 1);
-    Serial.println(F("%  (softmax of mean logits)"));
-    Serial.print(F("    per_trial mean: invoke_ms="));
+    Serial.print(F("%  (softmax of mean logits)"));
+    // Top-3 from mean logits
+    {
+      int r2 = -1, r3 = -1;
+      for (int k = 0; k < NUM_CLASSES; ++k) {
+        if (k == best) continue;
+        if (r2 < 0 || mean[k] > mean[r2]) { r3 = r2; r2 = k; }
+        else if (r3 < 0 || mean[k] > mean[r3]) { r3 = k; }
+      }
+      if (r2 >= 0) {
+        Serial.print(F("  ["));
+        Serial.print(kClassNames[r2]);
+        Serial.print(F("="));
+        Serial.print(confidence_percent(mean, r2), 1);
+        Serial.print(F("%"));
+        if (r3 >= 0) {
+          Serial.print(F("  "));
+          Serial.print(kClassNames[r3]);
+          Serial.print(F("="));
+          Serial.print(confidence_percent(mean, r3), 1);
+          Serial.print(F("%"));
+        }
+        Serial.print(F("]"));
+      }
+    }
+    Serial.println();
+    Serial.print(F("    per_trial: invoke_ms="));
     Serial.print(mean_ms, 2);
     Serial.print(F("  window_conf="));
     Serial.print(mean_win_conf, 1);
@@ -875,7 +925,17 @@ static void run_averaging_of_buffered_trials() {
     Serial.print(vote_count[majority]);
     Serial.print(F("/"));
     Serial.print(n0);
-    Serial.println(F(")"));
+    // Vote breakdown for all classes that got at least 1 vote
+    Serial.print(F(")  votes:"));
+    for (int k = 0; k < NUM_CLASSES; ++k) {
+      if (vote_count[k] > 0) {
+        Serial.print(F(" "));
+        Serial.print(kClassNames[k]);
+        Serial.print(F("="));
+        Serial.print(vote_count[k]);
+      }
+    }
+    Serial.println();
     set_activity_busy_led(false);
     g_n_trials_buffered = 0;
     Serial.println(F(">>> trial buffer cleared. <<<"));

@@ -164,6 +164,10 @@ class App(tk.Tk):
         self._recording = False
         self._connected = False
         self._last_pred: int = 0xFF
+        # Per-class window vote counts since last confirmed START; reset on 0→1 transition.
+        self._session_counts: list[int] = [0] * len(CLASS_NAMES)
+        self._session_total: int = 0
+        self._prev_confirmed_state: bool = False
 
         self._worker = BleWorker(device_name, device_address, self._to_gui, self._from_gui)
 
@@ -197,15 +201,37 @@ class App(tk.Tk):
                                     bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9, "bold"))
         self._lbl_state.grid(row=0, column=3, padx=(0, 16), pady=6, sticky="w")
 
-        # Prediction display
+        # Prediction display — live session aggregation (top-3 by vote count)
         pred_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
         pred_frame.pack(fill="x", padx=16, pady=4)
-        tk.Label(pred_frame, text="Last prediction",
-                 bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9)).pack(pady=(8, 2))
-        pred_f = tkfont.Font(family="Helvetica", size=28, weight="bold")
-        self._lbl_pred = tk.Label(pred_frame, text="—",
-                                   font=pred_f, bg=CLR_SURFACE, fg=CLR_TEXT, width=12)
-        self._lbl_pred.pack(pady=(0, 10))
+
+        hdr_f = tk.Frame(pred_frame, bg=CLR_SURFACE)
+        hdr_f.pack(fill="x", padx=10, pady=(8, 0))
+        tk.Label(hdr_f, text="Session predictions",
+                 bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9)).pack(side="left")
+        self._lbl_nwins = tk.Label(hdr_f, text="0 windows",
+                                    bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9))
+        self._lbl_nwins.pack(side="right")
+
+        top1_f = tk.Frame(pred_frame, bg=CLR_SURFACE)
+        top1_f.pack(fill="x", padx=10, pady=(4, 0))
+        pred_big = tkfont.Font(family="Helvetica", size=24, weight="bold")
+        self._lbl_top1 = tk.Label(top1_f, text="—", font=pred_big,
+                                   bg=CLR_SURFACE, fg=CLR_TEXT)
+        self._lbl_top1.pack(side="left")
+        self._lbl_top1_info = tk.Label(top1_f, text="",
+                                        bg=CLR_SURFACE, fg=CLR_ACCENT,
+                                        font=("Helvetica", 13, "bold"))
+        self._lbl_top1_info.pack(side="right", padx=4)
+
+        top23_f = tk.Frame(pred_frame, bg=CLR_SURFACE)
+        top23_f.pack(fill="x", padx=10, pady=(2, 10))
+        self._lbl_top2 = tk.Label(top23_f, text="", bg=CLR_SURFACE,
+                                   fg=CLR_MUTED, font=("Helvetica", 10))
+        self._lbl_top2.pack(anchor="w")
+        self._lbl_top3 = tk.Label(top23_f, text="", bg=CLR_SURFACE,
+                                   fg=CLR_MUTED, font=("Helvetica", 10))
+        self._lbl_top3.pack(anchor="w")
 
         # Buttons
         btn_frame = tk.Frame(self, bg=CLR_BG)
@@ -262,6 +288,43 @@ class App(tk.Tk):
         self._log.pack(fill="both")
 
         self._set_buttons_enabled(False)
+
+    # ── Prediction panel ─────────────────────────────────────────────────────
+    def _update_pred_display(self) -> None:
+        total = self._session_total
+        self._lbl_nwins.config(
+            text=f"{total} window{'s' if total != 1 else ''}")
+        if total == 0:
+            self._lbl_top1.config(text="—", fg=CLR_TEXT)
+            self._lbl_top1_info.config(text="")
+            self._lbl_top2.config(text="")
+            self._lbl_top3.config(text="")
+            return
+        ranked = sorted(range(len(CLASS_NAMES)),
+                        key=lambda i: -self._session_counts[i])
+
+        def _fmt(idx: int) -> str:
+            c = self._session_counts[idx]
+            pct = 100 * c / total
+            return f"{CLASS_NAMES[idx]}   {pct:.0f}%   ({c}/{total})"
+
+        r0 = ranked[0]
+        pct0 = 100 * self._session_counts[r0] / total
+        self._lbl_top1.config(text=CLASS_NAMES[r0], fg=CLR_ACCENT)
+        self._lbl_top1_info.config(
+            text=f"{pct0:.0f}%  ({self._session_counts[r0]}/{total})")
+
+        r1 = ranked[1] if len(ranked) > 1 else -1
+        if r1 >= 0 and self._session_counts[r1] > 0:
+            self._lbl_top2.config(text=f"  2.  {_fmt(r1)}")
+        else:
+            self._lbl_top2.config(text="")
+
+        r2 = ranked[2] if len(ranked) > 2 else -1
+        if r2 >= 0 and self._session_counts[r2] > 0:
+            self._lbl_top3.config(text=f"  3.  {_fmt(r2)}")
+        else:
+            self._lbl_top3.config(text="")
 
     # ── Button handlers ──────────────────────────────────────────────────────
     def _on_click(self) -> None:
@@ -324,11 +387,20 @@ class App(tk.Tk):
             elif mtype == "status":
                 state = msg["state"]
                 pred  = msg["pred"]
-                self._recording = bool(state)
+                confirmed = bool(state)
+                # Reset session tally on confirmed 0→1 (new START).
+                if confirmed and not self._prev_confirmed_state:
+                    self._session_counts = [0] * len(CLASS_NAMES)
+                    self._session_total = 0
+                    self._update_pred_display()
+                self._prev_confirmed_state = confirmed
+                self._recording = confirmed
                 self._update_record_ui()
                 if pred != 0xFF and pred < len(CLASS_NAMES):
                     self._last_pred = pred
-                    self._lbl_pred.config(text=CLASS_NAMES[pred], fg=CLR_ACCENT)
+                    self._session_counts[pred] += 1
+                    self._session_total += 1
+                    self._update_pred_display()
                     self._log_msg(f"[pred] {CLASS_NAMES[pred]}")
             elif mtype == "error":
                 self._log_msg(f"[ERR] {msg['msg']}")
