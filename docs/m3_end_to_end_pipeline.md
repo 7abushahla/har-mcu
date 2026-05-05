@@ -164,12 +164,14 @@ Our v1 implementation used a single uniformly sampled SO(3) rotation per selecte
 
 ```mermaid
 flowchart LR
-    A[Normalized train window X: T x 3] --> B[Denormalize: X_raw = X * std + mean]
-    B --> C[Sample one SO(3) matrix R per selected window]
-    C --> D[Rotate all timesteps: X_raw_rot = X_raw * R]
-    D --> E[Renormalize: X_rot = (X_raw_rot - mean) / std]
-    E --> F[model.fit training batch]
+    A["Normalized train window X: T x 3"] --> B["Denormalize: X_raw = X * std + mean"]
+    B --> C["Sample one SO(3) matrix R per selected window"]
+    C --> D["Rotate all timesteps: X_raw_rot = X_raw * R"]
+    D --> E["Renormalize: X_rot = (X_raw_rot - mean) / std"]
+    E --> F["model.fit training batch"]
 ```
+
+In GitHub-flavored Mermaid, **unquoted** text inside `Node[…]` can break when the label contains parentheses (e.g. `SO(3)`) or math punctuation — the parser may treat `(` as starting another node shape. **Wrap those labels in double quotes** as above.
 
 Configuration keys:
 
@@ -565,16 +567,16 @@ Deployment export uses:
 
 ```mermaid
 flowchart LR
-    A[Selected PTQ or QAT .tflite] --> B[model_data.h/.cc]
-    C[norm_stats_T*_P*.json] --> D[norm_stats.h]
-    B --> E[Arduino sketch]
+    A["Selected PTQ or QAT .tflite"] --> B["model_data.h/.cc"]
+    C["norm_stats_T*_P*.json"] --> D["norm_stats.h"]
+    B --> E["Arduino sketch"]
     D --> E
-    E --> F[IMU samples at SAMPLE_RATE_HZ]
-    F --> G[Ring buffer T x 3]
-    G --> H[Unit scale and optional z-score normalization]
-    H --> I[Int8 quantize into input tensor]
-    I --> J[TFLM Invoke]
-    J --> K[Serial output: timestamp,label,confidence,invoke_ms,e2e_ms]
+    E --> F["IMU samples at SAMPLE_RATE_HZ"]
+    F --> G["Ring buffer T x 3"]
+    G --> H["Unit scale and optional z-score normalization"]
+    H --> I["Int8 quantize into input tensor"]
+    I --> J["TFLM Invoke"]
+    J --> K["Serial output: timestamp,label,confidence,invoke_ms,e2e_ms"]
 ```
 
 The Arduino sketch keeps a ring buffer of `WINDOW_SIZE x 3`, samples accelerometer data at `SAMPLE_RATE_HZ`, normalizes with `kNormMean` and `kNormStd` when `APPLY_NORMALIZATION=1`, quantizes normalized values into the model input tensor, invokes TFLM, and prints predicted label plus timing.
