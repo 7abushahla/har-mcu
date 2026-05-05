@@ -840,3 +840,50 @@ T50 follow-up status:
 - Submitted on 2026-05-04 as training Slurm job `7758` with dependent dual-domain eval job `7759`.
 - Completion check: all `7758_*` and `7759_*` tasks finished `COMPLETED` with exit code `0:0`. Log review found no tracebacks, missing-artifact errors, cancellations, or timeouts.
 - Aggregate-only step completed: `reports/m3/dual_domain_eval_v2_bounded20_p025_t50/dual_domain_eval_master.csv` and `.md` are now generated.
+
+## Flash vs SRAM: model flatbuffer vs tensor arena
+
+On Arduino Nano 33 BLE (nRF52840, **256 KiB SRAM**), three numbers often confuse people because they sound related but are not:
+
+| Quantity | Typical role | Where it lives |
+| --- | --- | --- |
+| **Model flatbuffer size** (`model_flatbuffer_len` or `.tflite` file size) | Serialized graph + **weights/biases** (INT8) + quantization metadata | **Flash** (`.rodata`), constant at runtime |
+| **`kTensorArenaSize` (allocated arena)** | Upper bound you reserve for TFLite Micro scratch memory | **SRAM** (`tensor_arena[]` in BSS) |
+| **`interpreter->arena_used_bytes()`** | Bytes TFLite actually uses inside that arena after `AllocateTensors()` | Subset of the allocated arena only |
+
+**Weights do not live in the tensor arena.** During `Invoke()`, kernels read weights directly from the flatbuffer in flash. The arena holds **scratch RAM** for the interpreter: activations (layer outputs), temporary buffers for ops, and planner bookkeeping. TFLite Micro **reuses** the same arena bytes across operators, so the planner tracks **peak** activation memory — not “sum of every layer’s activations.”
+
+So it is normal — and common for small CNNs — for **model size in flash (e.g. ~27 KiB)** to be **much larger** than **arena used (e.g. ~8 KiB)**. The flatbuffer is dominated by parameters; the arena is dominated by **peak intermediate tensor sizes**, which can stay small if channels stay narrow.
+
+**Allocated vs used arena:** If `arena_used_bytes()` is far below `kTensorArenaSize`, the difference is **slack**: you could shrink `kTensorArenaSize` to reclaim SRAM for larger session buffers or BLE, as long as you leave a safety margin (allocation can shift slightly with resolver/TFLM version).
+
+## Arena size vs inference latency
+
+**Small arena does not imply fast inference.** Arena size tracks **peak scratch RAM** and planner reuse. Latency on Cortex-M4 is dominated by **compute** (MAC operations per layer), filter sizes, and window length `T`, not by how many KiB of arena you reserved. A weight-heavy but activation-narrow CNN can show **small arena_used** and still **~150 ms** per `Invoke()` on this MCU.
+
+Use **measured `invoke_ms`** (from the sketch) or estimated MAC counts from the graph for latency reporting — not arena bytes alone.
+
+## On-device SRAM breakdown (reference)
+
+The BLE deployment sketch (`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`) prints a **`[mem]`** block after tensor allocation that summarizes:
+
+- **Tensor arena:** allocated size, **used** (`arena_used_bytes()`), **slack**
+- **Session buffer:** `sizeof(g_session_buffer)` — float ring for recording (dominant non-arena SRAM when `kMaxSessionSamples` is large)
+- **Trial logits / misc:** cumulative trial buffers and confusion matrix helpers
+- **Static total:** arena allocation plus those named buffers (does **not** include stack, Cordio/BLE heap, or other mbed internals)
+- **Model flash:** same byte count as `model_flatbuffer_len`, labeled explicitly as **not SRAM**
+
+Use that block when filling deployment tables that ask for “arena size + additional buffers.”
+
+## Mapping to common deployment metrics
+
+| Metric | Where to read it |
+| --- | --- |
+| Model size (flash), KiB | `model_flatbuffer_len=` at boot, or size of the `.tflite` file on disk |
+| Total sketch flash | Arduino IDE compile output: “Sketch uses X bytes …” |
+| Arena allocated | `kTensorArenaSize` and/or `[mem] tensor arena … alloc` |
+| Arena actually used | `[mem] … used` = `interpreter->arena_used_bytes()` |
+| Extra SRAM buffers | `[mem]` lines for session / trial / misc + `static total` |
+| Inference latency (avg ≥ 50) | Per-window `invoke_ms=` lines; long-hold summary `per_trial: invoke_ms=` |
+
+---
