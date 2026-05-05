@@ -868,6 +868,80 @@ Regenerate deployment headers from the export scripts so every new `.tflite` →
 
 After the fix, verify in a map file or debugger that the model symbol lands on a **16-byte boundary** (e.g. `0x55ad0`). Flash alignment issues are **orthogonal** to arena size: a correctly aligned model can still need a larger arena for a bigger graph, but **no arena size fixes an unaligned flatbuffer**.
 
+## BLE desktop controller (`ble_controller.py`) vs USB Serial
+
+The Nano 33 BLE sketch **`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`** supports two control surfaces in parallel:
+
+| Surface | Transport | Role |
+| --- | --- | --- |
+| **BLE desktop UI** | Bluetooth GATT (Python + **bleak** + tkinter) | Remote START/STOP, ground truth, **AVERAGE**, live session summary |
+| **USB Serial** | `Serial` at 115200 baud | Full telemetry: every `trial=…` line, confusion matrix, `[mem]` boot dump, typing GT by name |
+
+They do **not** replace each other. The firmware runs **one IMU pipeline**; BLE sends **compact status** for the GUI while Serial prints **verbose logs** for debugging and coursework evidence.
+
+### How to run
+
+```bash
+pip install bleak   # once
+python deploy/m3_nano_int8_ble_imu/ble_controller.py
+python deploy/m3_nano_int8_ble_imu/ble_controller.py --name HAR-Nano
+python deploy/m3_nano_int8_ble_imu/ble_controller.py --address <BLE address>
+```
+
+Optional: keep **Arduino Serial Monitor** open at the same time for full window-by-window output.
+
+### Architecture (desktop)
+
+- **Tkinter** runs on the main thread (buttons, labels, log box).
+- A **background thread** runs **asyncio** + **BleakClient**: scan, connect, subscribe to notifications, read characteristics.
+- Two **queues** bridge threads: BLE→GUI (status, errors, model info) and GUI→BLE (command bytes).
+- Closing the window stops the worker only if the asyncio loop is still open (guarded against `RuntimeError` if the BLE thread already exited).
+
+### GATT service (must match firmware UUIDs)
+
+Single service **`19B10000-E8F2-537E-4F6C-D104768A1214`** with:
+
+| Characteristic | UUID suffix | Direction | Purpose |
+| --- | --- | --- | --- |
+| **cmd** | `…0001` | Central → device (write) | Single-byte commands (see below). |
+| **status** | `…0002` | Device → central (notify) | 4-byte prediction/state updates (see below). |
+| **info** | `…0003` | Central reads once after connect | ASCII model config: `T=<n> hop=<n> model=<symbol>` — UI shows **T** and **model name** (hop omitted in the panel). |
+
+Boot order on device: **TFLite init and `AllocateTensors()` complete before `BLE.begin()`**, so Cordio/HCI activity does not preempt tensor allocation.
+
+### Command bytes (central writes to **cmd**)
+
+| Byte | Meaning |
+| --- | --- |
+| `0x01` | Toggle **START / STOP** recording (same semantics as shield “short click” in other sketches). |
+| `0x02` | **Long-hold / AVERAGE** — mean logits over buffered trials, confusion matrix path, clear trial buffer as implemented in firmware. |
+| `0x10` … `0x15` | Set ground-truth class **0 … 5** before next START. |
+| `0x1F` | Clear ground truth. |
+
+On START, the GUI may send GT then `0x01` in sequence so the next segment carries the chosen label.
+
+### Status notify payload (device → central, **4 bytes**)
+
+| Offset | Content |
+| --- | --- |
+| `0` | **state:** `0` idle, `1` recording, **`2` average result** (not a sliding-window prediction — GUI must not count it as a window). |
+| `1` | **Class index** `0 … 5`, or **`0xFF`** for “no prediction this notify” (pure state update after START/STOP click). |
+| `2–3` | **uint16 little-endian:** confidence in **tenths of a percent** (`996` → **99.6 %**). |
+
+The GUI aggregates **window** predictions into **session top‑3 vote counts** with **per-class average confidence**; `[avg result]` lines use **state = 2** so they do not inflate the window tally.
+
+Legacy firmware that sent **3-byte** status is still parsed (integer percent in byte 2).
+
+### BLE vs Serial responsibilities
+
+- **Serial** — authoritative for **`invoke_ms`**, per-window **`trial=`** lines with runner-up classes, **`[mem]`** SRAM breakdown, **`model_flatbuffer_len`**, confusion matrix printouts.
+- **BLE** — enough to drive the remote UI: recording state, last/average class + confidence, optional **model info** string without parsing Serial.
+
+### Robustness notes
+
+- **`BLE.poll()`** is called **between sliding windows** during STOP inference and around averaging so the link stays supervised during long CPU-bound stretches (otherwise macOS may drop the connection).
+- **Double `ble_update_status()` after commands** was avoided: START/STOP sends **state-only** notifies (`pred = 0xFF`) so the desktop does not double-count windows or inject stale confidence.
+
 ## Flash vs SRAM: model flatbuffer vs tensor arena
 
 On Arduino Nano 33 BLE (nRF52840, **256 KiB SRAM**), three numbers often confuse people because they sound related but are not:
