@@ -16,10 +16,9 @@ Usage:
 BLE protocol (same UUIDs as the .ino):
     cmd  (write)  0x01 = toggle START / STOP
                   0x02 = long-hold average
-    status (notify, 3 bytes)
-                  byte[0]  0 = idle, 1 = recording, 2 = average result (not a window)
+    status (notify, 2 bytes)
+                  byte[0]  0 = idle, 1 = recording
                   byte[1]  last predicted class index (0xFF = none yet)
-                  byte[2]  softmax confidence 0–100 (0xFF = unknown)
 """
 from __future__ import annotations
 
@@ -37,6 +36,7 @@ from bleak import BleakClient, BleakScanner
 SERVICE_UUID = "19b10000-e8f2-537e-4f6c-d104768a1214"
 CMD_UUID     = "19b10001-e8f2-537e-4f6c-d104768a1214"
 STATUS_UUID  = "19b10002-e8f2-537e-4f6c-d104768a1214"
+INFO_UUID    = "19b10003-e8f2-537e-4f6c-d104768a1214"  # read-only model config string
 
 CMD_CLICK    = bytes([0x01])
 CMD_LONGHOLD = bytes([0x02])
@@ -49,11 +49,6 @@ BLE_STATE_REC  = 0x01
 BLE_STATE_AVG  = 0x02   # average-result notification — not a live window
 
 CLASS_NAMES = ["Walking", "Jogging", "Upstairs", "Downstairs", "Sitting", "Standing"]
-
-# Must match m3_nano_int8_ble_imu.ino: M3_KWINDOW_SIZE and M3_MODEL_SYM (Serial boot line).
-# Override with --window-t / --model if you flash a different build.
-DEFAULT_SKETCH_WINDOW_T = 100
-DEFAULT_SKETCH_MODEL = "m3_daghero_finetune_t100_qat_int8"
 
 # ── Colour palette ────────────────────────────────────────────────────────────
 CLR_BG       = "#1e1e2e"
@@ -142,6 +137,13 @@ class BleWorker:
                 self._client = client
                 self._notify({"type": "connected", "address": str(device.address)})
                 await client.start_notify(STATUS_UUID, self._status_handler)
+                # Read model config characteristic (written by firmware at boot).
+                try:
+                    info_raw = await client.read_gatt_char(INFO_UUID)
+                    info_text = info_raw.decode("utf-8", errors="ignore").rstrip("\x00")
+                    self._notify({"type": "info", "text": info_text})
+                except Exception:
+                    pass  # older firmware without this characteristic — silently skip
                 # Drain commands from GUI until disconnect
                 while client.is_connected:
                     try:
@@ -165,19 +167,11 @@ class BleWorker:
 class App(tk.Tk):
     POLL_MS = 50  # how often to drain the BLE→GUI queue
 
-    def __init__(
-        self,
-        device_name: str | None,
-        device_address: str | None,
-        sketch_window_t: int,
-        sketch_model: str,
-    ) -> None:
+    def __init__(self, device_name: str | None, device_address: str | None) -> None:
         super().__init__()
         self.title("HAR Nano BLE Controller")
         self.configure(bg=CLR_BG)
         self.resizable(False, False)
-        self._sketch_window_t = sketch_window_t
-        self._sketch_model = sketch_model
 
         self._to_gui:   queue.Queue = queue.Queue()
         self._from_gui: queue.Queue = queue.Queue()
@@ -222,28 +216,21 @@ class App(tk.Tk):
                                     bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9, "bold"))
         self._lbl_state.grid(row=0, column=3, padx=(0, 16), pady=6, sticky="w")
 
-        # Firmware config (mirrors Serial: "config: T=…  model=…")
-        cfg_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
-        cfg_frame.pack(fill="x", padx=16, pady=(4, 4))
-        tk.Label(
-            cfg_frame,
-            text="Firmware config (expected on Nano)",
-            bg=CLR_SURFACE,
-            fg=CLR_MUTED,
-            font=("Helvetica", 9),
-        ).pack(anchor="w", padx=10, pady=(8, 2))
-        cfg_line = (
-            f"config: T={self._sketch_window_t}  model={self._sketch_model}"
-        )
-        tk.Label(
-            cfg_frame,
-            text=cfg_line,
-            bg=CLR_SURFACE,
-            fg=CLR_TEXT,
-            font=("Courier", 10),
-            justify="left",
-            wraplength=420,
-        ).pack(anchor="w", padx=10, pady=(0, 8))
+        # Model config info box (populated from BLE read after connect)
+        model_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
+        model_frame.pack(fill="x", padx=16, pady=(0, 4))
+        model_inner = tk.Frame(model_frame, bg=CLR_SURFACE)
+        model_inner.pack(fill="x", padx=10, pady=(6, 6))
+        self._lbl_model_name = tk.Label(
+            model_inner, text="model  —",
+            bg=CLR_SURFACE, fg=CLR_TEXT,
+            font=("Courier", 9), anchor="w")
+        self._lbl_model_name.pack(anchor="w")
+        self._lbl_model_cfg = tk.Label(
+            model_inner, text="",
+            bg=CLR_SURFACE, fg=CLR_MUTED,
+            font=("Courier", 9), anchor="w")
+        self._lbl_model_cfg.pack(anchor="w")
 
         # Prediction display — live session aggregation (top-3 by vote count)
         pred_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
@@ -332,6 +319,15 @@ class App(tk.Tk):
         self._log.pack(fill="both")
 
         self._set_buttons_enabled(False)
+
+    # ── Model info panel ─────────────────────────────────────────────────────
+    def _update_model_info(self, text: str) -> None:
+        # text format from firmware: "T=100 hop=50 model=m3_daghero_finetune_t100_qat_int8"
+        parts = dict(p.split("=", 1) for p in text.split() if "=" in p)
+        model_name = parts.get("model", "—")
+        t_val      = parts.get("T", "—")
+        self._lbl_model_name.config(text=f"model  {model_name}")
+        self._lbl_model_cfg.config(text=f"T={t_val}")
 
     # ── Prediction panel ─────────────────────────────────────────────────────
     def _update_pred_display(self) -> None:
@@ -466,6 +462,8 @@ class App(tk.Tk):
                         self._update_pred_display()
                         conf_str = f" {conf}%" if conf != 0xFF else ""
                         self._log_msg(f"[pred] {CLASS_NAMES[pred]}{conf_str}")
+            elif mtype == "info":
+                self._update_model_info(msg["text"])
             elif mtype == "error":
                 self._log_msg(f"[ERR] {msg['msg']}")
                 messagebox.showerror("BLE Error", msg["msg"])
@@ -488,25 +486,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="HAR Nano BLE Desktop Controller")
     ap.add_argument("--name",    default="HAR-Nano", help="BLE device name (default: HAR-Nano)")
     ap.add_argument("--address", default=None,       help="BLE device address (overrides --name)")
-    ap.add_argument(
-        "--window-t",
-        type=int,
-        default=DEFAULT_SKETCH_WINDOW_T,
-        help=f"Window length T shown in UI (default: {DEFAULT_SKETCH_WINDOW_T}; match M3_KWINDOW_SIZE in .ino)",
-    )
-    ap.add_argument(
-        "--model",
-        default=DEFAULT_SKETCH_MODEL,
-        help=f"Model symbol shown in UI (default: {DEFAULT_SKETCH_MODEL}; match M3_MODEL_SYM in .ino)",
-    )
     args = ap.parse_args()
 
-    app = App(
-        device_name=args.name,
-        device_address=args.address,
-        sketch_window_t=args.window_t,
-        sketch_model=args.model,
-    )
+    app = App(device_name=args.name, device_address=args.address)
     app.mainloop()
 
 

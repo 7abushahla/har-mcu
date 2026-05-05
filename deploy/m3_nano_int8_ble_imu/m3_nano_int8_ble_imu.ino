@@ -3,14 +3,10 @@
 //
 // BLE service "HAR Control" (UUID 19B10000-E8F2-537E-4F6C-D104768A1214):
 //   cmd  characteristic (write, UUID ...0001): 0x01=toggle START/STOP, 0x02=average, 0x10..0x15=set GT, 0x1F=clear GT
-//   status characteristic (notify, UUID ...0002): 3 bytes
-//     byte[0]: 0=idle, 1=recording, 2=average result (not a window)
-//     byte[1]: last predicted class index (0–5, 0xFF if none)
-//     byte[2]: softmax confidence 0–100 (integer %)
+//   status characteristic (notify, UUID ...0002): 1 byte state + 1 byte last pred class
+//     byte[0]: 0=idle, 1=recording  byte[1]: last predicted class index (0–5, 0xFF if none)
 //
 // Desktop app: deploy/m3_nano_int8_ble_imu/ble_controller.py (Python + bleak + tkinter).
-//   If you change M3_KWINDOW_SIZE / M3_MODEL_SYM below, update DEFAULT_SKETCH_* in ble_controller.py
-//   (or pass --window-t / --model) so the UI “Firmware config” box matches Serial boot.
 //
 // Preprocessing (matches har-mcu `train_zscore` + `raw_no_conversion` in norm_stats JSON):
 //   1) Optional unit scale: accel * UNIT_PRE_MULTIPLY * UNIT_SCALE (from norm header; usually 1).
@@ -34,6 +30,7 @@
 #define BLE_SERVICE_UUID  "19B10000-E8F2-537E-4F6C-D104768A1214"
 #define BLE_CMD_UUID      "19B10001-E8F2-537E-4F6C-D104768A1214"
 #define BLE_STATUS_UUID   "19B10002-E8F2-537E-4F6C-D104768A1214"
+#define BLE_INFO_UUID     "19B10003-E8F2-537E-4F6C-D104768A1214"  // read-only: model config string
 // cmd values from desktop app:
 #define BLE_CMD_CLICK     0x01   // toggle START / STOP
 #define BLE_CMD_LONGHOLD  0x02   // average buffered trials
@@ -775,6 +772,8 @@ BLEByteCharacteristic g_ble_cmd(BLE_CMD_UUID, BLEWrite);
 // 3-byte status: [state, pred_class, conf_0_100]
 // state: BLE_STATE_IDLE=0, BLE_STATE_REC=1, BLE_STATE_AVG=2 (average result, not a window)
 BLECharacteristic g_ble_status(BLE_STATUS_UUID, BLERead | BLENotify, 3);
+// Read-only config: "T=100 hop=50 model=m3_daghero_finetune_t100_qat_int8" written at boot
+BLECharacteristic g_ble_info(BLE_INFO_UUID, BLERead, 96);
 
 static void ble_update_status() {
   const uint8_t state = g_ble_is_avg_result ? BLE_STATE_AVG :
@@ -1057,10 +1056,17 @@ void setup() {
     BLE.setAdvertisedService(g_ble_service);
     g_ble_service.addCharacteristic(g_ble_cmd);
     g_ble_service.addCharacteristic(g_ble_status);
+    g_ble_service.addCharacteristic(g_ble_info);
     BLE.addService(g_ble_service);
     {
       uint8_t init_status[3] = {BLE_STATE_IDLE, 0xFF, 0};
       g_ble_status.writeValue(init_status, 3);
+    }
+    {
+      char info_buf[96];
+      snprintf(info_buf, sizeof(info_buf), "T=%d hop=%d model=%s",
+               WINDOW_SIZE, static_cast<int>(kWindowHop), M3_MODEL_SYM_STR);
+      g_ble_info.writeValue(reinterpret_cast<uint8_t*>(info_buf), strlen(info_buf));
     }
     BLE.advertise();
     Serial.print(F("[BLE] advertising as \"HAR-Nano\" ("));
