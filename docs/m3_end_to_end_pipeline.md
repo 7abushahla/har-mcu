@@ -841,6 +841,33 @@ T50 follow-up status:
 - Completion check: all `7758_*` and `7759_*` tasks finished `COMPLETED` with exit code `0:0`. Log review found no tracebacks, missing-artifact errors, cancellations, or timeouts.
 - Aggregate-only step completed: `reports/m3/dual_domain_eval_v2_bounded20_p025_t50/dual_domain_eval_master.csv` and `.md` are now generated.
 
+## AllocateTensors failures: embedded model must be aligned
+
+### Symptom
+
+On Nano 33 BLE, `AllocateTensors()` could appear to **hang**, require **double reset**, or fault **silently** right after `[boot] allocate tensors…`. Increasing `kTensorArenaSize` did not fix it when the real issue was elsewhere.
+
+### Cause
+
+The model is embedded as a **C byte array** (`const unsigned char …[]`). Without alignment constraints, the **linker may place that array at any address**. Example from two builds of the same sketch:
+
+- One link placed the array at **`0x5555c`** — **16-byte aligned** by luck.
+- Another placed it at **`0x55ac1`** — **unaligned**.
+
+During `AllocateTensors()`, TensorFlow Lite reads the flatbuffer as **structured data** (tables, offsets, vectors). On **Cortex-M**, reading multi-byte fields from an **unaligned** base address can cause a **hard fault** instead of returning `kTfLiteError`. That matches “stuck at allocate tensors” with no clean error path.
+
+### Fix
+
+Declare the embedded model with **16-byte alignment** (flatbuffers often assume aligned access for internal offsets):
+
+```cpp
+alignas(16) const unsigned char my_model_tflite[] = { ... };
+```
+
+Regenerate deployment headers from the export scripts so every new `.tflite` → `.h` emit uses `alignas(16)`. In this repo, `har-mcu/src/deploy/export_c_array.py` writes the array that way; always **re-export** after changing models instead of hand-copying a bare `const unsigned char[]`.
+
+After the fix, verify in a map file or debugger that the model symbol lands on a **16-byte boundary** (e.g. `0x55ad0`). Flash alignment issues are **orthogonal** to arena size: a correctly aligned model can still need a larger arena for a bigger graph, but **no arena size fixes an unaligned flatbuffer**.
+
 ## Flash vs SRAM: model flatbuffer vs tensor arena
 
 On Arduino Nano 33 BLE (nRF52840, **256 KiB SRAM**), three numbers often confuse people because they sound related but are not:
