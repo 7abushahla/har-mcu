@@ -16,9 +16,10 @@ Usage:
 BLE protocol (same UUIDs as the .ino):
     cmd  (write)  0x01 = toggle START / STOP
                   0x02 = long-hold average
-    status (notify, 2 bytes)
-                  byte[0]  0 = idle, 1 = recording
-                  byte[1]  last predicted class index (0xFF = none yet)
+    status (notify, 4 bytes)
+                  byte[0]  state: 0 = idle, 1 = recording, 2 = average result (not a window)
+                  byte[1]  predicted class index (0xFF = none / state-only update)
+                  byte[2:3] uint16 LE — confidence in tenths of a percent (996 = 99.6 %)
 """
 from __future__ import annotations
 
@@ -98,8 +99,18 @@ class BleWorker:
     def _status_handler(self, _handle: int, data: bytearray) -> None:
         state = data[0] if len(data) > 0 else 0
         pred  = data[1] if len(data) > 1 else 0xFF
-        conf  = data[2] if len(data) > 2 else 0xFF   # 0-100 integer %, 0xFF = unknown
-        self._notify({"type": "status", "state": state, "pred": pred, "conf": conf})
+        conf_pct: float | None = None
+        if pred != 0xFF:
+            if len(data) >= 4:
+                tenths = int.from_bytes(data[2:4], "little")
+                conf_pct = tenths / 10.0
+            elif len(data) >= 3:
+                # Legacy 3-byte firmware: integer percent in byte[2]
+                b = data[2]
+                if b != 0xFF:
+                    conf_pct = float(b)
+        self._notify({"type": "status", "state": state, "pred": pred,
+                      "conf_pct": conf_pct})
 
     async def _write_cmd(self, cmd: bytes) -> None:
         if self._client and self._client.is_connected:
@@ -348,7 +359,7 @@ class App(tk.Tk):
             if c == 0:
                 return ""
             avg = self._session_conf_sum[idx] / c
-            return f" avg {avg:.0f}%"
+            return f" avg {avg:.1f}%"
 
         def _fmt(idx: int) -> str:
             c = self._session_counts[idx]
@@ -435,7 +446,7 @@ class App(tk.Tk):
             elif mtype == "status":
                 state = msg["state"]
                 pred  = msg["pred"]
-                conf  = msg.get("conf", 0xFF)
+                conf_pct = msg.get("conf_pct")
                 is_avg = (state == BLE_STATE_AVG)
                 if not is_avg:
                     # Only REC/IDLE updates change recording state and session tally reset.
@@ -451,16 +462,18 @@ class App(tk.Tk):
                     self._update_record_ui()
                 if pred != 0xFF and pred < len(CLASS_NAMES):
                     if is_avg:
-                        conf_str = f" {conf}%" if conf != 0xFF else ""
+                        conf_str = (
+                            f" {conf_pct:.1f}%" if conf_pct is not None else "")
                         self._log_msg(f"[avg result] {CLASS_NAMES[pred]}{conf_str}")
                     else:
                         self._last_pred = pred
                         self._session_counts[pred] += 1
-                        if conf != 0xFF:
-                            self._session_conf_sum[pred] += conf
+                        if conf_pct is not None:
+                            self._session_conf_sum[pred] += conf_pct
                         self._session_total += 1
                         self._update_pred_display()
-                        conf_str = f" {conf}%" if conf != 0xFF else ""
+                        conf_str = (
+                            f" {conf_pct:.1f}%" if conf_pct is not None else "")
                         self._log_msg(f"[pred] {CLASS_NAMES[pred]}{conf_str}")
             elif mtype == "info":
                 self._update_model_info(msg["text"])

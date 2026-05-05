@@ -122,8 +122,9 @@ alignas(16) uint8_t tensor_arena[kTensorArenaSize];
 
 // BLE state — declared early so inference functions can reference them.
 static uint8_t g_ble_last_pred_class = 0xFF;
-static uint8_t g_ble_last_pred_conf  = 0;      // 0-100 integer %
-static bool    g_ble_is_avg_result   = false;   // set before ble_update_status() for average
+// Confidence for BLE notify: tenths of a percent (996 => 99.6%). 0 when pred unknown.
+static uint16_t g_ble_conf_tenths = 0;
+static bool     g_ble_is_avg_result = false;  // set before ble_update_status() for average
 static void ble_update_status();  // forward declaration; defined in BLE globals block below
 
 // Live session: raw (normalized) accel stream between START and STOP
@@ -695,7 +696,7 @@ static void run_one_invoke(
   }
   Serial.println();
   g_ble_last_pred_class = static_cast<uint8_t>(best);
-  g_ble_last_pred_conf  = static_cast<uint8_t>(conf < 100.0f ? conf : 100.0f);
+  g_ble_conf_tenths     = conf_percent_to_tenths(conf);
   ble_update_status();
 }
 
@@ -769,17 +770,33 @@ static void run_sliding_session_inference() {
 // -------- BLE globals --------
 BLEService g_ble_service(BLE_SERVICE_UUID);
 BLEByteCharacteristic g_ble_cmd(BLE_CMD_UUID, BLEWrite);
-// 3-byte status: [state, pred_class, conf_0_100]
+// 4-byte status: [state, pred_class, conf_tenths_le_lo, conf_tenths_le_hi]
+// conf: uint16 LE, tenths of a percent (996 = 99.6%). 0 if pred_class == 0xFF (state-only).
 // state: BLE_STATE_IDLE=0, BLE_STATE_REC=1, BLE_STATE_AVG=2 (average result, not a window)
-BLECharacteristic g_ble_status(BLE_STATUS_UUID, BLERead | BLENotify, 3);
+BLECharacteristic g_ble_status(BLE_STATUS_UUID, BLERead | BLENotify, 4);
 // Read-only config: "T=100 hop=50 model=m3_daghero_finetune_t100_qat_int8" written at boot
 BLECharacteristic g_ble_info(BLE_INFO_UUID, BLERead, 96);
+
+static uint16_t conf_percent_to_tenths(float conf_pct) {
+  if (conf_pct <= 0.0f) {
+    return 0;
+  }
+  if (conf_pct >= 100.0f) {
+    return 1000;
+  }
+  return static_cast<uint16_t>(conf_pct * 10.0f + 0.5f);
+}
 
 static void ble_update_status() {
   const uint8_t state = g_ble_is_avg_result ? BLE_STATE_AVG :
                         (g_recording ? BLE_STATE_REC : BLE_STATE_IDLE);
-  uint8_t buf[3] = {state, g_ble_last_pred_class, g_ble_last_pred_conf};
-  g_ble_status.writeValue(buf, 3);
+  const uint16_t tenths = g_ble_conf_tenths;
+  uint8_t buf[4] = {
+      state,
+      g_ble_last_pred_class,
+      static_cast<uint8_t>(tenths & 0xFF),
+      static_cast<uint8_t>((tenths >> 8) & 0xFF)};
+  g_ble_status.writeValue(buf, 4);
   g_ble_is_avg_result = false;  // auto-reset after each notify
 }
 
@@ -829,7 +846,7 @@ static void poll_ble_commands() {
     // Sending last pred again here duplicates the final window; on START we would send a
     // stale pred/conf from the previous segment — both confuse the desktop UI tally.
     g_ble_last_pred_class = 0xFF;
-    g_ble_last_pred_conf  = 0;
+    g_ble_conf_tenths     = 0;
     ble_update_status();
   } else if (cmd == BLE_CMD_LONGHOLD) {
     Serial.println(F(">>> [BLE] long-hold: averaging buffered trials <<<"));
@@ -898,7 +915,7 @@ static void run_averaging_of_buffered_trials() {
 
     set_activity_busy_led(true);
     g_ble_last_pred_class = static_cast<uint8_t>(best);
-    g_ble_last_pred_conf  = static_cast<uint8_t>(conf < 100.0f ? conf : 100.0f);
+    g_ble_conf_tenths     = conf_percent_to_tenths(conf);
     g_ble_is_avg_result   = true;   // tells Python: this is the averaged result, not a new window
     ble_update_status();
     Serial.print(F(">>> HOLD_AVERAGE: n="));
@@ -1064,8 +1081,8 @@ void setup() {
     g_ble_service.addCharacteristic(g_ble_info);
     BLE.addService(g_ble_service);
     {
-      uint8_t init_status[3] = {BLE_STATE_IDLE, 0xFF, 0};
-      g_ble_status.writeValue(init_status, 3);
+      uint8_t init_status[4] = {BLE_STATE_IDLE, 0xFF, 0, 0};
+      g_ble_status.writeValue(init_status, 4);
     }
     {
       char info_buf[96];
