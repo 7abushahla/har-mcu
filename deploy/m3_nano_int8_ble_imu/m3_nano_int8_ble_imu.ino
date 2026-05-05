@@ -17,11 +17,9 @@
 
 #include <math.h>
 #include <string.h>
-#include <mbed.h>
-#include <rtos.h>
 #include <ArduinoBLE.h>
 #include <TensorFlowLite.h>
-#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+#include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/system_setup.h"
@@ -83,14 +81,15 @@ static constexpr float kNormInvStd[NUM_FEATURES] = {
 #endif
 
 #define BAUDRATE 115200
-const int kTensorArenaSize = 70 * 1024;
+// Match serial/live TFLM path; model flatbuffer must be alignas(16) in the .h (export script does this).
+const int kTensorArenaSize = 50 * 1024;
 const int kWindowHop = M3_KWINDOW_HOP;
 // Max length of one START…STOP run. ArduinoBLE library + TFLM arena leave very little
 // SRAM on Nano 33 BLE — keep this small. 500 samples = 25 s @ 20 Hz (or 5 s @ 100 Hz).
 // 500 * 3 * 4 = 6 KB.
-const int kMaxSessionSamples = 300;
+const int kMaxSessionSamples = 1500;
 // Cumulative logit cap (multiple STOP batches stack until full). 16 * 6 * 4 = 0.4 KB.
-const int kMaxSessionTrials = 16;
+const int kMaxSessionTrials = 64;
 const int kSampleRateHz = LIVE_SAMPLE_RATE_HZ;
 const uint32_t kSamplePeriodMs = 1000U / static_cast<uint32_t>(kSampleRateHz);
 const bool kUseImuContinuousMode = false;
@@ -116,17 +115,8 @@ const tflite::Model* model = nullptr;
 tflite::MicroInterpreter* interpreter = nullptr;
 TfLiteTensor* input = nullptr;
 TfLiteTensor* output = nullptr;
-// Arena lives on the HEAP (allocated in setup), not BSS — frees up static memory
-// and avoids BSS layout collisions with ArduinoBLE's static buffers on Nano 33 BLE.
-uint8_t* tensor_arena = nullptr;
+alignas(16) uint8_t tensor_arena[kTensorArenaSize];
 }  // namespace
-
-// Approximate free-heap probe (works on mbed-os via the libc sbrk hook).
-extern "C" char* sbrk(int incr);
-static int free_heap_bytes() {
-  char top;
-  return &top - reinterpret_cast<char*>(sbrk(0));
-}
 
 // BLE state — declared early so inference functions can reference them.
 static uint8_t g_ble_last_pred_class = 0xFF;
@@ -433,9 +423,6 @@ static void init_status_leds() {
 }
 
 static void clear_tensor_arena() {
-  if (tensor_arena == nullptr) {
-    return;
-  }
   for (size_t i = 0; i < kTensorArenaSize; ++i) {
     tensor_arena[i] = 0;
   }
@@ -572,31 +559,7 @@ static void print_tensor_dims_scale(const char* tag, const TfLiteTensor* t) {
 }
 
 static void setup_interpreter() {
-  // Minimal op set for Daghero (CNN) and DeepConvLSTM (CNN + LSTM) INT8 models.
-  // MicroMutableOpResolver is much lighter than AllOpsResolver — important when
-  // ArduinoBLE is linked, since the BLE/HCI stack steals RAM at runtime.
-  static tflite::MicroMutableOpResolver<20> resolver;
-  resolver.AddConv2D();
-  resolver.AddDepthwiseConv2D();
-  resolver.AddFullyConnected();
-  resolver.AddMaxPool2D();
-  resolver.AddAveragePool2D();
-  resolver.AddReshape();
-  resolver.AddSoftmax();
-  resolver.AddRelu();
-  resolver.AddLogistic();
-  resolver.AddTanh();
-  resolver.AddQuantize();
-  resolver.AddDequantize();
-  resolver.AddUnidirectionalSequenceLSTM();
-  resolver.AddTransposeConv();
-  resolver.AddMean();
-  resolver.AddPad();
-  resolver.AddAdd();
-  resolver.AddMul();
-  resolver.AddConcatenation();
-  resolver.AddStridedSlice();
-
+  static tflite::AllOpsResolver resolver;
   static tflite::MicroInterpreter static_interpreter(
       model, resolver, tensor_arena, kTensorArenaSize);
   interpreter = &static_interpreter;
@@ -958,33 +921,6 @@ void setup() {
 
   Serial.println(F("[boot] tflite init..."));
   tflite::InitializeTarget();
-
-  // ---- Allocate the tensor arena on the HEAP (not BSS).
-  Serial.print(F("[boot] free heap before arena malloc = "));
-  Serial.println(free_heap_bytes());
-  Serial.print(F("[boot] mallocing arena = "));
-  Serial.print(static_cast<unsigned long>(kTensorArenaSize));
-  Serial.println(F(" bytes (16-byte aligned)..."));
-  Serial.flush();
-
-  // 16-byte aligned malloc (TFLM requires the arena be aligned).
-  void* raw = malloc(kTensorArenaSize + 16);
-  if (raw == nullptr) {
-    Serial.println(F("[boot] FATAL: malloc(tensor_arena) returned NULL"));
-    Serial.flush();
-    while (true) {
-      delay(1000);
-    }
-  }
-  uintptr_t addr = reinterpret_cast<uintptr_t>(raw);
-  uintptr_t aligned = (addr + 15) & ~uintptr_t(15);
-  tensor_arena = reinterpret_cast<uint8_t*>(aligned);
-  Serial.print(F("[boot] arena malloc OK at 0x"));
-  Serial.println(static_cast<unsigned long>(aligned), HEX);
-  Serial.print(F("[boot] free heap after arena malloc  = "));
-  Serial.println(free_heap_bytes());
-  Serial.flush();
-
   Serial.println(F("[boot] clear arena..."));
   clear_tensor_arena();
 
@@ -1003,52 +939,8 @@ void setup() {
   }
   Serial.println(F("[boot] setup interpreter..."));
   setup_interpreter();
-  Serial.println(F("[boot] allocate tensors (on 24KB-stack worker thread)..."));
-  Serial.flush();
-  delay(50);
-
-  // Main mbed-os thread stack on Nano 33 BLE is ~4KB — TFLM's op-planner can
-  // recurse deeper than that on models with MEAN / DepthwiseConv / etc., which
-  // hard-faults silently. Spawn a dedicated thread with a larger stack just
-  // for AllocateTensors().
-  static volatile TfLiteStatus alloc_rc = kTfLiteError;
-  static volatile bool alloc_started = false;
-  static volatile bool alloc_finished = false;
-  rtos::Thread alloc_thread(osPriorityNormal, /* stack */ 24 * 1024);
-  alloc_thread.start([]() {
-    alloc_started = true;
-    alloc_rc = interpreter->AllocateTensors();
-    alloc_finished = true;
-  });
-
-  // Poll while AllocateTensors runs so we can tell if it's making progress
-  // or stuck. Time out after 30 s and report.
-  const uint32_t t_alloc0 = millis();
-  while (!alloc_finished && (millis() - t_alloc0 < 30000)) {
-    rtos::ThisThread::sleep_for(500);
-    Serial.print(F("[boot]   ... still running (started="));
-    Serial.print(alloc_started ? 1 : 0);
-    Serial.print(F(", elapsed="));
-    Serial.print(millis() - t_alloc0);
-    Serial.println(F(" ms)"));
-    Serial.flush();
-  }
-
-  if (!alloc_finished) {
-    Serial.println(F("[boot] AllocateTensors() TIMED OUT after 30 s — likely hard fault"));
-    Serial.print(F("[boot]   thread started? "));
-    Serial.println(alloc_started ? F("yes") : F("no"));
-    Serial.flush();
-    while (true) {
-      delay(1000);
-    }
-  }
-  alloc_thread.join();
-
-  Serial.print(F("[boot] AllocateTensors() returned rc="));
-  Serial.println(static_cast<int>(alloc_rc));
-  Serial.flush();
-  if (alloc_rc != kTfLiteOk) {
+  Serial.println(F("[boot] allocate tensors..."));
+  if (interpreter->AllocateTensors() != kTfLiteOk) {
     Serial.println(F("[boot] AllocateTensors() failed; raise kTensorArenaSize or choose smaller model."));
     MicroPrintf("AllocateTensors() failed, raise kTensorArenaSize.");
     while (true) {
@@ -1064,7 +956,7 @@ void setup() {
   Serial.print(F("[tensor] arena_bytes="));
   Serial.println(static_cast<unsigned long>(kTensorArenaSize));
 
-  Serial.println(F("--- m3_nano_int8_live_imu ---"));
+  Serial.println(F("--- m3_nano_int8_ble_imu ---"));
   Serial.print(F("model_flatbuffer_len="));
   Serial.println(M3_MODEL_LEN_VAR);
   Serial.print(F("config: T="));
