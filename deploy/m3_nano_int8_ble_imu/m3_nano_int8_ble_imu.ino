@@ -825,6 +825,11 @@ static void poll_ble_commands() {
       run_sliding_session_inference();
       g_session_n = 0;
     }
+    // State-only notify: each window already called ble_update_status() with pred+conf.
+    // Sending last pred again here duplicates the final window; on START we would send a
+    // stale pred/conf from the previous segment — both confuse the desktop UI tally.
+    g_ble_last_pred_class = 0xFF;
+    g_ble_last_pred_conf  = 0;
     ble_update_status();
   } else if (cmd == BLE_CMD_LONGHOLD) {
     Serial.println(F(">>> [BLE] long-hold: averaging buffered trials <<<"));
