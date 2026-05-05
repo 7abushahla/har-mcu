@@ -42,8 +42,8 @@
 #define BLE_STATE_AVG     0x02   // average-result notification — not a live window
 
 // ======== Edit these three lines, then compile + flash ============================
-#include "m3_daghero_finetune_t100_qat_int8.h"
-#define M3_MODEL_SYM    m3_daghero_finetune_t100_qat_int8
+#include "daghero_accel_rotation_v2_bounded20_p025_qat.h"
+#define M3_MODEL_SYM    daghero_accel_rotation_v2_bounded20_p025_qat
 #define M3_KWINDOW_SIZE 100  // ← T: 100 or 50 
 // ==================================================================================
 
@@ -1050,8 +1050,48 @@ void setup() {
 
   print_tensor_dims_scale("input", input);
   print_tensor_dims_scale("output", output);
-  Serial.print(F("[tensor] arena_bytes="));
-  Serial.println(static_cast<unsigned long>(kTensorArenaSize));
+
+  // ---- RAM breakdown -------------------------------------------------------
+  // arena_used_bytes() is exact: how much AllocateTensors() consumed.
+  const size_t arena_used   = interpreter->arena_used_bytes();
+  const size_t arena_alloc  = static_cast<size_t>(kTensorArenaSize);
+  const size_t arena_slack  = arena_alloc - arena_used;
+  // Static buffers in BSS (compile-time known).
+  const size_t buf_session  = sizeof(g_session_buffer);   // float[kMaxSamples][3]
+  const size_t buf_logits   = sizeof(g_trial_logit);      // float[kMaxTrials][6]
+  const size_t buf_misc     = sizeof(g_trial_invoke_ms)
+                            + sizeof(g_trial_window_conf)
+                            + sizeof(g_trial_pred_class)
+                            + sizeof(g_confusion);
+  const size_t model_flash  = static_cast<size_t>(M3_MODEL_LEN_VAR);
+  // nRF52840 has 256 KB SRAM; rough static total (arena + named buffers).
+  const size_t static_total = arena_alloc + buf_session + buf_logits + buf_misc;
+
+  Serial.println(F("[mem] --- SRAM breakdown (nRF52840 = 262144 B total) ---"));
+  Serial.print(F("[mem]   tensor arena : "));
+  Serial.print(static_cast<unsigned long>(arena_alloc));
+  Serial.print(F(" B alloc, "));
+  Serial.print(static_cast<unsigned long>(arena_used));
+  Serial.print(F(" B used, "));
+  Serial.print(static_cast<unsigned long>(arena_slack));
+  Serial.println(F(" B slack"));
+  Serial.print(F("[mem]   session buf  : "));
+  Serial.print(static_cast<unsigned long>(buf_session));
+  Serial.println(F(" B  (float accel stream)"));
+  Serial.print(F("[mem]   trial logits : "));
+  Serial.print(static_cast<unsigned long>(buf_logits));
+  Serial.println(F(" B  (cumulative window logits)"));
+  Serial.print(F("[mem]   trial misc   : "));
+  Serial.print(static_cast<unsigned long>(buf_misc));
+  Serial.println(F(" B  (invoke_ms, conf, pred_class, confusion)"));
+  Serial.print(F("[mem]   static total : "));
+  Serial.print(static_cast<unsigned long>(static_total));
+  Serial.println(F(" B  (arena + named buffers, excl. stack/BLE)"));
+  Serial.print(F("[mem]   model flash  : "));
+  Serial.print(static_cast<unsigned long>(model_flash));
+  Serial.println(F(" B  (.rodata, not SRAM)"));
+  Serial.println(F("[mem] --------------------------------------------------"));
+  // --------------------------------------------------------------------------
 
   Serial.println(F("--- m3_nano_int8_ble_imu ---"));
   Serial.print(F("model_flatbuffer_len="));
