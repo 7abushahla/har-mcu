@@ -1,12 +1,11 @@
-// M3 HAR INT8 (BLE + LIVE IMU) — Nano 33 BLE. BLE remote control + optional TinyML shield button.
+// M3 HAR INT8 (BLE + LIVE IMU) — Nano 33 BLE. BLE UI remote control.
 // Session → windowing matches offline pipeline.
 //
 // BLE service "HAR Control" (UUID 19B10000-E8F2-537E-4F6C-D104768A1214):
-//   cmd  characteristic (write, UUID ...0001): 0x01=click(toggle START/STOP), 0x02=long-hold avg
+//   cmd  characteristic (write, UUID ...0001): 0x01=toggle START/STOP, 0x02=average, 0x10..0x15=set GT, 0x1F=clear GT
 //   status characteristic (notify, UUID ...0002): 1 byte state + 1 byte last pred class
 //     byte[0]: 0=idle, 1=recording  byte[1]: last predicted class index (0–5, 0xFF if none)
 //
-// Physical button still works alongside BLE (set kUseTinyMLShield = true/false as before).
 // Desktop app: deploy/m3_nano_int8_ble_imu/ble_controller.py (Python + bleak + tkinter).
 //
 // Preprocessing (matches har-mcu `train_zscore` + `raw_no_conversion` in norm_stats JSON):
@@ -28,7 +27,6 @@
 #include "tensorflow/lite/micro/system_setup.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include <Arduino_LSM9DS1.h>
-#include "tinyml_shield.h"
 
 // -------- BLE service / characteristic UUIDs --------
 #define BLE_SERVICE_UUID  "19B10000-E8F2-537E-4F6C-D104768A1214"
@@ -37,6 +35,8 @@
 // cmd values from desktop app:
 #define BLE_CMD_CLICK     0x01   // toggle START / STOP
 #define BLE_CMD_LONGHOLD  0x02   // average buffered trials
+#define BLE_CMD_GT_BASE    0x10   // 0x10..0x15 set ground-truth class 0..5
+#define BLE_CMD_GT_CLEAR   0x1F   // clear ground-truth class
 // status byte[0] values sent to desktop app:
 #define BLE_STATE_IDLE    0x00
 #define BLE_STATE_REC     0x01
@@ -91,16 +91,8 @@ const int kWindowHop = M3_KWINDOW_HOP;
 const int kMaxSessionSamples = 300;
 // Cumulative logit cap (multiple STOP batches stack until full). 16 * 6 * 4 = 0.4 KB.
 const int kMaxSessionTrials = 16;
-// Press+release < this → one START/STOP **toggle** (on release, not on down).
-const uint32_t kShortClickMaxMs = 350U;
-// Hold this long to trigger “average last session trials” (mean logits) once per hold.
-const uint32_t kLongPressAvgMs = 2500U;
-
 const int kSampleRateHz = LIVE_SAMPLE_RATE_HZ;
 const uint32_t kSamplePeriodMs = 1000U / static_cast<uint32_t>(kSampleRateHz);
-const bool kUseTinyMLShield = true;
-const int kUserButtonPin = 7;
-const uint32_t kButtonDebounceMs = 50;
 const bool kUseImuContinuousMode = false;
 // Training CSV came from tf4micro-motion-kit captures: stored accelerometer = readAcceleration(g) / 4.
 // Arduino_LSM9DS1::readAcceleration() returns g, so divide by 4 before applying train z-score.
@@ -112,7 +104,7 @@ static const char* const kClassNames[NUM_CLASSES] = {
 // Short labels for confusion matrix columns (rows = true GT, cols = pred).
 static const char* const kClassAbr[NUM_CLASSES] = {"Walk", "Jog", "Upsz", "Dnsz", "Sit", "Stnd"};
 
-// Ground truth: set in Serial (class name or 0–5) **before** START. Snapshot at each START.
+// Ground truth: set by BLE UI before START; Serial input remains as a debug fallback. Snapshot at START.
 static int8_t g_ground_truth = -1;
 // Copy of g_ground_truth at REC start; used for each window in the following sliding pass.
 static int8_t g_session_gt = -1;
@@ -432,26 +424,12 @@ static void poll_serial_ground_truth() {
 }
 
 static void set_activity_busy_led(const bool on) {
-  if (kUseTinyMLShield || kUserButtonPin == 13) {
-#if defined(LEDR)
-    pinMode(LEDR, OUTPUT);
-    digitalWrite(LEDR, on ? LOW : HIGH);
-#endif
-  } else {
-    digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
-  }
+  digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
 }
 
 static void init_status_leds() {
-  if (kUseTinyMLShield || kUserButtonPin == 13) {
-#if defined(LEDR)
-    pinMode(LEDR, OUTPUT);
-    digitalWrite(LEDR, HIGH);
-#endif
-  } else {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
-  }
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 static void clear_tensor_arena() {
@@ -817,7 +795,18 @@ static void poll_ble_commands() {
     return;
   }
   const uint8_t cmd = g_ble_cmd.value();
-  if (cmd == BLE_CMD_CLICK) {
+  if (cmd >= BLE_CMD_GT_BASE && cmd < (BLE_CMD_GT_BASE + NUM_CLASSES)) {
+    const int gt = static_cast<int>(cmd - BLE_CMD_GT_BASE);
+    g_ground_truth = static_cast<int8_t>(gt);
+    Serial.print(F(">>> [BLE] GT = "));
+    Serial.print(kClassNames[gt]);
+    Serial.print(F(" ("));
+    Serial.print(gt);
+    Serial.println(F(")"));
+  } else if (cmd == BLE_CMD_GT_CLEAR) {
+    g_ground_truth = -1;
+    Serial.println(F(">>> [BLE] GT cleared <<<"));
+  } else if (cmd == BLE_CMD_CLICK) {
     if (!g_recording) {
       g_session_n = 0;
       g_session_gt = g_ground_truth;
@@ -844,27 +833,6 @@ static void poll_ble_commands() {
     run_averaging_of_buffered_trials();
     ble_update_status();
   }
-}
-
-// -------- Debounced: true while the physical button is held (shield D13: active low; manual: LOW).
-static bool read_button_steady_pressed() {
-  const int r =
-      kUseTinyMLShield ? (readShieldButtonDown() ? LOW : HIGH) : digitalRead(kUserButtonPin);
-  static int last_raw = r;
-  static int steady = r;
-  static uint32_t last_raw_ch = 0;
-  const uint32_t now = millis();
-  if (r != last_raw) {
-    last_raw = r;
-    last_raw_ch = now;
-  }
-  if (static_cast<uint32_t>(now - last_raw_ch) < kButtonDebounceMs) {
-    return (steady == LOW);
-  }
-  if (r != steady) {
-    steady = r;
-  }
-  return (steady == LOW);
 }
 
 // Long-hold: optional mean of saved logits + confusion matrix, then clear buffers.
@@ -956,56 +924,6 @@ static void run_averaging_of_buffered_trials() {
   }
 }
 
-// Short press+release: toggle START / STOP+sliding. Long hold: average buffered trials;
-// does not run START/STOP.
-static void poll_shield_holds_and_clicks() {
-  const bool down = read_button_steady_pressed();
-  static bool prev = false;
-  static uint32_t t_down = 0;
-  static bool long_fired = false;
-  const uint32_t now = millis();
-
-  if (down && !prev) {
-    t_down = now;
-    long_fired = false;
-  }
-  if (down) {
-    if (!long_fired && (uint32_t)(now - t_down) >= kLongPressAvgMs) {
-      long_fired = true;
-      run_averaging_of_buffered_trials();
-    }
-  } else if (prev) {
-    const uint32_t dur = (uint32_t)(now - t_down);
-    if (!long_fired && dur < kShortClickMaxMs) {
-      if (!g_recording) {
-        g_session_n = 0;
-        g_session_gt = g_ground_truth;
-        g_recording = true;
-        Serial.println();
-        if (g_session_gt < 0) {
-          Serial.println(
-              F(">>> [GT] not set: confusion matrix will not count this run. Type class name, "
-                "e.g. Walking, then START again, or type help. <<<"));
-        } else {
-          Serial.print(F(">>> [GT] for this record = "));
-          Serial.print(kClassNames[static_cast<int>(g_session_gt)]);
-          Serial.println();
-        }
-        Serial.println(
-            F(">>> REC — move, then short press+release to STOP and run sliding windows. <<<"));
-      } else {
-        g_recording = false;
-        Serial.print(F(">>> STOP — "));
-        Serial.print(g_session_n);
-        Serial.println(F(" samples, windowing + inference..."));
-        run_sliding_session_inference();
-        g_session_n = 0;
-      }
-    }
-  }
-  prev = down;
-}
-
 void setup() {
   Serial.begin(BAUDRATE);
   const uint32_t t0 = millis();
@@ -1017,11 +935,6 @@ void setup() {
   // background thread on Nano 33 BLE preempts main during AllocateTensors()
   // and hard-faults it; keeping BLE off until TFLM is done avoids that.
 
-  if (kUseTinyMLShield) {
-    initializeShield();
-  } else {
-    pinMode(kUserButtonPin, INPUT_PULLUP);
-  }
   init_status_leds();
 
   if (!IMU.begin()) {
@@ -1158,20 +1071,14 @@ void setup() {
   Serial.print(M3_KWINDOW_SIZE);
   Serial.print(F("  model="));
   Serial.println(F(M3_MODEL_SYM_STR));
-  if (kUseTinyMLShield) {
-    Serial.print(F("Shield: tinyml_shield (not Harvard TFL package). T="));
-  } else {
-    Serial.print(F("Button: D"));
-    Serial.print(kUserButtonPin);
-    Serial.print(F("  T="));
-  }
+  Serial.print(F("Control: BLE UI. T="));
   Serial.print(WINDOW_SIZE);
   Serial.print(F(" hop="));
   Serial.print(kWindowHop);
   Serial.println();
   Serial.println();
   Serial.println(
-      F("Serial: type class name (Walking… or 0-5) before START, then long-hold for mean + CM. "
+      F("BLE UI: choose GT, START/STOP, then AVERAGE for mean + CM. Serial class input is debug fallback. "
         "Cumulative STOP batches; kMaxSessionTrials cap."));
 
   // ---- Bring up BLE now (TFLM is fully allocated; BLE/HCI threads can run safely).
@@ -1180,6 +1087,7 @@ void setup() {
     Serial.println(F("[BLE] init failed — continuing without BLE."));
   } else {
     BLE.setLocalName("HAR-Nano");
+    BLE.setDeviceName("HAR-Nano");
     BLE.setAdvertisedService(g_ble_service);
     g_ble_service.addCharacteristic(g_ble_cmd);
     g_ble_service.addCharacteristic(g_ble_status);
@@ -1192,7 +1100,7 @@ void setup() {
     Serial.print(F("[BLE] advertising as \"HAR-Nano\" ("));
     Serial.print(BLE.address());
     Serial.println(F(")"));
-    Serial.println(F("[BLE] cmds: 0x01=START/STOP toggle  0x02=long-hold avg"));
+    Serial.println(F("[BLE] cmds: 0x01=START/STOP  0x02=average  0x10..0x15=set GT  0x1F=clear GT"));
   }
 
   next_sample_ms = millis();
@@ -1201,7 +1109,6 @@ void setup() {
 void loop() {
   poll_serial_ground_truth();
   poll_ble_commands();
-  poll_shield_holds_and_clicks();
 
   const uint32_t now = millis();
   if (now < next_sample_ms) {

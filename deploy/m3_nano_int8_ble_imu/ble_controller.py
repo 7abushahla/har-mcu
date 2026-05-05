@@ -3,8 +3,7 @@
 HAR Nano BLE Desktop Controller
 ================================
 Connects to the Arduino Nano 33 BLE running m3_nano_int8_ble_imu.ino and lets
-you Start/Stop recording and trigger the long-hold average — all without a
-physical shield button.
+you choose ground truth, Start/Stop recording, and trigger averaging over BLE.
 
 Requirements:
     pip install bleak
@@ -40,6 +39,8 @@ STATUS_UUID  = "19b10002-e8f2-537e-4f6c-d104768a1214"
 
 CMD_CLICK    = bytes([0x01])
 CMD_LONGHOLD = bytes([0x02])
+CMD_GT_BASE  = 0x10
+CMD_GT_NONE  = bytes([0x1F])
 
 CLASS_NAMES = ["Walking", "Jogging", "Upstairs", "Downstairs", "Sitting", "Standing"]
 
@@ -96,7 +97,7 @@ class BleWorker:
     async def _write_cmd(self, cmd: bytes) -> None:
         if self._client and self._client.is_connected:
             try:
-                await self._client.write_gatt_char(CMD_UUID, cmd, response=False)
+                await self._client.write_gatt_char(CMD_UUID, cmd, response=True)
             except Exception as exc:
                 self._notify({"type": "error", "msg": str(exc)})
 
@@ -105,15 +106,21 @@ class BleWorker:
             await self._client.disconnect()
 
     async def _run(self) -> None:
-        self._notify({"type": "log", "msg": "Scanning for HAR-Nano…"})
+        target_name = self._name or "HAR-Nano"
+        self._notify({"type": "log", "msg": f"Scanning for {target_name} / service {SERVICE_UUID}…"})
         try:
             if self._address:
                 device = await BleakScanner.find_device_by_address(
                     self._address, timeout=10.0
                 )
             else:
-                device = await BleakScanner.find_device_by_name(
-                    self._name or "HAR-Nano", timeout=10.0
+                def matches_har_device(device, adv) -> bool:
+                    names = {device.name, adv.local_name}
+                    services = {uuid.lower() for uuid in (adv.service_uuids or [])}
+                    return target_name in names or SERVICE_UUID.lower() in services
+
+                device = await BleakScanner.find_device_by_filter(
+                    matches_har_device, timeout=10.0
                 )
             if device is None:
                 self._notify({"type": "error", "msg": "Device not found. Is the Nano powered and advertising?"})
@@ -226,7 +233,7 @@ class App(tk.Tk):
         # Ground truth selector
         gt_frame = tk.Frame(self, bg=CLR_SURFACE, bd=0)
         gt_frame.pack(fill="x", padx=16, pady=(0, 4))
-        tk.Label(gt_frame, text="Ground truth (sent via Serial on next START):",
+        tk.Label(gt_frame, text="Ground truth (sent to Nano on next START):",
                  bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9)).pack(
                      anchor="w", padx=10, pady=(8, 2))
         self._gt_var = tk.StringVar(value="(none)")
@@ -258,7 +265,16 @@ class App(tk.Tk):
 
     # ── Button handlers ──────────────────────────────────────────────────────
     def _on_click(self) -> None:
+        if not self._recording:
+            selected = self._gt_var.get()
+            if selected in CLASS_NAMES:
+                self._from_gui.put_nowait(bytes([CMD_GT_BASE + CLASS_NAMES.index(selected)]))
+                self._log_msg(f"[GUI] Ground truth set: {selected}")
+            else:
+                self._from_gui.put_nowait(CMD_GT_NONE)
+                self._log_msg("[GUI] Ground truth cleared")
         self._from_gui.put_nowait(CMD_CLICK)
+        self._log_msg("[GUI] START/STOP requested")
         # optimistic local toggle (BLE status update will confirm)
         self._recording = not self._recording
         self._update_record_ui()
