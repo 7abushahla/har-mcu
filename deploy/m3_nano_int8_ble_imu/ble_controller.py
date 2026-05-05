@@ -42,6 +42,11 @@ CMD_LONGHOLD = bytes([0x02])
 CMD_GT_BASE  = 0x10
 CMD_GT_NONE  = bytes([0x1F])
 
+# Status byte[0] values from firmware
+BLE_STATE_IDLE = 0x00
+BLE_STATE_REC  = 0x01
+BLE_STATE_AVG  = 0x02   # average-result notification — not a live window
+
 CLASS_NAMES = ["Walking", "Jogging", "Upstairs", "Downstairs", "Sitting", "Standing"]
 
 # ── Colour palette ────────────────────────────────────────────────────────────
@@ -92,7 +97,8 @@ class BleWorker:
     def _status_handler(self, _handle: int, data: bytearray) -> None:
         state = data[0] if len(data) > 0 else 0
         pred  = data[1] if len(data) > 1 else 0xFF
-        self._notify({"type": "status", "state": state, "pred": pred})
+        conf  = data[2] if len(data) > 2 else 0xFF   # 0-100 integer %, 0xFF = unknown
+        self._notify({"type": "status", "state": state, "pred": pred, "conf": conf})
 
     async def _write_cmd(self, cmd: bytes) -> None:
         if self._client and self._client.is_connected:
@@ -164,8 +170,9 @@ class App(tk.Tk):
         self._recording = False
         self._connected = False
         self._last_pred: int = 0xFF
-        # Per-class window vote counts since last confirmed START; reset on 0→1 transition.
-        self._session_counts: list[int] = [0] * len(CLASS_NAMES)
+        # Per-class window vote counts + confidence sums since last confirmed START.
+        self._session_counts:   list[int]   = [0]   * len(CLASS_NAMES)
+        self._session_conf_sum: list[float] = [0.0] * len(CLASS_NAMES)
         self._session_total: int = 0
         self._prev_confirmed_state: bool = False
 
@@ -303,16 +310,24 @@ class App(tk.Tk):
         ranked = sorted(range(len(CLASS_NAMES)),
                         key=lambda i: -self._session_counts[i])
 
+        def _avg_conf(idx: int) -> str:
+            c = self._session_counts[idx]
+            if c == 0:
+                return ""
+            avg = self._session_conf_sum[idx] / c
+            return f" avg {avg:.0f}%"
+
         def _fmt(idx: int) -> str:
             c = self._session_counts[idx]
             pct = 100 * c / total
-            return f"{CLASS_NAMES[idx]}   {pct:.0f}%   ({c}/{total})"
+            return f"{CLASS_NAMES[idx]}   {pct:.0f}%   ({c}/{total}){_avg_conf(idx)}"
 
         r0 = ranked[0]
-        pct0 = 100 * self._session_counts[r0] / total
+        c0 = self._session_counts[r0]
+        pct0 = 100 * c0 / total
         self._lbl_top1.config(text=CLASS_NAMES[r0], fg=CLR_ACCENT)
         self._lbl_top1_info.config(
-            text=f"{pct0:.0f}%  ({self._session_counts[r0]}/{total})")
+            text=f"{pct0:.0f}%  ({c0}/{total}){_avg_conf(r0)}")
 
         r1 = ranked[1] if len(ranked) > 1 else -1
         if r1 >= 0 and self._session_counts[r1] > 0:
@@ -387,21 +402,33 @@ class App(tk.Tk):
             elif mtype == "status":
                 state = msg["state"]
                 pred  = msg["pred"]
-                confirmed = bool(state)
-                # Reset session tally on confirmed 0→1 (new START).
-                if confirmed and not self._prev_confirmed_state:
-                    self._session_counts = [0] * len(CLASS_NAMES)
-                    self._session_total = 0
-                    self._update_pred_display()
-                self._prev_confirmed_state = confirmed
-                self._recording = confirmed
-                self._update_record_ui()
+                conf  = msg.get("conf", 0xFF)
+                is_avg = (state == BLE_STATE_AVG)
+                if not is_avg:
+                    # Only REC/IDLE updates change recording state and session tally reset.
+                    confirmed = (state == BLE_STATE_REC)
+                    if confirmed and not self._prev_confirmed_state:
+                        # Confirmed new START: reset session tally.
+                        self._session_counts   = [0]   * len(CLASS_NAMES)
+                        self._session_conf_sum = [0.0] * len(CLASS_NAMES)
+                        self._session_total    = 0
+                        self._update_pred_display()
+                    self._prev_confirmed_state = confirmed
+                    self._recording = confirmed
+                    self._update_record_ui()
                 if pred != 0xFF and pred < len(CLASS_NAMES):
-                    self._last_pred = pred
-                    self._session_counts[pred] += 1
-                    self._session_total += 1
-                    self._update_pred_display()
-                    self._log_msg(f"[pred] {CLASS_NAMES[pred]}")
+                    if is_avg:
+                        conf_str = f" {conf}%" if conf != 0xFF else ""
+                        self._log_msg(f"[avg result] {CLASS_NAMES[pred]}{conf_str}")
+                    else:
+                        self._last_pred = pred
+                        self._session_counts[pred] += 1
+                        if conf != 0xFF:
+                            self._session_conf_sum[pred] += conf
+                        self._session_total += 1
+                        self._update_pred_display()
+                        conf_str = f" {conf}%" if conf != 0xFF else ""
+                        self._log_msg(f"[pred] {CLASS_NAMES[pred]}{conf_str}")
             elif mtype == "error":
                 self._log_msg(f"[ERR] {msg['msg']}")
                 messagebox.showerror("BLE Error", msg["msg"])

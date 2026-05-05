@@ -38,6 +38,7 @@
 // status byte[0] values sent to desktop app:
 #define BLE_STATE_IDLE    0x00
 #define BLE_STATE_REC     0x01
+#define BLE_STATE_AVG     0x02   // average-result notification — not a live window
 
 // ======== Edit these three lines, then compile + flash ============================
 #include "m3_daghero_finetune_t100_qat_int8.h"
@@ -120,6 +121,8 @@ alignas(16) uint8_t tensor_arena[kTensorArenaSize];
 
 // BLE state — declared early so inference functions can reference them.
 static uint8_t g_ble_last_pred_class = 0xFF;
+static uint8_t g_ble_last_pred_conf  = 0;      // 0-100 integer %
+static bool    g_ble_is_avg_result   = false;   // set before ble_update_status() for average
 static void ble_update_status();  // forward declaration; defined in BLE globals block below
 
 // Live session: raw (normalized) accel stream between START and STOP
@@ -691,6 +694,7 @@ static void run_one_invoke(
   }
   Serial.println();
   g_ble_last_pred_class = static_cast<uint8_t>(best);
+  g_ble_last_pred_conf  = static_cast<uint8_t>(conf < 100.0f ? conf : 100.0f);
   ble_update_status();
 }
 
@@ -764,13 +768,16 @@ static void run_sliding_session_inference() {
 // -------- BLE globals --------
 BLEService g_ble_service(BLE_SERVICE_UUID);
 BLEByteCharacteristic g_ble_cmd(BLE_CMD_UUID, BLEWrite);
-BLECharacteristic g_ble_status(BLE_STATUS_UUID, BLERead | BLENotify, 2);
+// 3-byte status: [state, pred_class, conf_0_100]
+// state: BLE_STATE_IDLE=0, BLE_STATE_REC=1, BLE_STATE_AVG=2 (average result, not a window)
+BLECharacteristic g_ble_status(BLE_STATUS_UUID, BLERead | BLENotify, 3);
 
 static void ble_update_status() {
-  uint8_t buf[2] = {
-      g_recording ? BLE_STATE_REC : BLE_STATE_IDLE,
-      g_ble_last_pred_class};
-  g_ble_status.writeValue(buf, 2);
+  const uint8_t state = g_ble_is_avg_result ? BLE_STATE_AVG :
+                        (g_recording ? BLE_STATE_REC : BLE_STATE_IDLE);
+  uint8_t buf[3] = {state, g_ble_last_pred_class, g_ble_last_pred_conf};
+  g_ble_status.writeValue(buf, 3);
+  g_ble_is_avg_result = false;  // auto-reset after each notify
 }
 
 // Called from loop() — handles BLE connect/poll and translates cmd writes to click/longhold.
@@ -819,7 +826,8 @@ static void poll_ble_commands() {
   } else if (cmd == BLE_CMD_LONGHOLD) {
     Serial.println(F(">>> [BLE] long-hold: averaging buffered trials <<<"));
     run_averaging_of_buffered_trials();
-    ble_update_status();
+    // ble_update_status() already called inside with BLE_STATE_AVG; don't call again
+    // (a second call would look like a window pred to the Python UI).
   }
 }
 
@@ -882,6 +890,8 @@ static void run_averaging_of_buffered_trials() {
 
     set_activity_busy_led(true);
     g_ble_last_pred_class = static_cast<uint8_t>(best);
+    g_ble_last_pred_conf  = static_cast<uint8_t>(conf < 100.0f ? conf : 100.0f);
+    g_ble_is_avg_result   = true;   // tells Python: this is the averaged result, not a new window
     ble_update_status();
     Serial.print(F(">>> HOLD_AVERAGE: n="));
     Serial.print(n0);
@@ -1045,8 +1055,8 @@ void setup() {
     g_ble_service.addCharacteristic(g_ble_status);
     BLE.addService(g_ble_service);
     {
-      uint8_t init_status[2] = {BLE_STATE_IDLE, 0xFF};
-      g_ble_status.writeValue(init_status, 2);
+      uint8_t init_status[3] = {BLE_STATE_IDLE, 0xFF, 0};
+      g_ble_status.writeValue(init_status, 3);
     }
     BLE.advertise();
     Serial.print(F("[BLE] advertising as \"HAR-Nano\" ("));
