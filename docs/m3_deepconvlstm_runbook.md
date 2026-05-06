@@ -268,8 +268,8 @@ Experiment ladder and what we learned:
 | Run | Purpose | Policy | What we achieved | Decision |
 | --- | --- | --- | --- | --- |
 | v1 | Stress-test whether physically valid arbitrary orientation changes help. | `uniform_so3`, `p=0.5`, `apply_in_qat=true` | Proved the shared train-only augmentation path works for FP32, fine-tune, and QAT with no inference cost. Found unconstrained rotations are too blunt: Daghero Arduino improves slightly, DeepConvLSTM especially QAT gets hurt. | Keep as reference, not deployment default. |
-| v2 | Test a gentler random perturbation after v1 was too strong. | `bounded_so3`, `20deg`, `p=0.25`, `apply_in_qat=true` | Reduced damage compared with v1 and gave Daghero small mean Arduino gains, but did not improve deployment-subset failure metrics. Stored Arduino standing/walking are already near-perfect for Daghero E09/E10, so the live issue is not reproduced by this split. | Do not spend the next sweep on more bounded random rotations. |
-| v3 | Use observed WISDM-vs-Arduino axis/domain shift instead of blind random rotations. | `target_gravity`, targets `-x/-y/+z`, `p=0.25`, `apply_in_qat=true` | Completed. It directly rotates WISDM-like gravity directions toward Arduino clusters and works technically, but the offline metrics do not beat the no-augmentation Daghero baseline for deployment. | Do not deploy by default; keep as reference and stop rotation sweeps until live failure data is captured. |
+| v2 | Test a gentler random perturbation after v1 was too strong. | `bounded_so3`, `20deg`, `p=0.25`, `apply_in_qat=true` | Reduced damage compared with v1 and gave Daghero small mean Arduino gains. Stored Arduino standing/walking are already near-perfect for Daghero E09/E10, but informal live testing favored this branch. | Use Daghero E09 v2 QAT as the main live deployment branch; keep the clean model as rollback. |
+| v3 | Use observed WISDM-vs-Arduino axis/domain shift instead of blind random rotations. | `target_gravity`, targets `-x/-y/+z`, `p=0.25`, `apply_in_qat=true` | Completed. It directly rotates WISDM-like gravity directions toward Arduino clusters and works technically, but the offline metrics do not beat v2 as the live deployment choice. | Keep as EDA-informed reference, not the main live deployment branch. |
 
 QAT augmentation rule and recommendation:
 
@@ -306,7 +306,7 @@ Deployment guideline right now:
   - Deploy E10 on-device to test whether WISDM pretraining plus Arduino fine-tuning is actually necessary, or whether training directly on device IMU data is sufficient.
   - Treat E12 as the T50 from-scratch analogue of E10. In other words, the requested "E10 with augmentations at T=50" experiment is already represented by E12.
 - On-device test priority: verify the actual live confusion behavior for `Standing`, `Walking`, `Upstairs`, and `Downstairs`, and explicitly log confidence so low-confidence and high-confidence failures can be separated.
-- We still need a systematic pocket-orientation sweep; tomorrow's live run should cover board-in-hand, left-pocket, and alternate pocket orientation placements.
+- We still need a systematic pocket-orientation sweep; the next logged live run should cover board-in-hand, left-pocket, and alternate pocket orientation placements.
 - After the main E09 live pass, the next scientific deployment comparison should be E10 Daghero v2 QAT. That is the direct test of whether pretraining is helping or whether a from-scratch device-only model is good enough.
 - Use E12 Daghero v2 QAT as the matching T50 from-scratch comparison.
 - Export commands for the first candidate:
@@ -329,7 +329,41 @@ Team update summary:
 - Done: added EDA showing a real axis/domain shift: WISDM mostly `+y`, Arduino dynamic activities mostly `-x`, Arduino standing `-x/-y`, Arduino sitting `+z`.
 - Finding: arbitrary `uniform_so3,p=0.5` is too strong; bounded `20deg,p=0.25` is the current best live policy even though the offline delta is small; target-gravity v3 remains a reference branch rather than the main deployment choice.
 - Current best deployable reference for live use: Daghero E09 v2 QAT, about `26.7 KB`, with better live robustness than the clean baseline.
+- M4 report alignment: `paper/M4.tex` now treats Daghero E09 v2 QAT as the final deployment candidate, the clean Daghero E09 QAT artifact as the control/rollback model, and DeepConvLSTM E09 v2 PTQ as the architecture comparison.
 - Left to do: export the selected Daghero candidate into `deploy/common`, run the logged live robustness sweep, compare E09 against E10 on-device to test whether pretraining is necessary, and collect failure windows for the DeepConvLSTM deep dive.
+
+## M4 Published Reference Comparison And Deployment Notes
+
+`paper/M4.tex` now includes a published-reference comparison table so the final report does not only compare our models against our own previous milestones.
+
+Reference numbers used in M4:
+
+| System | Published/current result | Footprint/latency note | How to interpret it |
+| --- | --- | --- | --- |
+| Original DeepConvLSTM, Ordonez and Roggen 2016 | OPPORTUNITY F1 `0.930/0.895` for locomotion and `0.866/0.915` for gestures depending on null-class setting; Skoda F1 `0.958` | No Nano/TFLite size or latency reported | Historical source of the CNN+LSTM architecture, but not directly comparable to our accelerometer-only WISDM/Arduino TinyML setting. |
+| Published DeepConv LSTM edge reference, Zhou et al. 2025 | WISDM accuracy `98.24%`, F1 `98.23%`; quantized model about `97%` accuracy/F1 | Size `513.23 KB -> 136.51 KB`; Arduino Nano 33 BLE Sense Rev2 Edge Impulse deployment reported `29.1 KB` RAM, `189.6 KB` flash, `21 ms` average inference | Closest WISDM/edge DeepConvLSTM reference for our project. |
+| Our DeepConvLSTM E00 source anchor | WISDM FP32 `97.83%` accuracy / `96.82%` macro-F1; PTQ `97.88%` / `96.93%` | `513.617 KB` FP32, `136.922 KB` PTQ; our local TFLM LSTM path is too slow live | Similar source-domain scale, but not the deployment choice. |
+| Published Daghero CNN, Daghero et al. 2022 | WISDM max F1 `98.9%`; Max-5% point F1 `94.74%` | Max point `6.22 KB`, `4.19 ms`; Max-5% point `1.27 KB`, `1.07 ms` on Quentin RISC-V | Motivates the lightweight CNN path; their mixed/sub-byte backend is not directly comparable to TFLite flatbuffer size. |
+| Our Daghero E00 source anchor | WISDM v2 QAT `99.41%` accuracy / `99.18%` macro-F1 | `26.734 KB` TFLite flatbuffer | Confirms our Daghero implementation is a strong WISDM classifier. |
+| Our final Daghero E09 v2 deployment branch | Arduino held-out `99.56%` accuracy / `99.56%` macro-F1; stored-test Walking and Standing recall `1.0` | `26.734 KB` flatbuffer; mean live `Invoke()` about `68.6 ms` | Final live candidate because it gives the best size, latency, stored-test, and current live-behavior balance. |
+
+The comparison is intentionally not presented as a strict leaderboard. Zhou et al. used an Edge Impulse deployment stack on Nano 33 BLE Sense Rev2; Daghero et al. used mixed/sub-byte quantization on the Quentin RISC-V MCU. Our numbers are TensorFlow Lite flatbuffer sizes and local TensorFlow Lite Micro behavior on our Nano 33 BLE Sense sketch.
+
+M4 diagram alignment:
+
+- The Markdown Mermaid pipeline in `docs/m3_end_to_end_pipeline.md` is represented as TikZ in `paper/M4.tex`.
+- M4 includes TikZ diagrams for the full training/evaluation/deployment pipeline, train-time rotation augmentation, and Arduino deployment.
+- The augmentation diagram explicitly shows `normalized train window -> denormalize -> rotate raw [T,3] -> re-normalize -> model.fit/QAT fit`, with validation/test/PTQ representative data bypassing augmentation.
+
+Arduino deployment specificity:
+
+- Current sketch: `deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`.
+- Current v2 model header include: `daghero_accel_rotation_v2_bounded20_p025_qat.h`.
+- Current normalization header include for T100: `m3_norm_finetune_t100.h`.
+- Core live settings: `M3_KWINDOW_SIZE=100`, hop `50`, `LIVE_SAMPLE_RATE_HZ=100`, and `kAccelScaleDivisor=4.0f` before z-score normalization.
+- Firmware path: LSM9DS1 accel sample, scale, z-score normalize with exported stats, quantize into INT8 tensor, call TFLM `Invoke()`, print/notify prediction, confidence, timing, and confusion counts.
+- BLE commands: START/STOP, average, set/clear ground truth. Serial remains the detailed debug/evidence channel.
+- No augmentation, no gyro/magnetometer features, and no orientation correction run on-device.
 
 ## Orientation Failure Notes And Next Strategy
 
@@ -365,8 +399,8 @@ Current EDA snapshot:
 Recommended next experiment strategy:
 
 1. Do not adopt `probability=0.5`, `mode=uniform_so3` as the deployment default. Keep the completed run as a reference negative/partial-positive result.
-2. Do not spend another full Slurm sweep on the bounded-rotation grid. Run a narrow v2 T50 follow-up for E08, E11, and E12 on both Daghero and DeepConvLSTM instead, because several live errors happen near activity transitions and may benefit from the shorter window.
-3. Tomorrow's live session should include board-in-hand, left-pocket, and alternate pocket orientation trials. Log confidence values so low-confidence and high-confidence failures can be counted explicitly.
+2. Do not spend another full Slurm sweep on the bounded-rotation grid. The narrow v2 T50 follow-up for E08, E11, and E12 has completed; use it to decide whether shorter windows are worth live testing.
+3. The next logged live session should include board-in-hand, left-pocket, and alternate pocket orientation trials. Log confidence values so low-confidence and high-confidence failures can be counted explicitly.
 4. Treat the stored E04 axis EDA as the current orientation proxy. The important proxy facts are WISDM dynamic/static classes mostly `+y`, Arduino walking/jogging mostly `-x`, Arduino standing split `-x/-y`, and Arduino sitting `+z`.
 5. Target-orientation v3 has now been run. It is technically valid and EDA-informed, but it is still not the main live deployment choice.
 6. Keep the generated failure-focus reports as the decision surface:

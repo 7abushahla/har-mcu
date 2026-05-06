@@ -14,6 +14,7 @@ This document describes the code path used for the M3 accelerometer-only HAR exp
   - [DeepConvLSTM](#deepconvlstm)
   - [Daghero](#daghero)
 - [TFLite Model Sizes](#tflite-model-sizes)
+- [Published Reference Comparison Used In M4](#published-reference-comparison-used-in-m4)
 - [Training, Validation, And Callbacks](#training-validation-and-callbacks)
 - [Quantization And Deploy Gate](#quantization-and-deploy-gate)
 - [Evaluation Metrics](#evaluation-metrics)
@@ -402,6 +403,31 @@ models_tflite/m3/E00_wisdm_m2_anchor/accel_rotation/daghero_cnn_2layer_conv2d/e0
 models_tflite/m3/E00_wisdm_m2_anchor/accel_rotation/daghero_cnn_2layer_conv2d/e00/daghero_cnn_2layer_conv2d_T100_Prandom_stratified_E00_daghero_cnn_2layer_conv2d_r0_qat.tflite
 ```
 
+## Published Reference Comparison Used In M4
+
+`paper/M4.tex` compares the closest published reference numbers against our current implementation. This is not a perfectly apples-to-apples benchmark table because the hardware stacks and quantization formats differ, but it is the most honest way to explain how our implementation relates to the papers we used.
+
+| System | Domain/protocol | Reported score | Footprint/latency | Interpretation |
+| --- | --- | --- | --- | --- |
+| Original DeepConvLSTM, Ordonez and Roggen 2016 | OPPORTUNITY and Skoda wearable HAR, multimodal sensor setting | OPPORTUNITY F1: 0.930/0.895 for locomotion and 0.866/0.915 for gestures depending on null-class setting; Skoda F1: 0.958 | No Nano/TFLite size or latency reported | Historical architecture source, but not directly comparable to our accelerometer-only WISDM/Arduino TinyML setting. |
+| Published DeepConv LSTM edge reference, Zhou et al. 2025 | WISDM, 3-axis accelerometer, Edge Impulse deployment on Arduino Nano 33 BLE Sense Rev2 | 98.24% accuracy, 98.23% F1; quantized about 97% accuracy/F1 | 513.23 KB to 136.51 KB; 29.1 KB RAM, 189.6 KB flash, 21 ms | This is the closest published WISDM/edge DeepConvLSTM reference for our project. |
+| Our DeepConvLSTM E00 source anchor | WISDM random-stratified T100 | FP32: 97.83% accuracy, 96.82% macro-F1; PTQ: 97.88% accuracy, 96.93% macro-F1 | 513.617 KB FP32; 136.922 KB PTQ | Similar size/performance scale, but our local TFLM LSTM deployment path is much slower than the optimized Edge Impulse reference. |
+| Published Daghero CNN, Daghero et al. 2022 | WISDM and other HAR datasets on Quentin RISC-V MCU | WISDM max F1 98.9%; Max-5% point F1 94.74% | Max point: 6.22 KB, 4.19 ms; Max-5%: 1.27 KB, 1.07 ms | This motivates the lightweight-CNN direction; their mixed/sub-byte backend is not directly comparable to our TFLite flatbuffer size. |
+| Our Daghero E00 source anchor | WISDM random-stratified T100 | v2 QAT: 99.41% accuracy, 99.18% macro-F1 | 26.734 KB TFLite flatbuffer | Confirms our Daghero implementation is a strong WISDM classifier and much smaller than DeepConvLSTM in TFLite form. |
+| Our final Daghero E09 deployment branch | WISDM pretrain plus Arduino fine-tune, v2 bounded rotation, Arduino held-out test | 99.56% accuracy, 99.56% macro-F1; stored-test Walking/Standing recall 1.0 | 26.734 KB flatbuffer; mean live `Invoke()` about 68.6 ms | Final deployment choice because it gives the best size/latency/accuracy/live-behavior balance in this repo. |
+
+Source traceability:
+
+- Original DeepConvLSTM architecture: Ordonez and Roggen, "Deep Convolutional and LSTM Recurrent Neural Networks for Multimodal Wearable Activity Recognition," Sensors 2016, DOI `10.3390/s16010115`.
+- DeepConvLSTM reference: Zhou et al., "Efficient human activity recognition on edge devices using DeepConv LSTM architectures," Scientific Reports 2025, DOI `10.1038/s41598-025-98571-2`.
+- Daghero reference: Daghero et al., "Human Activity Recognition on Microcontrollers with Quantized and Adaptive Deep Neural Networks," ACM TECS 2022, DOI `10.1145/3542819`.
+
+The TikZ diagrams in `paper/M4.tex` mirror this Markdown file's Mermaid diagrams:
+
+- End-to-end training/evaluation/deployment flow from [Pipeline Diagram](#pipeline-diagram).
+- Train-time rotation augmentation flow from [Train-Time Rotation Augmentation](#train-time-rotation-augmentation).
+- Arduino deployment flow from [Deployment](#deployment).
+
 ## Training, Validation, And Callbacks
 
 FP32 training uses [src/train/train_model.py](/shared/b00088568/github/har-mcu/src/train/train_model.py), or the equivalent fine-tune helper in [src/m3/transfer.py](/shared/b00088568/github/har-mcu/src/m3/transfer.py). Labels are converted to one-hot with `tf.keras.utils.to_categorical`.
@@ -555,7 +581,7 @@ V3 result summary:
 - V3 produced 44 per-run CSVs, 264 master rows, and 66 augmentation-on TFLite exports. The off rows reuse the clean no-augmentation v2 artifacts.
 - Daghero QAT gets a mean Arduino macro-F1 gain across all experiments, but WISDM drops and the E09-E12 deployment subset does not beat the no-augmentation Daghero baseline.
 - DeepConvLSTM loses mean Arduino macro-F1 under v3 for FP32/PTQ/QAT.
-- Final offline recommendation: rotation augmentation should remain experimental. The deployment reference should be no-augmentation Daghero E09 QAT first, with no-augmentation E09 PTQ as backup.
+- Final deployment recommendation: use the v2 augmented Daghero E09 QAT branch for live deployment, while keeping the clean no-augmentation Daghero E09 QAT export as the offline control and rollback. This is a live-deployment decision: the stored Arduino metrics are very close, but v2 directly targets the board-orientation failure and behaved better in informal live screening.
 
 ## Deployment
 
@@ -563,7 +589,7 @@ Deployment export uses:
 
 - [src/deploy/export_c_array.py](/shared/b00088568/github/har-mcu/src/deploy/export_c_array.py) to generate `model_data.h` and `model_data.cc`.
 - [src/deploy/export_norm_header.py](/shared/b00088568/github/har-mcu/src/deploy/export_norm_header.py) to generate `norm_stats.h`.
-- [deploy/arduino_infer/arduino_infer.ino](/shared/b00088568/github/har-mcu/deploy/arduino_infer/arduino_infer.ino) for live Nano 33 BLE Sense inference.
+- [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino) for the current live Nano 33 BLE Sense inference sketch.
 
 ```mermaid
 flowchart LR
@@ -571,15 +597,31 @@ flowchart LR
     C["norm_stats_T*_P*.json"] --> D["norm_stats.h"]
     B --> E["Arduino sketch"]
     D --> E
-    E --> F["IMU samples at SAMPLE_RATE_HZ"]
-    F --> G["Ring buffer T x 3"]
-    G --> H["Unit scale and optional z-score normalization"]
+    E --> F["LSM9DS1 accel at LIVE_SAMPLE_RATE_HZ"]
+    F --> G["Session/ring buffer T x 3"]
+    G --> H["Scale by 4.0 divisor and z-score normalize"]
     H --> I["Int8 quantize into input tensor"]
     I --> J["TFLM Invoke"]
-    J --> K["Serial output: timestamp,label,confidence,invoke_ms,e2e_ms"]
+    J --> K["Serial/BLE output: pred, confidence, invoke_ms, confusion"]
 ```
 
-The Arduino sketch keeps a ring buffer of `WINDOW_SIZE x 3`, samples accelerometer data at `SAMPLE_RATE_HZ`, normalizes with `kNormMean` and `kNormStd` when `APPLY_NORMALIZATION=1`, quantizes normalized values into the model input tensor, invokes TFLM, and prints predicted label plus timing.
+The current BLE Arduino sketch is configured for the v2 deployment branch by including `daghero_accel_rotation_v2_bounded20_p025_qat.h`, mapping `M3_MODEL_SYM` to that array, and including `m3_norm_finetune_t100.h` when `M3_KWINDOW_SIZE == 100`. It uses `M3_KWINDOW_SIZE=100`, hop `50`, `LIVE_SAMPLE_RATE_HZ=100`, and `kAccelScaleDivisor=4.0f` before applying the exported z-score constants. After STOP, it runs overlapping sliding windows, quantizes normalized values into the TFLM input tensor, calls `Invoke()`, and prints per-window prediction, confidence, top scores, and `invoke_ms`.
+
+The BLE surface and Serial surface run in parallel:
+
+- BLE command characteristic: `0x01` toggles START/STOP, `0x02` averages buffered trials, `0x10..0x15` set ground-truth class, and `0x1F` clears ground truth.
+- BLE status characteristic: reports state, last predicted class, and confidence.
+- BLE info characteristic: exposes compact model/window metadata.
+- Serial remains the verbose debug/evidence channel and prints confusion matrices when ground truth is set.
+
+Model selection for deployment is intentionally multi-objective:
+
+1. Export must pass the TFLite/TFLM deploy gate for FP32/PTQ/QAT as applicable.
+2. Arduino held-out accuracy, macro-F1, and per-class recalls must stay high, especially Standing, Walking, Upstairs, and Downstairs.
+3. Live Nano behavior must improve the actual observed orientation failures, even if the stored Arduino table is tied.
+4. Model flatbuffer size and `Invoke()` latency must fit the demo and MCU budget.
+
+That is why the current first deploy target is Daghero E09 v2 QAT, while the clean no-augmentation Daghero E09 QAT model is kept as the rollback/control and DeepConvLSTM E09 v2 PTQ is kept only as the architecture comparison.
 
 No rotation augmentation runs on-device. Its cost is paid only during training.
 
@@ -766,6 +808,7 @@ Current deployment guideline after v3 results:
 - Prefer Daghero over DeepConvLSTM for first on-device testing because Daghero's INT8 artifacts are about `26-27 KB` and the v2 Daghero QAT branch is currently the best live model.
 - The live recommendation has moved to the v2 augmented branch even though the offline tables remain close to the clean baseline.
 - Use only one TFLite and its matching normalization header in `deploy/common` at a time, and keep the clean no-augmentation Daghero export as the rollback control.
+- M4 report alignment: [paper/M4.tex](/shared/b00088568/github/har-mcu/paper/M4.tex) uses Daghero E09 v2 QAT as the final deployment candidate, clean Daghero E09 QAT as the offline control/rollback model, and DeepConvLSTM E09 v2 PTQ as the architecture comparison.
 
 Recommended on-device candidates:
 
@@ -773,7 +816,7 @@ Recommended on-device candidates:
 | --- | --- | --- | --- | ---: | --- | --- |
 | 1 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Current best overall live candidate: walking, jogging, sitting, and standing are stable in informal live testing; upstairs usually works; downstairs often flips to upstairs with low confidence; size about `26.7 KB`. |
 | 2 | Daghero | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Backup if QAT is unstable on-device; same augmentation policy and small footprint. |
-| 3 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 off | Offline control and rollback candidate if the augmented advantage does not reproduce tomorrow. |
+| 3 | Daghero | QAT INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 off | Offline control and rollback candidate if the augmented advantage does not reproduce in the next logged live session. |
 | 4 | DeepConvLSTM | PTQ INT8 | E09 WISDM pretrain + Arduino fine-tune | T100 | v2 on | Architecture comparison only; standing improved versus the earlier no-augmentation live pass, but walking still tends to drift to upstairs. |
 
 Recommended pretraining-ablation follow-up:
@@ -819,15 +862,15 @@ Normalization and augmentation at deployment:
 - On-device, export that JSON into `deploy/common/norm_stats.h`. The Arduino sketch applies the same z-score normalization to each raw IMU sample before quantizing into the TFLM input tensor.
 - No augmentation runs on-device. Rotation augmentation was train-only in v1/v2/v3 and has zero inference-time cost.
 - For augmented QAT artifacts, the QAT fine-tuning stage did use augmentation because v1/v2/v3 set `apply_in_qat=true`; this still affects training only and does not change the deployed Arduino preprocessing path.
-- The main observed v2 Daghero failures were low-confidence ambiguities, especially downstairs into upstairs. Tomorrow's live session should log confidence and placement so those failure modes can be counted directly.
+- The main observed v2 Daghero failures were low-confidence ambiguities, especially downstairs into upstairs. The next logged live session should record confidence and placement so those failure modes can be counted directly.
 
-Augmented comparison candidates, to test only after the no-augmentation Daghero baseline:
+Augmented comparison candidates and controls:
 
 | Priority | Architecture | Run | Tier | Experiment | Augmentation policy | Stored Arduino summary |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Daghero | v2 | QAT INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Current best live model: stable walking/jogging/sitting/standing, good upstairs, weak downstairs, small footprint. |
 | 2 | Daghero | v2 | PTQ INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Fallback if the QAT export is unstable on-device. |
-| 3 | Daghero | v3 | QAT INT8 | E09 | `target_gravity`, `p=0.25`, targets `-x/-y/+z` | EDA-informed alternative if v2 still struggles after tomorrow's live pass. |
+| 3 | Daghero | v3 | QAT INT8 | E09 | `target_gravity`, `p=0.25`, targets `-x/-y/+z` | EDA-informed alternative if v2 still struggles after the next logged live pass. |
 | 4 | DeepConvLSTM | v2 | PTQ INT8 | E09 | `bounded_so3`, `20deg`, `p=0.25` | Architecture comparison only; standing is better than before, but walking still tends to move toward upstairs. |
 
 V2 Daghero QAT augmented candidate:
