@@ -1,5 +1,5 @@
 /* Converted from E11_wisdm_pretrain_arduino_finetune_T50/accel_rotation_v3_target_clusters_p025/daghero_cnn_2layer_conv2d/e11/daghero_cnn_2layer_conv2d_T50_Prandom_stratified_E11_daghero_cnn_2layer_conv2d_r0_fp32.tflite */
-const unsigned char daghero_accel_rotation_v3_target_clusters_p025_t50_fp32[] = {
+alignas(16) const unsigned char daghero_accel_rotation_v3_target_clusters_p025_t50_fp32[] = {
   0x1C, 0x00, 0x00, 0x00, 0x54, 0x46, 0x4C, 0x33, 0x14, 0x00,
   0x20, 0x00, 0x1C, 0x00, 0x18, 0x00, 0x14, 0x00, 0x10, 0x00,
   0x0C, 0x00, 0x00, 0x00, 0x08, 0x00, 0x04, 0x00, 0x14, 0x00,
