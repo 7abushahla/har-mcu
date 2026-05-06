@@ -27,6 +27,7 @@ import argparse
 import asyncio
 import queue
 import threading
+import time
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox
@@ -82,6 +83,7 @@ class BleWorker:
         self._from_gui = from_gui
         self._client: BleakClient | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._stop_requested = False
 
     # ── public: called from GUI thread ──
     def send_cmd(self, cmd: bytes) -> None:
@@ -89,6 +91,7 @@ class BleWorker:
             asyncio.run_coroutine_threadsafe(self._write_cmd(cmd), self._loop)
 
     def stop(self) -> None:
+        self._stop_requested = True
         if self._loop and not self._loop.is_closed():
             asyncio.run_coroutine_threadsafe(self._disconnect(), self._loop)
 
@@ -123,7 +126,7 @@ class BleWorker:
         if self._client and self._client.is_connected:
             await self._client.disconnect()
 
-    async def _run(self) -> None:
+    async def _run_once(self) -> None:
         target_name = self._name or "HAR-Nano"
         self._notify({"type": "log", "msg": f"Scanning for {target_name} / service {SERVICE_UUID}…"})
         try:
@@ -141,7 +144,7 @@ class BleWorker:
                     matches_har_device, timeout=10.0
                 )
             if device is None:
-                self._notify({"type": "error", "msg": "Device not found. Is the Nano powered and advertising?"})
+                self._notify({"type": "log", "msg": "Device not found yet (power/advertising)."})
                 return
             self._notify({"type": "log", "msg": f"Found {device.name} ({device.address}) — connecting…"})
             async with BleakClient(device) as client:
@@ -157,6 +160,8 @@ class BleWorker:
                     pass  # older firmware without this characteristic — silently skip
                 # Drain commands from GUI until disconnect
                 while client.is_connected:
+                    if self._stop_requested:
+                        break
                     try:
                         cmd: bytes = self._from_gui.get_nowait()
                         await self._write_cmd(cmd)
@@ -164,13 +169,20 @@ class BleWorker:
                         pass
                     await asyncio.sleep(0.02)
         except Exception as exc:
-            self._notify({"type": "error", "msg": str(exc)})
+            self._notify({"type": "log", "msg": f"BLE reconnect error: {exc}"})
         finally:
             self._notify({"type": "disconnected"})
 
     def run_forever(self) -> None:
         self._loop = asyncio.new_event_loop()
-        self._loop.run_until_complete(self._run())
+        asyncio.set_event_loop(self._loop)
+        while not self._stop_requested:
+            self._loop.run_until_complete(self._run_once())
+            if self._stop_requested:
+                break
+            # Keep trying after flash/reboot/disconnect without requiring Ctrl+C.
+            self._notify({"type": "log", "msg": "Reconnecting in 1.5s…"})
+            time.sleep(1.5)
         self._loop.close()
 
 
@@ -223,8 +235,17 @@ class App(tk.Tk):
 
         tk.Label(status_frame, text="State:", bg=CLR_SURFACE,
                  fg=CLR_MUTED, font=("Helvetica", 9)).grid(row=0, column=2, padx=(8, 2), pady=6)
-        self._lbl_state = tk.Label(status_frame, text="idle",
-                                    bg=CLR_SURFACE, fg=CLR_MUTED, font=("Helvetica", 9, "bold"))
+        # Fixed width (chars) so "idle" → "recording" does not widen the window; anchor left.
+        _state_font = ("Helvetica", 9, "bold")
+        self._lbl_state = tk.Label(
+            status_frame,
+            text="idle",
+            width=11,
+            anchor="w",
+            bg=CLR_SURFACE,
+            fg=CLR_MUTED,
+            font=_state_font,
+        )
         self._lbl_state.grid(row=0, column=3, padx=(0, 16), pady=6, sticky="w")
 
         # Model config info box (populated from BLE read after connect)
