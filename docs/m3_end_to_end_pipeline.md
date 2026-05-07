@@ -20,19 +20,21 @@ This document describes the code path used for the M3 accelerometer-only HAR exp
 - [Evaluation Metrics](#evaluation-metrics)
 - [Dual-Domain Off/On Comparison](#dual-domain-offon-comparison)
 - [Deployment](#deployment)
+- [Code-Referenced Demo Q&A](#code-referenced-demo-qa)
 - [Output Locations](#output-locations)
 - [Slurm Commands](#slurm-commands)
 - [AllocateTensors failures: embedded model must be aligned](#allocatetensors-failures-embedded-model-must-be-aligned)
   - [Symptom](#symptom)
   - [Cause](#cause)
   - [Fix](#fix)
-- [BLE desktop controller (`ble_controller.py`) vs USB Serial](#ble-desktop-controller-ble_controllerpy-vs-usb-serial)
+- [Live BLE and Serial Control](#live-ble-and-serial-control)
   - [How to run](#how-to-run)
-  - [Architecture (desktop)](#architecture-desktop)
-  - [GATT service (must match firmware UUIDs)](#gatt-service-must-match-firmware-uuids)
-  - [Command bytes (central writes to **cmd**)](#command-bytes-central-writes-to-cmd)
-  - [Status notify payload (device → central, **4 bytes**)](#status-notify-payload-device-central-4-bytes)
-  - [BLE vs Serial responsibilities](#ble-vs-serial-responsibilities)
+  - [Desktop controller architecture](#desktop-controller-architecture)
+  - [GATT service](#gatt-service)
+  - [Command bytes](#command-bytes)
+  - [Status notify payload](#status-notify-payload)
+  - [Sketch control surface](#sketch-control-surface)
+  - [BLE and Serial output](#ble-and-serial-output)
   - [Robustness notes](#robustness-notes)
 - [Flash vs SRAM: model flatbuffer vs tensor arena](#flash-vs-sram-model-flatbuffer-vs-tensor-arena)
 - [Arena size vs inference latency](#arena-size-vs-inference-latency)
@@ -172,7 +174,7 @@ flowchart LR
     E --> F["model.fit training batch"]
 ```
 
-In GitHub-flavored Mermaid, **unquoted** text inside `Node[…]` can break when the label contains parentheses (e.g. `SO(3)`) or math punctuation — the parser may treat `(` as starting another node shape. **Wrap those labels in double quotes** as above.
+In GitHub-flavored Mermaid, **unquoted** text inside `Node[...]` can break when the label contains parentheses (e.g. `SO(3)`) or math punctuation - the parser may treat `(` as starting another node shape. **Wrap those labels in double quotes** as above.
 
 Configuration keys:
 
@@ -245,6 +247,13 @@ QAT-specific behavior:
 - The no-augmentation baseline rows, including no-augmentation QAT, have augmentation disabled and therefore use unaugmented normalized train arrays.
 - QAT validation data is not augmented. QAT's representative/calibration data for the final full-integer TFLite conversion is not augmented.
 - Recommendation: keep `apply_in_qat=true` for future augmentation ablations so QAT fine-tuning and FP32/fine-tune training see the same training distribution. The current live recommendation is already Daghero E09 v2 QAT, but keep the no-augmentation Daghero E09 QAT export as the control and rollback comparison.
+
+Why augment during QAT as well as FP32/fine-tuning:
+
+- The deployed QAT artifact is not just the FP32 model converted after training. QAT wraps the model with fake-quantization behavior, recompiles it, and runs additional training epochs before exporting INT8. In [src/quant/qat_train.py](/shared/b00088568/github/har-mcu/src/quant/qat_train.py): lines 454-486, the QAT model is built, compiled, given a training input, and fit again.
+- If FP32/fine-tune training used rotation augmentation but QAT did not, the last trainable stage would optimize only on clean normalized windows. That can partially wash out the robustness learned earlier, because the final deployed weights are the post-QAT weights.
+- Keeping `apply_in_qat=true` makes QAT see the same train-time robustness policy that produced the FP32/fine-tuned checkpoint, while still validating on clean `X_val` and converting/calibrating with unaugmented representative arrays. The config switch remains useful: setting `apply_in_qat=false` is a valid ablation if we want to measure whether augmentation-only-before-QAT is enough for a specific model.
+- Augmenting only pretraining/fine-tuning might be enough when QAT uses very few epochs, a very small learning rate, frozen layers, or empirical results show no difference. That is not guaranteed, and our selected deployable artifact is QAT, so the conservative training contract is to include the same augmentation in QAT and let clean validation/test decide whether it helped.
 
 All current M3 v1 rotation configs enable this block with probability `0.5` and `mode=uniform_so3`. [configs/default.yaml](/shared/b00088568/github/har-mcu/configs/default.yaml) keeps it disabled by default. The v2 Slurm wrapper does not edit the YAML files; it overrides the augmentation keys on the command line so v2 outputs stay traceable to their artifact suffix.
 
@@ -589,6 +598,7 @@ Deployment export uses:
 - [src/deploy/export_c_array.py](/shared/b00088568/github/har-mcu/src/deploy/export_c_array.py) to generate `model_data.h` and `model_data.cc`.
 - [src/deploy/export_norm_header.py](/shared/b00088568/github/har-mcu/src/deploy/export_norm_header.py) to generate `norm_stats.h`.
 - [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino) for the current live Nano 33 BLE Sense inference sketch.
+- [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py) for the desktop BLE demo controller.
 
 ```mermaid
 flowchart LR
@@ -604,14 +614,14 @@ flowchart LR
     J --> K["Serial/BLE output: pred, confidence, invoke_ms, confusion"]
 ```
 
-The current BLE Arduino sketch is configured for the v2 deployment branch by including `daghero_accel_rotation_v2_bounded20_p025_qat.h`, mapping `M3_MODEL_SYM` to that array, and including `m3_norm_finetune_t100.h` when `M3_KWINDOW_SIZE == 100`. It uses `M3_KWINDOW_SIZE=100`, hop `50`, `LIVE_SAMPLE_RATE_HZ=100`, and `kAccelScaleDivisor=4.0f` before applying the exported z-score constants. After STOP, it runs overlapping sliding windows, quantizes normalized values into the TFLM input tensor, calls `Invoke()`, and prints per-window prediction, confidence, top scores, and `invoke_ms`.
+The current BLE Arduino sketch is configured for the v2 deployment branch by including `daghero_accel_rotation_v2_bounded20_p025_qat.h`, mapping `M3_MODEL_SYM` to that array, and including `m3_norm_finetune_t100.h` when `M3_KWINDOW_SIZE == 100`. The selected model header must be present beside the sketch at compile time; the generated v2 header is under `deploy/m3_int8_headers/` and can be copied into `deploy/m3_nano_int8_ble_imu/` for the live build. The sketch uses `M3_KWINDOW_SIZE=100`, hop `50`, `LIVE_SAMPLE_RATE_HZ=100`, and `kAccelScaleDivisor=4.0f` before applying the exported z-score constants. After STOP, it runs overlapping sliding windows, quantizes normalized values into the TFLM input tensor, calls `Invoke()`, prints per-window prediction, confidence, top scores, and `invoke_ms`, and sends BLE status notifications to the desktop controller.
 
-The BLE surface and Serial surface run in parallel:
+The BLE and Serial surfaces run in parallel:
 
 - BLE command characteristic: `0x01` toggles START/STOP, `0x02` averages buffered trials, `0x10..0x15` set ground-truth class, and `0x1F` clears ground truth.
 - BLE status characteristic: reports state, last predicted class, and confidence.
 - BLE info characteristic: exposes compact model/window metadata.
-- Serial remains the verbose debug/evidence channel and prints confusion matrices when ground truth is set.
+- Serial remains the verbose debug/evidence channel and prints per-window predictions and confusion matrices when ground truth is set.
 
 Model selection for deployment is intentionally multi-objective:
 
@@ -623,6 +633,127 @@ Model selection for deployment is intentionally multi-objective:
 That is why the current first deploy target is Daghero E09 v2 QAT, while the clean no-augmentation Daghero E09 QAT model is kept as the rollback/control and DeepConvLSTM E09 v2 PTQ is kept only as the architecture comparison.
 
 No rotation augmentation runs on-device. Its cost is paid only during training.
+
+## Code-Referenced Demo Q&A
+
+This section is the line-referenced companion to `paper/qna.tex`. The goal is to make the live-demo answers traceable back to code and result artifacts.
+
+### Normalization: Training vs Live Device
+
+Training normalization is fit on `X_train_raw` only. [src/data/build_dataset.py](/shared/b00088568/github/har-mcu/src/data/build_dataset.py) slices `X_train_raw`, `X_val_raw`, and `X_test_raw` at lines 121-127, fits or loads train statistics at lines 129-143, applies the same stats to train/val/test at lines 143-145, and writes `norm_stats_T*_P*.json` at lines 168-188. The low-level per-axis formula is in [src/data/normalize.py](/shared/b00088568/github/har-mcu/src/data/normalize.py): lines 8-15 fit mean/std over `(N,T)`, and lines 18-19 apply `(X - mean) / std`.
+
+Live normalization is the same z-score formula but applied sample-by-sample. The Arduino sketch documents the rule at [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 11-16, selects the model and norm headers at lines 44-55, stores derived constants at lines 78-83, and applies the z-score at lines 436-447. The live loop reads IMU samples and writes normalized x/y/z samples into the session buffer at lines 1155-1173. The normalized float window is then quantized to INT8 at lines 459-479.
+
+Important: live inputs are not denormalized. Denormalization is only used by the train-time augmentation helper so rotations happen in raw accelerometer units. That helper denormalizes selected normalized windows at [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): line 419, rotates them at lines 420-426, and re-normalizes them at line 427.
+
+There is no deployment mismatch from not denormalizing on-device. The model expects normalized inputs. Denormalization during augmentation is only an internal temporary step because rotation must be done in raw accelerometer coordinates; the augmented batch is normalized again before `model.fit`. If the Arduino denormalized and then fed raw values to the model, it would recreate the E06/E07 style preprocessing mismatch. If it denormalized and then re-normalized, it would be a no-op with extra float work. The real live risks are placement/orientation, the 100 Hz live cadence versus 20 Hz training metadata, and motion patterns not captured in the stored Arduino split.
+
+### Which Normalization Stats To Deploy
+
+Use the normalization stats from the final training distribution of the exact model being flashed:
+
+| Training mode | Which stats to use | Code reference |
+| --- | --- | --- |
+| WISDM source-only | WISDM train-split stats | Single-domain runner dispatches to the paper experiment path in [src/m3/run_experiment.py](/shared/b00088568/github/har-mcu/src/m3/run_experiment.py): lines 279-296, which trains and quantizes from one processed dataset in [src/run_paper_experiment.py](/shared/b00088568/github/har-mcu/src/run_paper_experiment.py): lines 294-426. |
+| WISDM to Arduino zero-shot | WISDM source train stats, also applied to Arduino eval arrays | [src/m3/transfer.py](/shared/b00088568/github/har-mcu/src/m3/transfer.py): lines 305-337 build source WISDM stats and rebuild target Arduino arrays with those external stats. |
+| WISDM pretrain plus Arduino fine-tune | Arduino fine-tune train stats | [src/m3/transfer.py](/shared/b00088568/github/har-mcu/src/m3/transfer.py): lines 339-370 build WISDM pretrain and Arduino fine-tune datasets, then set `quant_cfg = eval_cfg`, so PTQ/QAT/export use the Arduino fine-tune stats at lines 422-431. |
+| Arduino from scratch | Arduino train-split stats | Same single-domain runner path as source-only, but with the Arduino config/domain. |
+
+Dual-domain evaluation follows the same rule. [src/m3/dual_domain_eval.py](/shared/b00088568/github/har-mcu/src/m3/dual_domain_eval.py): lines 88-95 locate the training stats directory (`source_wisdm` for zero-shot, `finetune_arduino` for fine-tune, plain processed dir otherwise), lines 197-201 load those stats, and lines 226-235 rebuild WISDM/Arduino eval arrays with the model's train stats.
+
+For the selected E09 Daghero v2 QAT model, deploy the `finetune_arduino/norm_stats_T100_Prandom_stratified.json` paired with that exact TFLite. [configs/m3/E09_wisdm_pretrain_arduino_finetune.yaml](/shared/b00088568/github/har-mcu/configs/m3/E09_wisdm_pretrain_arduino_finetune.yaml): lines 11-20 define the fine-tune mode and domains, and lines 36-38 enable `train_zscore`.
+
+### Augmentation Scope
+
+Augmentation is not applied on-device, validation, test, or PTQ representative data. It is inserted only through the training input object passed to `model.fit`.
+
+- FP32 training uses `build_training_input(...)` and then passes unaugmented validation data in [src/train/train_model.py](/shared/b00088568/github/har-mcu/src/train/train_model.py): lines 85-103.
+- The DeepConvLSTM baseline does the same in [src/train/train_baseline.py](/shared/b00088568/github/har-mcu/src/train/train_baseline.py): lines 82-99.
+- Fine-tuning does the same in [src/m3/transfer.py](/shared/b00088568/github/har-mcu/src/m3/transfer.py): lines 129-147.
+- QAT training uses `build_training_input(..., for_qat=True)` in [src/quant/qat_train.py](/shared/b00088568/github/har-mcu/src/quant/qat_train.py): lines 467-486. Because v1/v2/v3 set `apply_in_qat=true`, augmented QAT training batches use the active rotation policy.
+- PTQ representative arrays are selected directly from saved arrays in [src/quant/ptq_full_int8.py](/shared/b00088568/github/har-mcu/src/quant/ptq_full_int8.py): lines 216-264 and [src/quant/deploy_gate.py](/shared/b00088568/github/har-mcu/src/quant/deploy_gate.py): lines 11-24.
+- Evaluation loads test arrays directly in [src/eval/evaluate_model.py](/shared/b00088568/github/har-mcu/src/eval/evaluate_model.py): lines 35-45 and [src/eval/eval_tflite.py](/shared/b00088568/github/har-mcu/src/eval/eval_tflite.py): lines 175-183.
+
+The augmentation helper itself checks config and QAT behavior in [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): lines 47-93, samples v1 uniform SO(3) rotations at lines 161-202, samples v2 bounded SO(3) rotations at lines 233-253, samples v3 target-gravity rotations at lines 323-349 and 369-379, applies one matrix per `[T,3]` window at lines 383-394, and performs denormalize-rotate-renormalize at lines 397-428.
+
+QAT rationale for demos: augmentation in QAT is deliberate because QAT is the last trainable stage before the deployed INT8 export. If we augmented FP32/fine-tuning but disabled augmentation during QAT, the final trainable stage would see only clean windows and could reduce the robustness learned earlier. The repository keeps this configurable through `apply_in_qat`: [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): lines 47-64 disable QAT augmentation when requested, and lines 499-506 fall back to plain `X_train` when augmentation is disabled. Our v1/v2/v3 augmentation-on runs left it enabled, while validation, test, PTQ representative data, and QAT representative data stayed clean.
+
+### Arduino Live Inference Workflow
+
+```mermaid
+flowchart TD
+    A["Selected model header"] --> C["Arduino sketch"]
+    B["Selected norm header"] --> C
+    C --> D["setup(): IMU + TFLM + BLE init"]
+    D --> E["AllocateTensors"]
+    E --> F["BLE/Serial GT + START records samples"]
+    F --> G["readAcceleration x/y/z"]
+    G --> H["divide by capture scale, z-score per axis"]
+    H --> I["session buffer"]
+    I --> J["STOP: sliding windows with hop T/2"]
+    J --> K["quantize normalized floats to int8 tensor"]
+    K --> L["Invoke"]
+    L --> M["Serial/BLE pred, confidence, invoke_ms, confusion"]
+```
+
+Code trace:
+
+- Model and norm header selection: [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 44-55.
+- Tensor arena and live buffers: lines 85-145.
+- TFLM model/interpreter/tensor setup: lines 566-570 and 987-1093.
+- BLE service/characteristics and boot advertising: lines 771-779 and 1113-1140.
+- Serial ground-truth fallback: lines 369-419.
+- BLE ground-truth, START/STOP, and AVERAGE handling: lines 804-858.
+- Live sample read and preprocessing: lines 1155-1173.
+- Sliding-window pass after STOP: lines 703-769.
+- INT8 input quantization: lines 459-479.
+- `Invoke()` timing: lines 573-600.
+- Per-window Serial output and BLE status notify: lines 603-700.
+- BLE controller connect/notify/control path: [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py): lines 37-53, 102-116, 129-170, 306-340, 410-427, and 467-500.
+
+The current live sketch samples at `LIVE_SAMPLE_RATE_HZ=100` while the training metadata is 20 Hz; the code calls out that this changes real window duration unless we retrain or resample to match ([deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 67-72). That is one of the most important next cleanup items.
+
+### Latency, Model Size, And Window Size
+
+The major latency/size win came from architecture choice, not from pretraining. Daghero v2 QAT is about `26.7 KB` and measured about `68.6 ms` live `Invoke()` in our current sketch. The DeepConvLSTM comparison is about `136.9 KB` and measured about `2501 ms` live `Invoke()`. Host-side timing is implemented in [src/eval/eval_tflite.py](/shared/b00088568/github/har-mcu/src/eval/eval_tflite.py): lines 109-164, while on-device timing is measured around `interpreter->Invoke()` in [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 590-598 and printed at lines 658-672.
+
+Pretraining plus fine-tuning (E09/E11) versus Arduino-only training (E10/E12) does not inherently change latency because the network graph and `T` are what drive compute. It can change accuracy/domain behavior. T50 does reduce host-side latency and DeepConvLSTM model size, but it did not replace E09 T100 as the primary live candidate. DeepConvLSTM's T-dependent flatten/classifier path is visible in [src/models/deepconv_lstm.py](/shared/b00088568/github/har-mcu/src/models/deepconv_lstm.py): lines 51-63; Daghero's global-average-pooling path keeps the parameter count largely independent of `T` in [src/models/daghero_cnn_searchspace_tf.py](/shared/b00088568/github/har-mcu/src/models/daghero_cnn_searchspace_tf.py): lines 54-68. The current T50 follow-up status is documented below in this file at the T50 status block.
+
+### Result Notes For Q&A
+
+- E09 Daghero v2 QAT has stored Arduino accuracy `0.995575` and macro-F1 `0.995578`, with `26.734 KB` TFLite size in `reports/m3/dual_domain_eval_v2_bounded20_p025/dual_domain_eval_master.csv`.
+- The clean E09 Daghero QAT control is essentially tied offline (`0.995575` accuracy and macro-F1 `0.995576`), so the choice of v2 for the live candidate is based on the live orientation behavior plus the fact that v2 directly targets board-placement robustness.
+- E06 no-normalization and E07 skip-inference-normalization diagnostic rows are near chance on Arduino. In v2 QAT, Daghero is about `0.166` accuracy and `0.048` macro-F1 for E06/E07; DeepConvLSTM is also poor, about `0.17-0.20` accuracy depending on the diagnostic row. Their configs are [configs/m3/E06_no_norm_matched.yaml](/shared/b00088568/github/har-mcu/configs/m3/E06_no_norm_matched.yaml): lines 34-36 and [configs/m3/E07_skip_inference_norm_diag.yaml](/shared/b00088568/github/har-mcu/configs/m3/E07_skip_inference_norm_diag.yaml): lines 34-36; the implementation branches are [src/data/build_dataset.py](/shared/b00088568/github/har-mcu/src/data/build_dataset.py): lines 146-156 and [src/deploy/export_norm_header.py](/shared/b00088568/github/har-mcu/src/deploy/export_norm_header.py): lines 17-35.
+
+### Robustness Placement Tests
+
+For left-pocket, hand-held, and wrong-orientation tests, the hope is not that every class becomes perfect. The hope is that v2 reduces recall drops and confidence collapse for the standing/walking/stairs group compared with the clean rollback model. Left pocket changes the body-relative axes and leg coupling. Hand-held changes both orientation and motion coupling. Right pocket with the board rotated incorrectly isolates orientation more cleanly. V2 prepares us for modest orientation changes because it uses bounded 20-degree SO(3) rotation on 25 percent of training windows. It does not fully prepare us for arbitrary 180-degree flips, hand-specific dynamics, or the 100 Hz live cadence mismatch; those require logged live data or an explicit sampling/deployment experiment.
+
+Code refs: v2 policy in [scripts/slurm/submit_m3_rotation_v2_train.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_rotation_v2_train.sh): lines 8-12 and 32-35; bounded sampler in [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): lines 233-253; live ground-truth/confusion support in [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 103-114, 284-367, and 615-618.
+
+### Why V3 Did Not Beat V2
+
+V3 uses EDA-derived gravity targets, but that makes it stronger and more opinionated than v2. It estimates the selected window mean vector as a gravity proxy, samples a target cluster (`-x`, `-y`, or `+z`), and rotates the whole raw window toward that target. This can be a large rotation and is not class-conditional. Because the stored Arduino test split does not reproduce every live failure, v3 can fit the stored axis clusters while hurting WISDM retention and not improving the live deployment decision. V2 is less clever but safer: it leaves 75 percent of windows unchanged and only nudges selected windows within 20 degrees.
+
+Code refs: v3 policy in [scripts/slurm/submit_m3_rotation_v3_train.sh](/shared/b00088568/github/har-mcu/scripts/slurm/submit_m3_rotation_v3_train.sh): lines 8-12 and 33-35; target-gravity implementation in [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): lines 323-349 and 369-379; v2 sampler at lines 233-253; v1 sampler at lines 161-202; v2/v3 result summaries above in this file at the V2 and V3 result summary blocks.
+
+### FPU And Float Work On The Nano 33 BLE Sense
+
+The Nano 33 BLE Sense family uses the nRF52840 / Cortex-M4F class MCU, so yes, it has an FPU. The official Arduino Nano 33 BLE Sense Rev2 datasheet lists a 64 MHz Arm Cortex-M4F with FPU, and Nordic's nRF52840 page lists a 64 MHz Arm Cortex-M4 with FPU. For the selected INT8 model, the heavy neural-network kernels are still integer quantized; the FPU mainly helps the surrounding sketch math: IMU float reads, z-score normalization, input quantization scaling, output dequantization, confidence calculations, and Serial float printing. We did not run an FPU-on/off ablation, so we should not claim a measured factor. If we deployed FP32 TFLite, the FPU would matter much more, but INT8 is the selected deployment tier.
+
+The reported on-device `invoke_ms` is intentionally narrower than "whole demo time": input quantization happens before timing starts, and output dequantization, confidence formatting, Serial printing, and BLE notification happen after timing stops. Those float/UI operations can affect wall-clock interaction smoothness but are not included in the printed `invoke_ms`. The sketch also uses `AllOpsResolver`, which is convenient for model swapping but can increase firmware flash compared with a minimal op resolver.
+
+Hardware refs: Arduino datasheet: <https://docs.arduino.cc/resources/datasheets/ABX00069-datasheet.pdf>; Nordic nRF52840 page: <https://www.nordicsemi.com/Products/nRF52840>.
+
+Code refs: selected INT8 model header in [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 44-47; INT8 input path in lines 459-479 and 575-577; float preprocessing in lines 436-447 and 1155-1173; output dequantization is in lines 481-493; confidence uses probabilities directly when possible and otherwise falls back to `expf` in lines 516-535; `Invoke()` timing starts after input quantization and excludes output dequantization, Serial printing, and BLE notification in lines 574-600; BLE polling during long sliding inference is at line 751; `AllOpsResolver` is used at lines 566-570.
+
+### Improvement Ideas
+
+1. Log a structured live confusion matrix for the selected v2 Daghero QAT model. The sketch already supports BLE/Serial ground-truth labels and confusion matrices at [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 103-114, 284-367, and 804-858.
+2. Fix or explicitly justify the live sampling-rate mismatch. The sketch currently warns that 100 Hz live sampling changes the real window duration relative to 20 Hz training at lines 67-72.
+3. Use T50 v2 candidates as a targeted transition/latency follow-up, not as a blind replacement. T50 coverage is complete for E08/E11/E12; see the T50 status block below.
+4. Reclaim SRAM only after checking that `AllocateTensors()` still succeeds. The current BLE sketch prints allocated/used arena bytes and `model_flatbuffer_len` at lines 1054-1098 and declares the named arena/session/trial buffers at lines 85-145.
+5. If live failures persist, use captured live failure windows to design a new target augmentation rather than widening random rotation. The current target-gravity machinery is in [src/train/augment.py](/shared/b00088568/github/har-mcu/src/train/augment.py): lines 323-349 and 369-379.
 
 ## Output Locations
 
@@ -925,16 +1056,16 @@ T50 follow-up status:
 
 ### Symptom
 
-On Nano 33 BLE, `AllocateTensors()` could appear to **hang**, require **double reset**, or fault **silently** right after `[boot] allocate tensors…`. Increasing `kTensorArenaSize` did not fix it when the real issue was elsewhere.
+On Nano 33 BLE, `AllocateTensors()` could appear to **hang**, require **double reset**, or fault **silently** right after `[boot] allocate tensors...`. Increasing `kTensorArenaSize` did not fix it when the real issue was elsewhere.
 
 ### Cause
 
-The model is embedded as a **C byte array** (`const unsigned char …[]`). Without alignment constraints, the **linker may place that array at any address**. Example from two builds of the same sketch:
+The model is embedded as a **C byte array** (`const unsigned char ...[]`). Without alignment constraints, the **linker may place that array at any address**. Example from two builds of the same sketch:
 
-- One link placed the array at **`0x5555c`** — **16-byte aligned** by luck.
-- Another placed it at **`0x55ac1`** — **unaligned**.
+- One link placed the array at **`0x5555c`** - **16-byte aligned** by luck.
+- Another placed it at **`0x55ac1`** - **unaligned**.
 
-During `AllocateTensors()`, TensorFlow Lite reads the flatbuffer as **structured data** (tables, offsets, vectors). On **Cortex-M**, reading multi-byte fields from an **unaligned** base address can cause a **hard fault** instead of returning `kTfLiteError`. That matches “stuck at allocate tensors” with no clean error path.
+During `AllocateTensors()`, TensorFlow Lite reads the flatbuffer as **structured data** (tables, offsets, vectors). On **Cortex-M**, reading multi-byte fields from an **unaligned** base address can cause a **hard fault** instead of returning `kTfLiteError`. That matches "stuck at allocate tensors" with no clean error path.
 
 ### Fix
 
@@ -944,90 +1075,113 @@ Declare the embedded model with explicit alignment so the linker cannot place th
 alignas(16) const unsigned char my_model_tflite[] = { ... };
 ```
 
-**What `alignas(16)` means.** In C++, `alignas(N)` sets the **minimum alignment** (in bytes) of the **next** object. The compiler and linker then reserve the symbol so its **starting address** is a multiple of `N`. Without it, `const unsigned char model[]` is just a byte array: the linker may put it at any address (e.g. ending in `…c1`), which is what triggered the fault.
+**What `alignas(16)` means.** In C++, `alignas(N)` sets the **minimum alignment** (in bytes) of the **next** object. The compiler and linker then reserve the symbol so its **starting address** is a multiple of `N`. Without it, `const unsigned char model[]` is just a byte array: the linker may put it at any address (e.g. ending in `...c1`), which is what triggered the fault.
 
-**Why 16 — not “this model only”.** The literal **`16` is not fitted to Daghero vs DeepConvLSTM** or to the `.tflite` file size. It is a **small, safe default** for embedding **any** TFLite FlatBuffer blob on MCU:
+**Why 16 - not "this model only".** The literal **`16` is not fitted to Daghero vs DeepConvLSTM** or to the `.tflite` file size. It is a **small, safe default** for embedding **any** TFLite FlatBuffer blob on MCU:
 
-- FlatBuffers layout rules assume the buffer base can be accessed sensibly; **16-byte** alignment matches common **SIMD / vector** boundaries on many CPUs and is widely used as a **“round up to safe boundary”** choice in embedded TFLite examples (same idea as aligning the **tensor arena** — often 16 bytes — for the interpreter scratch region).
+- FlatBuffers layout rules assume the buffer base can be accessed sensibly; **16-byte** alignment matches common **SIMD / vector** boundaries on many CPUs and is widely used as a **"round up to safe boundary"** choice in embedded TFLite examples (same idea as aligning the **tensor arena** - often 16 bytes - for the interpreter scratch region).
 - Using **`alignas(8)`** would also fix many unaligned-base crashes on ARM; **`alignas(16)`** is slightly stricter, costs at most a few bytes of **padding** before the array in flash, and stays **one rule for all models** in this repo.
 
-Regenerate deployment headers from the export scripts so every new `.tflite` → `.h` emit uses `alignas(16)`. In this repo, `har-mcu/src/deploy/export_c_array.py` writes the array that way; always **re-export** after changing models instead of hand-copying a bare `const unsigned char[]`.
+Regenerate deployment headers from the export scripts so every new `.tflite` -> `.h` emit uses `alignas(16)`. In this repo, `har-mcu/src/deploy/export_c_array.py` writes the array that way; always **re-export** after changing models instead of hand-copying a bare `const unsigned char[]`.
 
 After the fix, verify in a map file or debugger that the model symbol lands on a **16-byte boundary** (e.g. `0x55ad0`). Flash alignment issues are **orthogonal** to arena size: a correctly aligned model can still need a larger arena for a bigger graph, but **no arena size fixes an unaligned flatbuffer**.
 
-## BLE desktop controller (`ble_controller.py`) vs USB Serial
+## Live BLE and Serial Control
 
-The Nano 33 BLE sketch **`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`** supports two control surfaces in parallel:
+The active demo sketch is **`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`**. It is paired with **`deploy/m3_nano_int8_ble_imu/ble_controller.py`**. BLE is the main demo control path; USB Serial remains the verbose evidence/debug channel.
 
-| Surface | Transport | Role |
-| --- | --- | --- |
-| **BLE desktop UI** | Bluetooth GATT (Python + **bleak** + tkinter) | Remote START/STOP, ground truth, **AVERAGE**, live session summary |
-| **USB Serial** | `Serial` at 115200 baud | Full telemetry: every `trial=…` line, confusion matrix, `[mem]` boot dump, typing GT by name |
-
-They do **not** replace each other. The firmware runs **one IMU pipeline**; BLE sends **compact status** for the GUI while Serial prints **verbose logs** for debugging and coursework evidence.
+| Surface | Role |
+| --- | --- |
+| **BLE controller** | Select ground truth, toggle START/STOP, request AVERAGE, and display session prediction votes and confidence. |
+| **USB Serial** | Debug fallback for ground-truth labels; read every `trial=...` prediction line, `invoke_ms`, confidence, tensor diagnostics, model flatbuffer length, SRAM breakdown, and confusion matrix. |
 
 ### How to run
 
+1. Put the selected model header and matching norm header beside the sketch.
+2. Open `deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino` in the Arduino IDE.
+3. Confirm the include, `M3_MODEL_SYM`, and `M3_KWINDOW_SIZE` at lines 44-47.
+4. Flash the Nano 33 BLE Sense.
+5. Run `python deploy/m3_nano_int8_ble_imu/ble_controller.py`, connect to `HAR-Nano`, choose a ground-truth class, press START, perform the activity, press STOP, and read the BLE prediction display plus Serial prediction lines.
+
+One-time Python dependency and useful launch forms:
+
 ```bash
-pip install bleak   # once
+pip install bleak
 python deploy/m3_nano_int8_ble_imu/ble_controller.py
 python deploy/m3_nano_int8_ble_imu/ble_controller.py --name HAR-Nano
 python deploy/m3_nano_int8_ble_imu/ble_controller.py --address <BLE address>
 ```
 
-Optional: keep **Arduino Serial Monitor** open at the same time for full window-by-window output.
+Optional: keep Arduino Serial Monitor open at 115200 baud while using BLE. The firmware runs one IMU pipeline; BLE sends compact status for the GUI, while Serial prints verbose logs for debugging and coursework evidence.
 
-### Architecture (desktop)
+### Desktop controller architecture
 
-- **Tkinter** runs on the main thread (buttons, labels, log box).
-- A **background thread** runs **asyncio** + **BleakClient**: scan, connect, subscribe to notifications, read characteristics.
-- Two **queues** bridge threads: BLE→GUI (status, errors, model info) and GUI→BLE (command bytes).
-- Closing the window stops the worker only if the asyncio loop is still open (guarded against `RuntimeError` if the BLE thread already exited).
+- `tkinter` runs on the main thread for buttons, labels, and the log box.
+- A background thread runs `asyncio` plus `BleakClient` for scanning, connecting, subscribing to notifications, reading model info, and writing commands.
+- Two queues bridge threads: BLE-to-GUI for status/errors/model info, and GUI-to-BLE for command bytes.
+- Code refs: controller requirements and CLI are in [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py): lines 1-23 and 519-530; the BLE worker owns bleak calls at lines 69-187; the Tkinter app starts the worker and polls queues at lines 189-214 and 449-516.
 
-### GATT service (must match firmware UUIDs)
+### GATT service
 
-Single service **`19B10000-E8F2-537E-4F6C-D104768A1214`** with:
+The firmware and controller must agree on one service and three characteristics:
 
-| Characteristic | UUID suffix | Direction | Purpose |
+| Characteristic | UUID | Direction | Purpose |
 | --- | --- | --- | --- |
-| **cmd** | `…0001` | Central → device (write) | Single-byte commands (see below). |
-| **status** | `…0002` | Device → central (notify) | 4-byte prediction/state updates (see below). |
-| **info** | `…0003` | Central reads once after connect | ASCII model config: `T=<n> hop=<n> model=<symbol>` — UI shows **T** and **model name** (hop omitted in the panel). |
+| Service | `19B10000-E8F2-537E-4F6C-D104768A1214` | advertised by device | HAR control service |
+| `cmd` | `19B10001-E8F2-537E-4F6C-D104768A1214` | central writes | Single-byte commands |
+| `status` | `19B10002-E8F2-537E-4F6C-D104768A1214` | device notifies | 4-byte state/prediction/confidence payload |
+| `info` | `19B10003-E8F2-537E-4F6C-D104768A1214` | central reads | ASCII model config: `T=<n> hop=<n> model=<symbol>` |
 
-Boot order on device: **TFLite init and `AllocateTensors()` complete before `BLE.begin()`**, so Cordio/HCI activity does not preempt tensor allocation.
+Boot order matters: the device completes TFLite initialization and `AllocateTensors()` before `BLE.begin()`, so BLE/Cordio activity does not preempt tensor allocation. Code refs: firmware UUIDs are at [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 29-42, characteristics are declared at lines 771-779, BLE starts after tensor allocation at lines 1113-1140, and controller UUIDs mirror them at [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py): lines 37-53.
 
-### Command bytes (central writes to **cmd**)
+### Command bytes
 
 | Byte | Meaning |
 | --- | --- |
-| `0x01` | Toggle **START / STOP** recording (same semantics as shield “short click” in other sketches). |
-| `0x02` | **Long-hold / AVERAGE** — mean logits over buffered trials, confusion matrix path, clear trial buffer as implemented in firmware. |
-| `0x10` … `0x15` | Set ground-truth class **0 … 5** before next START. |
+| `0x01` | Toggle START/STOP recording. |
+| `0x02` | AVERAGE buffered trials, report mean/logit summary, and print/clear confusion state. |
+| `0x10` to `0x15` | Set ground-truth class 0 to 5 before the next START. |
 | `0x1F` | Clear ground truth. |
 
-On START, the GUI may send GT then `0x01` in sequence so the next segment carries the chosen label.
+On START, the GUI sends the selected ground-truth command first, then sends `0x01`, so the segment carries the chosen label. Code refs: command constants are in the firmware at lines 34-42 and controller at lines 43-53; controller button handling is at [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py): lines 410-427; firmware command handling is at [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 804-858.
 
-### Status notify payload (device → central, **4 bytes**)
+### Status notify payload
 
 | Offset | Content |
 | --- | --- |
-| `0` | **state:** `0` idle, `1` recording, **`2` average result** (not a sliding-window prediction — GUI must not count it as a window). |
-| `1` | **Class index** `0 … 5`, or **`0xFF`** for “no prediction this notify” (pure state update after START/STOP click). |
-| `2–3` | **uint16 little-endian:** confidence in **tenths of a percent** (`996` → **99.6 %**). |
+| `0` | State: `0` idle, `1` recording, `2` average result. State `2` is not a sliding-window prediction and should not be counted as a window vote. |
+| `1` | Class index `0` to `5`, or `0xFF` for no prediction in a state-only update. |
+| `2-3` | `uint16` little-endian confidence in tenths of a percent, for example `996` means `99.6%`. |
 
-The GUI aggregates **window** predictions into **session top‑3 vote counts** with **per-class average confidence**; `[avg result]` lines use **state = 2** so they do not inflate the window tally.
+The GUI aggregates only window predictions into session vote counts and average confidence. It still parses legacy 3-byte firmware status as integer percent for compatibility. Code refs: firmware payload packing is at [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 781-802; START/STOP sends state-only notifications by resetting `pred=0xFF` at lines 846-851; the controller parses status at [deploy/m3_nano_int8_ble_imu/ble_controller.py](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/ble_controller.py): lines 102-116 and handles average-vs-window updates at lines 467-500.
 
-Legacy firmware that sent **3-byte** status is still parsed (integer percent in byte 2).
+### Sketch control surface
 
-### BLE vs Serial responsibilities
+- BLE UUIDs and command constants are defined in the sketch at lines 29-42 and mirrored in `ble_controller.py` at lines 37-53.
+- BLE ground-truth, START/STOP, and AVERAGE commands are handled in the sketch at lines 804-858.
+- The long-hold/AVERAGE result and confusion-matrix report are handled in lines 860-985.
+- Serial ground-truth fallback is parsed at lines 369-419.
+- The Python controller sends ground truth and START/STOP commands at lines 410-427 and displays prediction status at lines 467-500.
 
-- **Serial** — authoritative for **`invoke_ms`**, per-window **`trial=`** lines with runner-up classes, **`[mem]`** SRAM breakdown, **`model_flatbuffer_len`**, confusion matrix printouts.
-- **BLE** — enough to drive the remote UI: recording state, last/average class + confidence, optional **model info** string without parsing Serial.
+### BLE and Serial output
+
+BLE is the clean demo UI and Serial is the detailed evidence channel. The sketch prints:
+
+- tensor shape, dtype, quantization scale, and zero point at lines 537-564 and 1051-1052;
+- SRAM breakdown, arena allocated/used/slack, and model flash bytes at lines 1054-1093;
+- `model_flatbuffer_len` and selected model symbol at lines 1096-1102;
+- per-window `trial=...`, `invoke_ms=...`, `pred=...`, and `conf=...` at lines 658-672;
+- cumulative confusion matrices at lines 284-367.
+
+The BLE controller reads the model info characteristic at lines 154-160, parses status notifications at lines 102-116, updates the prediction panel at lines 365-407, and logs each prediction at lines 467-500.
 
 ### Robustness notes
 
-- **`BLE.poll()`** is called **between sliding windows** during STOP inference and around averaging so the link stays supervised during long CPU-bound stretches (otherwise macOS may drop the connection).
-- **Double `ble_update_status()` after commands** was avoided: START/STOP sends **state-only** notifies (`pred = 0xFF`) so the desktop does not double-count windows or inject stale confidence.
+- During robustness testing, keep the same typed ground truth and START/STOP procedure for each placement so the confusion matrix remains interpretable.
+- The sketch currently samples at 100 Hz while the training metadata records 20 Hz; this is called out in lines 67-72 and should be treated as a known deployment caveat.
+- If a selected generated model header is not in the sketch folder, copy it from `deploy/m3_int8_headers/` before compiling. The current live sketch's selected v2 header is `daghero_accel_rotation_v2_bounded20_p025_qat.h`.
+- `BLE.poll()` is called between sliding windows during STOP inference and during averaging so the link stays supervised during long CPU-bound stretches. Code refs: [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 751 and 917-918.
+- The sketch intentionally avoids sending an extra prediction after START/STOP. State-only notifications use `pred=0xFF`, so the desktop UI does not double-count the final window or inject stale confidence. Code refs: lines 846-851.
 
 ## Flash vs SRAM: model flatbuffer vs tensor arena
 
@@ -1037,41 +1191,46 @@ On Arduino Nano 33 BLE (nRF52840, **256 KiB SRAM**), three numbers often confuse
 | --- | --- | --- |
 | **Model flatbuffer size** (`model_flatbuffer_len` or `.tflite` file size) | Serialized graph + **weights/biases** (INT8) + quantization metadata | **Flash** (`.rodata`), constant at runtime |
 | **`kTensorArenaSize` (allocated arena)** | Upper bound you reserve for TFLite Micro scratch memory | **SRAM** (`tensor_arena[]` in BSS) |
-| **`interpreter->arena_used_bytes()`** | Bytes TFLite actually uses inside that arena after `AllocateTensors()` | Subset of the allocated arena only |
+| **Actual arena use** | Bytes TFLite actually uses inside that arena after `AllocateTensors()` | Subset of the allocated arena; the current BLE sketch prints this value |
 
-**Weights do not live in the tensor arena.** During `Invoke()`, kernels read weights directly from the flatbuffer in flash. The arena holds **scratch RAM** for the interpreter: activations (layer outputs), temporary buffers for ops, and planner bookkeeping. TFLite Micro **reuses** the same arena bytes across operators, so the planner tracks **peak** activation memory — not “sum of every layer’s activations.”
+**Weights do not live in the tensor arena.** During `Invoke()`, kernels read weights directly from the flatbuffer in flash. The arena holds **scratch RAM** for the interpreter: activations (layer outputs), temporary buffers for ops, and planner bookkeeping. TFLite Micro **reuses** the same arena bytes across operators, so the planner tracks **peak** activation memory - not "sum of every layer's activations."
 
-So it is normal — and common for small CNNs — for **model size in flash (e.g. ~27 KiB)** to be **much larger** than **arena used (e.g. ~8 KiB)**. The flatbuffer is dominated by parameters; the arena is dominated by **peak intermediate tensor sizes**, which can stay small if channels stay narrow.
+So it is normal for **model size in flash (e.g. ~27 KiB)** and **arena allocation (currently 50 KiB)** to be different numbers. The flatbuffer is dominated by parameters and metadata; the arena is dominated by peak intermediate tensors and scratch buffers.
 
-**Allocated vs used arena:** If `arena_used_bytes()` is far below `kTensorArenaSize`, the difference is **slack**: you could shrink `kTensorArenaSize` to reclaim SRAM for larger session buffers or BLE, as long as you leave a safety margin (allocation can shift slightly with resolver/TFLM version).
+**Allocated vs used arena:** The current BLE sketch prints the allocated arena size, actual `interpreter->arena_used_bytes()`, and slack. To tune SRAM tightly, reduce `kTensorArenaSize` carefully and verify that `AllocateTensors()` still succeeds for the exact selected model and TFLM version.
+
+Code refs: [src/deploy/export_c_array.py](/shared/b00088568/github/har-mcu/src/deploy/export_c_array.py): lines 18-67 converts `.tflite` into an aligned C array; [deploy/m3_int8_headers/daghero_accel_rotation_v2_bounded20_p025_qat.h](/shared/b00088568/github/har-mcu/deploy/m3_int8_headers/daghero_accel_rotation_v2_bounded20_p025_qat.h): lines 1-2 and 2742 show the flatbuffer array and length; [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 1024-1036 calls `tflite::GetModel`, lines 1037-1047 allocate tensors, and lines 1054-1093 print arena allocated/used/slack plus model flash bytes.
 
 ## Arena size vs inference latency
 
-**Small arena does not imply fast inference.** Arena size tracks **peak scratch RAM** and planner reuse. Latency on Cortex-M4 is dominated by **compute** (MAC operations per layer), filter sizes, and window length `T`, not by how many KiB of arena you reserved. A weight-heavy but activation-narrow CNN can show **small arena_used** and still **~150 ms** per `Invoke()` on this MCU.
+**Small arena does not imply fast inference.** Arena size tracks **peak scratch RAM** and planner reuse. Latency on Cortex-M4 is dominated by **compute** (MAC operations per layer), filter sizes, recurrent layers, and window length `T`, not by how many KiB of arena you reserved. Increasing the arena beyond what allocation needs will not make `Invoke()` faster.
 
-Use **measured `invoke_ms`** (from the sketch) or estimated MAC counts from the graph for latency reporting — not arena bytes alone.
+Use **measured `invoke_ms`** (from the sketch) or estimated MAC counts from the graph for latency reporting - not arena bytes alone.
+
+Code refs: the fixed arena is declared in [deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino](/shared/b00088568/github/har-mcu/deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino): lines 85-88, tensor allocation happens at lines 1037-1047, and `Invoke()` latency is measured separately at lines 590-598.
 
 ## On-device SRAM breakdown (reference)
 
-The BLE deployment sketch (`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`) prints a **`[mem]`** block after tensor allocation that summarizes:
+The live deployment sketch (`deploy/m3_nano_int8_ble_imu/m3_nano_int8_ble_imu.ino`) uses these named SRAM blocks:
 
-- **Tensor arena:** allocated size, **used** (`arena_used_bytes()`), **slack**
-- **Session buffer:** `sizeof(g_session_buffer)` — float ring for recording (dominant non-arena SRAM when `kMaxSessionSamples` is large)
+- **Tensor arena:** `kTensorArenaSize = 50 * 1024`, declared at lines 85-88.
+- **Session buffer:** `g_session_buffer[1500][3]`, about 18 KB of floats, declared at lines 89-92 and 130-131.
+- **Ring buffer:** `ring_buffer[WINDOW_SIZE][3]`, about 1.2 KB for T100, declared at lines 133-134.
 - **Trial logits / misc:** cumulative trial buffers and confusion matrix helpers
-- **Static total:** arena allocation plus those named buffers (does **not** include stack, Cordio/BLE heap, or other mbed internals)
+- **Stack and library heap:** not included in the simple named-buffer estimate
 - **Model flash:** same byte count as `model_flatbuffer_len`, labeled explicitly as **not SRAM**
 
-Use that block when filling deployment tables that ask for “arena size + additional buffers.”
+At boot, the current BLE sketch prints tensor shapes at lines 1051-1052, arena allocated/used/slack and named buffer sizes at lines 1054-1093, and `model_flatbuffer_len` at lines 1096-1098.
 
 ## Mapping to common deployment metrics
 
 | Metric | Where to read it |
 | --- | --- |
 | Model size (flash), KiB | `model_flatbuffer_len=` at boot, or size of the `.tflite` file on disk |
-| Total sketch flash | Arduino IDE compile output: “Sketch uses X bytes …” |
-| Arena allocated | `kTensorArenaSize` and/or `[mem] tensor arena … alloc` |
-| Arena actually used | `[mem] … used` = `interpreter->arena_used_bytes()` |
-| Extra SRAM buffers | `[mem]` lines for session / trial / misc + `static total` |
-| Inference latency (avg ≥ 50) | Per-window `invoke_ms=` lines; long-hold summary `per_trial: invoke_ms=` |
+| Total sketch flash | Arduino IDE compile output: "Sketch uses X bytes ..." |
+| Arena allocated | `kTensorArenaSize`, printed in the `[mem] tensor arena` line at boot |
+| Arena actually used | Printed from `interpreter->arena_used_bytes()` in the `[mem] tensor arena` line |
+| Extra SRAM buffers | Estimate from named arrays: session buffer, ring buffer, trial logits, confidence, predictions, confusion matrix |
+| Inference latency (avg >= 50) | Per-window `invoke_ms=` lines; long-hold summary `per_trial: invoke_ms=` |
 
 ---
