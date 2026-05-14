@@ -321,6 +321,17 @@ def download_arduino_archive(args: argparse.Namespace, cache_dir: Path) -> Path:
     raise RuntimeError("All Arduino download candidates failed:\n- " + "\n- ".join(errors))
 
 
+def remove_cached_archive(archive_path: Path, cache_dir: Path) -> None:
+    """Remove a downloaded setup archive after its contents have been extracted."""
+
+    try:
+        archive_path.resolve().relative_to(cache_dir.resolve())
+    except ValueError:
+        return
+    archive_path.unlink(missing_ok=True)
+    log(f"removed cached archive {archive_path}")
+
+
 def convert_wisdm_txt_to_csv(wisdm_dir: Path, *, force: bool = False) -> Path:
     raw_txt = wisdm_dir / "WISDM_ar_v1.1_raw.txt"
     raw_csv = wisdm_dir / "WISDM_ar_v1.1_raw.csv"
@@ -503,6 +514,7 @@ def ensure_wisdm(args: argparse.Namespace, repo_root: Path) -> Path:
         )
 
     archive_path: Path | None = None
+    remove_archive_after_extract = False
     if args.archive:
         archive_path = Path(args.archive)
         if not archive_path.is_absolute():
@@ -511,9 +523,12 @@ def ensure_wisdm(args: argparse.Namespace, repo_root: Path) -> Path:
             raise FileNotFoundError(f"Archive not found: {archive_path}")
     elif not args.skip_download:
         archive_path = download_wisdm_archive(args, cache_dir)
+        remove_archive_after_extract = True
 
     if archive_path is not None:
         extract_archive(archive_path, wisdm_dir, cache_dir)
+        if remove_archive_after_extract:
+            remove_cached_archive(archive_path, cache_dir)
     elif not wisdm_dir.exists():
         raise FileNotFoundError(
             f"{wisdm_dir} does not exist and downloads were skipped. "
@@ -542,6 +557,7 @@ def ensure_arduino(args: argparse.Namespace, repo_root: Path) -> Path | None:
         return raw_csv
 
     archive_path: Path | None = None
+    remove_archive_after_extract = False
     if args.arduino_archive:
         archive_path = Path(args.arduino_archive)
         if not archive_path.is_absolute():
@@ -550,6 +566,7 @@ def ensure_arduino(args: argparse.Namespace, repo_root: Path) -> Path | None:
             raise FileNotFoundError(f"Arduino archive not found: {archive_path}")
     elif not args.skip_download and not args.skip_arduino_download:
         archive_path = download_arduino_archive(args, cache_dir)
+        remove_archive_after_extract = True
 
     if archive_path is not None:
         extract_arduino_archive(
@@ -558,6 +575,8 @@ def ensure_arduino(args: argparse.Namespace, repo_root: Path) -> Path | None:
             cache_dir,
             csv_name=args.arduino_csv,
         )
+        if remove_archive_after_extract:
+            remove_cached_archive(archive_path, cache_dir)
     elif not raw_csv.exists():
         raise FileNotFoundError(
             f"{raw_csv} does not exist and Arduino downloads were skipped. "

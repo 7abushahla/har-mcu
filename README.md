@@ -63,7 +63,8 @@ before running the M4 paper pipeline:
    Google Drive archive first, then the official WISDM archive/page fallback.
    A local archive can also be supplied with `--archive`.
 3. Extracts only the WISDM release files needed by the repo into
-   `WISDM_ar_v1.1/`.
+   `WISDM_ar_v1.1/`, then deletes the downloaded archive from
+   `data/raw_cache/`.
 4. Normalizes `WISDM_ar_v1.1_raw.csv`. If an extracted CSV has the shorter
    legacy row count, the setup script regenerates it from
    `WISDM_ar_v1.1_raw.txt` by parsing semicolon-terminated raw records.
@@ -77,15 +78,17 @@ before running the M4 paper pipeline:
 7. Extracts only the Arduino numeric-user CSV needed by the M3 configs into
    `tiny-motion/`. The M3 training/evaluation code reads Arduino data through
    `paths.arduino_raw_csv`; the other capture logs and conversion helpers are
-   not required for setup-time replication checks.
+   not required for setup-time replication checks. The downloaded Arduino
+   archive is deleted from `data/raw_cache/` after extraction.
 8. Validates that the Arduino CSV has the same six WISDM-style columns, all
    six activity classes, numeric timestamps/axes, two users, and at least
    200,000 rows. With `--strict-data`, it requires exactly 240,620 data rows.
 9. Skips notebook execution, M3 smoke experiments, and v2 augmentation checks
    unless those checks are explicitly requested with the flags below.
 
-The raw WISDM folder, raw Arduino folder, downloaded archives, executed
-notebook smoke copies, and generated setup artifacts are ignored by Git.
+The raw WISDM folder, raw Arduino folder, executed notebook smoke copies, and
+generated setup artifacts are ignored by Git. Downloaded archives are also
+ignored and are removed automatically after successful extraction.
 
 #### Optional setup checks
 
