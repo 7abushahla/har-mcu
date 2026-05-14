@@ -1,7 +1,7 @@
 """Milestone 3 single-experiment entrypoint.
 
-Run this inside Slurm jobs only. Dry-run mode validates config contracts without
-loading datasets or importing TensorFlow-heavy training paths.
+Used by both local smoke checks and Slurm jobs. Dry-run mode validates config
+contracts without loading datasets or importing TensorFlow-heavy training paths.
 """
 
 from __future__ import annotations

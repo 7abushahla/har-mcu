@@ -6,10 +6,16 @@ __pycache__/
 .venv/
 venv/
 
-# Generated artifacts — ignore processed data except full M3 tree (repro / cross-eval)
-data/processed/*
-!data/processed/m3/
-!data/processed/m3/**
+# Downloaded raw datasets
+WISDM_ar_v1.1/
+WISDM_ar_v1.1.zip
+WISDM_ar_latest.tar.gz
+tiny-motion/
+tiny-motion.zip
+data/raw_cache/
+
+# Generated artifacts
+data/processed/
 checkpoints/*
 # models_tflite tracked (TFLite exports for deployment/repro)
 reports/*.json
@@ -29,11 +35,22 @@ slurm_logs/
 slurm-*.out
 notebooks/executed/
 reports/m3/smoke*/
+reports/m3/setup_smoke*/
 reports/m3/arch_sweeps/
 models_tflite/m3/*/smoke*/
+models_tflite/m3/*/setup_smoke*/
 models_tflite/m3/*/arch_sweeps/
+deploy/common/m3/*/setup_smoke*/
 *.pdf
 *.PDF
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
 DeepConv+LSTM.ipynb
 
 # NFS temporary files

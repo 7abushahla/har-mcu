@@ -46,6 +46,114 @@ Each record in the raw dataset contains:
 
 Use conda environment `tinymlproj`.
 
+#### One-command local setup
+
+Use this path for a clean local reproduction without Slurm:
+
+```bash
+bash scripts/setup_repro.sh --yes
+```
+
+By default, the setup wrapper performs only the lightweight local setup needed
+before running the M4 paper pipeline:
+
+1. Creates or updates conda environment `tinymlproj` from `environment.yml`
+   unless `--skip-env` is passed.
+2. Downloads WISDM if `WISDM_ar_v1.1/` is missing. It tries the configured
+   Google Drive archive first, then the official WISDM archive/page fallback.
+   A local archive can also be supplied with `--archive`.
+3. Extracts only the WISDM release files needed by the repo into
+   `WISDM_ar_v1.1/`.
+4. Normalizes `WISDM_ar_v1.1_raw.csv`. If an extracted CSV has the shorter
+   legacy row count, the setup script regenerates it from
+   `WISDM_ar_v1.1_raw.txt` by parsing semicolon-terminated raw records.
+5. Validates that the WISDM CSV has the required columns, all six activity
+   classes, 36 users, and at least 1,000,000 rows. With `--strict-data`, it
+   requires exactly 1,098,207 data rows.
+6. Downloads the Arduino-collected dataset if
+   `tiny-motion/Arduino_layth_hamza_wisdm_raw_numeric_user.csv` is missing.
+   It uses the configured `tiny-motion.zip` Google Drive archive by default;
+   a local archive can be supplied with `--arduino-archive`.
+7. Extracts only the Arduino numeric-user CSV needed by the M3 configs into
+   `tiny-motion/`. The M3 training/evaluation code reads Arduino data through
+   `paths.arduino_raw_csv`; the other capture logs and conversion helpers are
+   not required for setup-time replication checks.
+8. Validates that the Arduino CSV has the same six WISDM-style columns, all
+   six activity classes, numeric timestamps/axes, two users, and at least
+   200,000 rows. With `--strict-data`, it requires exactly 240,620 data rows.
+9. Skips notebook execution, M3 smoke experiments, and v2 augmentation checks
+   unless those checks are explicitly requested with the flags below.
+
+The raw WISDM folder, raw Arduino folder, downloaded archives, executed
+notebook smoke copies, and generated setup artifacts are ignored by Git.
+
+#### Optional setup checks
+
+The default command is intentionally lightweight. Add these flags only when
+you want setup to verify runnable notebooks or experiment entry points:
+
+- `--notebook-check smoke`: executes a patched quick-mode copy of
+  `notebooks/replication_deepconvlstm.ipynb` through the WISDM data-load sanity
+  cell. The executed copy is written under `notebooks/executed/`.
+- `--notebook-check execute`: runs the patched quick-mode notebook end to end.
+- `--m3-check dry-run`: validates the WISDM M3 config/CLI path without
+  training.
+- `--m3-check smoke`: runs a tiny WISDM M3 train/eval/export pass through
+  `configs/m3/E00_wisdm_m2_anchor.yaml`. The Arduino M3 check follows this
+  mode unless `--arduino-m3-check` is provided.
+- `--arduino-m3-check dry-run` or `--arduino-m3-check smoke`: validates or
+  runs the Arduino M3 path using `configs/m3/E10_arduino_from_scratch.yaml`.
+- `--v2-augment-check dry-run` or `--v2-augment-check smoke`: validates the v2
+  acceleration-rotation path. The direct self-test samples bounded SO(3)
+  rotations on synthetic accelerometer windows and checks shape, finite values,
+  actual rotation, and norm preservation. The M3 integration check then uses
+  the paper v2 policy: `bounded_so3`, probability `0.25`, and `20` degrees.
+
+GPU behavior: optional notebook checks keep the original notebook's
+`USE_GPU=True`, so TensorFlow sees and uses a visible GPU during notebook
+validation. Optional M3 smoke checks use the same runtime device policy as the
+M3 script: sanity-check train/eval/PTQ stages request GPU and fall back to CPU
+if no GPU is visible. QAT is skipped in the smoke runs for speed; pass
+`--m3-enable-qat` to include the M3 QAT stage, using the QAT device preference
+from the experiment config. To make GPU availability a hard prerequisite, run
+this inside the environment:
+
+```bash
+python scripts/env/check_tf_cuda.py --expect-version 2.14.1 --require-gpu
+```
+
+Useful variants:
+
+```bash
+# Use the current active environment instead of creating/updating conda.
+bash scripts/setup_repro.sh --skip-env
+
+# Enforce the exact WISDM and Arduino data-row counts.
+bash scripts/setup_repro.sh --yes --strict-data
+
+# Fast config-only validation for the WISDM and Arduino M3 entry points.
+bash scripts/setup_repro.sh --notebook-check skip --m3-check dry-run
+
+# Full local smoke verification after setup: notebook data smoke, WISDM M3,
+# Arduino M3, and v2 bounded-rotation integration.
+bash scripts/setup_repro.sh --yes --strict-data --notebook-check smoke --m3-check smoke --v2-augment-check smoke
+
+# Redownload the Arduino archive and overwrite the local numeric-user CSV.
+bash scripts/setup_repro.sh --force-arduino-download --arduino-m3-check dry-run
+
+# Skip the Arduino M3 smoke while still downloading and validating the CSV.
+bash scripts/setup_repro.sh --arduino-m3-check skip
+
+# Check v2 bounded-rotation augmentation config/CLI wiring without training.
+bash scripts/setup_repro.sh --v2-augment-check dry-run
+
+# Run the tiny v2 bounded-rotation smoke: direct rotation self-test plus E10 M3 integration.
+bash scripts/setup_repro.sh --v2-augment-check smoke
+
+# Run the patched quick-mode notebook end to end.
+bash scripts/setup_repro.sh --notebook-check execute
+```
+
 Optional: update conda first:
 
 ```bash

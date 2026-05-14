@@ -17,6 +17,11 @@ nvidia-cuda-nvrtc-cu11==11.8.89
 ipykernel
 jupyterlab
 notebook
+nbclient
+nbformat
+
+# Data download tooling
+requests
 
 # Test tooling
 pytest
